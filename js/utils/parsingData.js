@@ -149,7 +149,7 @@ var loadColorMap = function(callback){
 
 
 var loadMetricValues = function(callback){
-    console.log("loading metrci file");
+    console.log("loading metric file");
     Papa.parse("data/Anatomic/metric.csv",{
         download: true,
         delimiter: ',',
