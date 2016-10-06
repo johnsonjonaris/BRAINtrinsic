@@ -349,10 +349,8 @@ var createLegend = function (active) {
         legendMenu.removeChild(legendMenu.childNodes[0]);
     }
 
-
     //var scaleColorGroup = d3.scale.category20();
     legendMenu = d3.select("#legend");
-
 
     if(active != 3){
         console.log("active group value: " + active);
@@ -388,20 +386,23 @@ var createLegend = function (active) {
                 .on("click", function(){
                     toggleRegion(this.id);
                 });
-            elementGroup.append("circle")
-                .attr("cx",5)
-                .attr("cy",10)
-                .attr("fill",scaleColorGroup(activeGroup[i]))
-                .attr('opacity', opacity)
-                .attr("r",8);
+
 
             if(typeof(activeGroup[i]) != 'number' && activeGroup[i].indexOf("right") > -1){
+                elementGroup.append("rect")
+                    .attr("x",-5)
+                    .attr("y",0)
+                    .attr("width", 20)
+                    .attr("height", 20)
+                    .attr("fill", scaleColorGroup(activeGroup[i]))
+                    .attr('opacity',opacity);
+            } else {
                 elementGroup.append("circle")
                     .attr("cx",5)
                     .attr("cy",10)
-                    .attr("fill","rgb(0,0,0)")
-                    .attr("r",4)
-                    .attr('opacity',opacity);
+                    .attr("fill",scaleColorGroup(activeGroup[i]))
+                    .attr('opacity', opacity)
+                    .attr("r",8);
             }
 
             //choose color of the text
@@ -412,7 +413,6 @@ var createLegend = function (active) {
                 textColor = "rgb(0,0,0)";
                 opacity = 1;
             }
-
 
             elementGroup.append("text")
                 .text(activeGroup[i])
@@ -1004,12 +1004,12 @@ searchElement = function (index) {
         alert("The value inserted is not a number");
     }
 
-    if(index < 0 || index > spheres.length){
+    if(index < 0 || index > glyphs.length){
         alert("Node not found");
     }
 
 
-    spheres[index].geometry = drawSelectedNode(index, spheres[index]);
+    glyphs[index].geometry = drawSelectedNode(index, glyphs[index]);
 }
 
 toggleFslMenu = function (e) {

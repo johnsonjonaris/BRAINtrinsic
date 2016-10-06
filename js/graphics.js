@@ -9,7 +9,7 @@ var canvas;
 var renderer;
 var controls;
 var scene;
-var spheres;
+var glyphs;
 var sphereNodeDictionary ={};
 
 var oculusControl;
@@ -50,10 +50,10 @@ function onDocumentMouseMove( event )
     // the following line would stop any other event handler from firing
     // (such as the mouse's TrackballControls)
     event.preventDefault();
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
-    var intersectedObject = getIntersectedObject();
+    var intersectedObject = getIntersectedObject(event);
 
     if ( intersectedObject  && visibleNodes[sphereNodeDictionary[intersectedObject.object.uuid]] && isRegionActive(getRegionByNode(sphereNodeDictionary[intersectedObject.object.uuid]))) {
         var i = sphereNodeDictionary[intersectedObject.object.uuid];
@@ -62,24 +62,12 @@ function onDocumentMouseMove( event )
     }
 
     if ( intersectedObject && nodesSelected.indexOf(sphereNodeDictionary[intersectedObject.object.uuid]) == -1 && visibleNodes[sphereNodeDictionary[intersectedObject.object.uuid]] && isRegionActive(getRegionByNode(sphereNodeDictionary[intersectedObject.object.uuid]))) {
-
         var index = sphereNodeDictionary[intersectedObject.object.uuid];
-
-
         if(pointedObject){
-            //pointedObject.geometry = new THREE.SphereGeometry(1,10,10);
             pointedObject.geometry = createNormalGeometryByObject(pointedObject);
         }
-
-
-
         pointedObject = intersectedObject.object;
-
-        //pointedObject.geometry = new THREE.SphereGeometry(2,10,10);
         pointedObject.geometry = createSelectedGeometryByObject(pointedObject);
-
-        //pointedObject.material.transparent = false;
-
 
         var regionName = getRegionNameByIndex(index);
         setNodeInfoPanel(regionName, index);
@@ -92,18 +80,13 @@ function onDocumentMouseMove( event )
         }
     } else{
         if(pointedObject){
-
             if(sphereNodeDictionary[pointedObject.uuid] == root) {
-                //pointedObject.geometry = new THREE.SphereGeometry(3,10,10);
                 console.log("root creation");
                 pointedObject.geometry = createRootGeometryByObject(pointedObject);
             }
             else {
-                //pointedObject.geometry = new THREE.SphereGeometry(1, 10, 10);
                 pointedObject.geometry = createNormalGeometryByObject(pointedObject);
-                //pointedObject.material.transparent = false;
             }
-
 
             if(nodesSelected.indexOf(sphereNodeDictionary[pointedObject.uuid]) == -1 ) {
                 removeEdgesGivenNode(sphereNodeDictionary[pointedObject.uuid]);
@@ -111,7 +94,6 @@ function onDocumentMouseMove( event )
             pointedObject = null;
         }
     }
-
 }
 
 
@@ -119,51 +101,18 @@ function onDocumentMouseMove( event )
  * This method is used to interact with objects in scene.
  *
  */
-/*
- function onClick( event ) {
-
- event.preventDefault();
-
- var vector = new THREE.Vector3(
- ( event.clientX / window.innerWidth ) * 2 - 1,
- - ( event.clientY / window.innerHeight ) * 2 + 1,
- 0.5
- );
- vector = vector.unproject( camera );
-
- var ray = new THREE.Raycaster( camera.position,
- vector.sub( camera.position ).normalize() );
-
- var intersects = ray.intersectObjects( spheres );
-
-
- if ( intersects.length > 0 ) {
-
- var index = sphereNodeDictionary[intersects[0].object.uuid];
- var dataset = getDataset();
-
- setNodeInfoPanel(dataset[index].name, index);
-
- }
-
- }*/
 
 function onDblClick(event){
     mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
     mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
     event.preventDefault();
 
-
-    var intersectedObject = getIntersectedObject();
-
-
+    var intersectedObject = getIntersectedObject(event);
     if(intersectedObject) {
         removeElementsFromEdgePanel();
         var nodeIndex = sphereNodeDictionary[intersectedObject.object.uuid];
-
         spt = true;
         drawShortestPath(nodeIndex);
-
     }
 }
 
@@ -173,18 +122,11 @@ function onClick( event ){
     mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
     event.preventDefault();
-
-
-    var objectIntersected = getIntersectedObject();
-
-
+    var objectIntersected = getIntersectedObject(event);
     if (objectIntersected && visibleNodes[sphereNodeDictionary[objectIntersected.object.uuid]]) {
-
         if(!spt) {
             var nodeIndex = sphereNodeDictionary[objectIntersected.object.uuid];
-
             var el = nodesSelected.indexOf(nodeIndex);
-
             if (el == -1) {
                 //if the node is not already selected -> draw edges and add in the nodesSelected Array
                 /*
@@ -196,19 +138,11 @@ function onClick( event ){
                     drawTopNEdgesByNode(nodeIndex, getNumberOfEdges());
                 }
                 nodesSelected[nodesSelected.length] = nodeIndex; */
-
                 objectIntersected.geometry = drawSelectedNode(nodeIndex,objectIntersected.object);
-                
                 pointedObject = null;
-
             } else { //if the nodes is already selected, remove edges and remove from the nodeSelected Array
-
                 objectIntersected.object.material.color = new THREE.Color(scaleColorGroup(getRegionByNode(nodeIndex),nodeIndex));
-                //objectIntersected.object.geometry = new THREE.SphereGeometry(1.0,10,10);
-
                 objectIntersected.object.geometry = createNormalGeometryByObject(objectIntersected.object);
-
-
                 nodesSelected.splice(el, 1);
                 removeEdgesGivenNode(nodeIndex);
             }
@@ -219,6 +153,23 @@ function onClick( event ){
     }
 }
 
+function onMouseDown(event) {
+    click = true;
+    switch (event.button) {
+        case 0:
+            onClick(event);
+            break;
+        case 2:
+            setTimeout(function () {click = false;}, 200);
+            break;
+    }
+}
+
+function onMouseUp(event) {
+    if(event.button == 2 && click){
+        toggleFslMenu();
+    }
+}
 
 /**
  * This method should be called to init th canvas where we render the brain
@@ -237,7 +188,6 @@ initCanvas = function () {
     addFslRadioButton();
     addSearchPanel();
 
-
     setRegionsActivated();
 
     //setThreshold(30);
@@ -249,7 +199,7 @@ initCanvas = function () {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
 
     camera.position.z = 50;
-    spheres = [];
+    glyphs = [];
 
     canvas = document.getElementById('canvas');
 
@@ -257,35 +207,14 @@ initCanvas = function () {
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     canvas.addEventListener('dblclick', onDblClick , true);
-
-    canvas.addEventListener( 'mousedown', function(e){
-        click = true;
-        switch (e.button) {
-            case 0:
-                onClick(e);
-                break;
-            case 2:
-                setTimeout(function () {
-                  click = false;
-                },200);
-                break;
-        }
-    }, true);
-
-    canvas.addEventListener('mouseup', function(e){
-        if(e.button == 2 && click){
-            toggleFslMenu();
-        }
-    });
-
-    canvas.addEventListener( 'mousemove', onDocumentMouseMove, true );
+    canvas.addEventListener('mousedown', onMouseDown, true);
+    canvas.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('mousemove', onDocumentMouseMove, true );
 
     canvas.appendChild(renderer.domElement);
 
-
     controls = new THREE.TrackballControls(camera, renderer.domElement);
     controls.rotateSpeed = 0.5;
-
 
     effect = new THREE.OculusRiftEffect( renderer, { worldScale: 1 } );
     effect.setSize( window.innerWidth, window.innerHeight );
@@ -331,21 +260,17 @@ initCanvas = function () {
         effect.setSize(window.innerWidth, window.innerHeight);
     }
 
-
     var len = getConnectionMatrixDimension();
-
     for(var i =0; i < len; i++){
         visibleNodes[visibleNodes.length] = true;
     }
 
     drawRegions(getDataset());
 
-
     //Adding light
-
-    light = new THREE.HemisphereLight({
-        intensity: 0.5
-    });
+    scene.add( new THREE.AmbientLight(0x606060, 1.5));
+    light = new THREE.PointLight( 0xffffff, 1.0, 10000 );
+    light.position.set( 1000, 1000, 100 );
     scene.add(light);
 
     var axisHelper = new THREE.AxisHelper( 5 );
@@ -363,11 +288,10 @@ initCanvas = function () {
  */
 
 updateScene = function(){
-    var l = spheres.length;
+    var l = glyphs.length;
     for (var i=0; i < l; i++){
-        scene.remove(spheres[i]);
+        scene.remove(glyphs[i]);
     }
-
 
     for(i=0; i < displayedEdges.length; i++){
         scene.remove(displayedEdges[i]);
@@ -375,23 +299,19 @@ updateScene = function(){
 
     displayedEdges = [];
 
-
     drawRegions(getDataset());
     drawConnections();
     createLegend(activeGroup);
 };
-
-
-
 
 animate = function () {
 
     requestAnimationFrame(animate);
     controls.update();
 
-    for(var i = 0; i < spheres.length; i++){
-        spheres[i].lookAt(camera.position);
-    }
+    // for(var i = 0; i < glyphs.length; i++){
+    //     glyphs[i].lookAt(camera.position);
+    // }
 
     //controls.update(  );
     if(vr > 0 ) {
@@ -400,7 +320,6 @@ animate = function () {
     render();
 
 };
-
 
 render = function() {
 
@@ -417,8 +336,6 @@ render = function() {
     }
 };
 
-
-
 var createCentroidScale = function(d){
     var l = d.length;
     var allCoordinates = [];
@@ -430,100 +347,62 @@ var createCentroidScale = function(d){
     }
     centroidScale = d3.scale.linear().domain(
         [
-            d3.min(allCoordinates, function(element){
-                return element;
-            })
-            ,
-            d3.max(allCoordinates, function(element){
-                return element;
-            })
+            d3.min(allCoordinates, function(element){ return element; }),
+            d3.max(allCoordinates, function(element){ return element; })
         ]
     ).range([-500,+500]);
 };
 
 /*
- * This method draws all the regions of the brain as spheres.
+ * This method draws all the regions of the brain as glyphs.
  */
 
 var drawRegions = function(dataset) {
 
     var l = dataset.length;
-    var material;
-
-
     createCentroidScale(dataset);
+    var xCentroid = d3.mean(dataset, function(d){ return centroidScale(d.x); });
+    var yCentroid = d3.mean(dataset, function(d){ return centroidScale(d.y); });
+    var zCentroid = d3.mean(dataset, function(d){ return centroidScale(d.z); });
 
-    var geometry;
-
-    var xCentroid = d3.mean(dataset, function(d){
-        return centroidScale(d.x);
-    });
-
-    var yCentroid = d3.mean(dataset, function(d){
-        return centroidScale(d.y);
-    });
-
-    var zCentroid = d3.mean(dataset, function(d){
-        return centroidScale(d.z);
-    });
-
+    var material;
     var geometry = new THREE.CircleGeometry( 1.0, 10);
     for(var i=0; i < l; i++){
-        spheres[i] = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+        glyphs[i] = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
         if(shouldDrawRegion(dataset[i])) {
             if(nodesSelected.indexOf(i) == -1) {
                 //if the node is not selected
-                /*material = new THREE.MeshPhongMaterial({
-                    color: scaleColorGroup(dataset[i].group),
-                    shininess: 15,
-                    transparent: false,
-                    opacity: 0.7
-                });*/
-
                 material = getNormalMaterial(dataset[i].group,i);
-
-                //geometry = new THREE.SphereGeometry(1.0, 10, 10);
                 geometry = createNormalGeometry(dataset[i].hemisphere);
 
             } else {
-                /*
-                material = new THREE.MeshPhongMaterial({
-                    color: scaleColorGroup(dataset[i].group),
-                    shininess: 15
-                });*/
-
                 material = getNormalMaterial(dataset[i].group,i);
-
-
                 geometry = createSelectedGeometry(dataset[i].hemisphere);
             }
 
             if(root && root == i){
-                //geometry = new THREE.SphereGeometry(3.0,10,10);
                 geometry = createRootGeometry(dataset[i].hemisphere);
                 material.transparent = false;
             }
 
-            spheres[i] = new THREE.Mesh(geometry, material);
-            spheres[i].userData.hemisphere = dataset[i].hemisphere;
-
+            glyphs[i] = new THREE.Mesh(geometry, material);
+            glyphs[i].userData.hemisphere = dataset[i].hemisphere;
 
             var x = centroidScale(dataset[i].x) - xCentroid;
             var y = centroidScale(dataset[i].y) - yCentroid;
             var z = centroidScale(dataset[i].z) - zCentroid;
 
-            spheres[i].position.set(x, y, z);
+            glyphs[i].position.set(x, y, z);
 
-            sphereNodeDictionary[spheres[i].uuid] = i;
+            sphereNodeDictionary[glyphs[i].uuid] = i;
 
             if(visibleNodes[i]){
-                //spheres[i].lookAt( camera.position);
-                scene.add(spheres[i]);
+                // glyphs[i].lookAt( camera.position);
+                scene.add(glyphs[i]);
             }
         }
-        spheres[i].userData.hemisphere = dataset[i].hemisphere;
+        glyphs[i].userData.hemisphere = dataset[i].hemisphere;
     }
-
 };
 
 
@@ -548,8 +427,8 @@ var drawRegions = function(dataset) {
  color: scale(connectionMatrix[i][j]),
  linewidth: connectionMatrix[i][j]/25.0
  });
- var start = new THREE.Vector3(spheres[i].position.x, spheres[i].position.y,spheres[i].position.z);
- var end = new THREE.Vector3(spheres[j].position.x, spheres[j].position.y,spheres[j].position.z);
+ var start = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y,glyphs[i].position.z);
+ var end = new THREE.Vector3(glyphs[j].position.x, glyphs[j].position.y,glyphs[j].position.z);
  var geometry = new THREE.Geometry();
  geometry.vertices.push(
  start,
@@ -571,8 +450,8 @@ var drawConnections = function () {
                 row = getConnectionMatrixRow(nodesSelected[i]);
                 for(var j=0; j < row.length; j++) {
                     if (isRegionActive(getRegionByNode(j)) && row[j] > getThreshold() && visibleNodes[j]) {
-                        var start = new THREE.Vector3(spheres[nodesSelected[i]].position.x, spheres[nodesSelected[i]].position.y, spheres[nodesSelected[i]].position.z);
-                        var end = new THREE.Vector3(spheres[j].position.x, spheres[j].position.y, spheres[j].position.z);
+                        var start = new THREE.Vector3(glyphs[nodesSelected[i]].position.x, glyphs[nodesSelected[i]].position.y, glyphs[nodesSelected[i]].position.z);
+                        var end = new THREE.Vector3(glyphs[j].position.x, glyphs[j].position.y, glyphs[j].position.z);
                         var line = drawEdgeWithName(start, end, row[j]);
                         displayedEdges[displayedEdges.length] = line;
                     }
@@ -591,8 +470,6 @@ var drawConnections = function () {
 
     setEdgesColor();
 };
-
-
 
 var setEdgesColor = function () {
     var allDisplayedWeights =[];
@@ -665,8 +542,8 @@ var drawEdgesGivenNode = function (indexNode) {
     var l = connectionRow.length;
     for(var i=0; i < l ; i++){
         if(connectionRow[i] > getThreshold()  && isRegionActive(getRegionByNode(i)) && visibleNodes[i]) {
-            var start = new THREE.Vector3(spheres[indexNode].position.x, spheres[indexNode].position.y, spheres[indexNode].position.z);
-            var end = new THREE.Vector3(spheres[i].position.x, spheres[i].position.y, spheres[i].position.z);
+            var start = new THREE.Vector3(glyphs[indexNode].position.x, glyphs[indexNode].position.y, glyphs[indexNode].position.z);
+            var end = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z);
             var line = drawEdgeWithName(start,end, connectionRow[i]);
             displayedEdges[displayedEdges.length] = line;
 
@@ -674,7 +551,6 @@ var drawEdgesGivenNode = function (indexNode) {
     }
     setEdgesColor();
 };
-
 
 var drawEdge = function (start,end, opacity) {
 
@@ -699,9 +575,9 @@ var drawEdgeWithName = function (start, end, name) {
 };
 
 var removeEdgesGivenNode = function (indexNode) {
-    var x = spheres[indexNode].position.x;
-    var y = spheres[indexNode].position.y;
-    var z = spheres[indexNode].position.z;
+    var x = glyphs[indexNode].position.x;
+    var y = glyphs[indexNode].position.y;
+    var z = glyphs[indexNode].position.z;
 
     var l = displayedEdges.length;
 
@@ -738,8 +614,7 @@ var removeEdgesGivenNode = function (indexNode) {
     setEdgesColor();
 };
 
-
-getIntersectedObject = function () {
+getIntersectedObject = function (event) {
 
     var vector = new THREE.Vector3(
         ( event.clientX / window.innerWidth ) * 2 - 1,
@@ -752,11 +627,7 @@ getIntersectedObject = function () {
         vector.sub( camera.position ).normalize() );
 
 
-    //raycaster.setFromCamera( mouse, camera );
-
-
-    var objectsIntersected = ray.intersectObjects( spheres );
-
+    var objectsIntersected = ray.intersectObjects( glyphs );
 
     if(objectsIntersected[0]){
         return objectsIntersected[0];
@@ -765,13 +636,9 @@ getIntersectedObject = function () {
     return undefined;
 };
 
-
-
 drawShortestPath = function (nodeIndex) {
     var line;
     root = nodeIndex;
-
-
 
     var len = getConnectionMatrixDimension();
     //var dist = computeShortestPathDistances(nodeIndex);
@@ -783,7 +650,6 @@ drawShortestPath = function (nodeIndex) {
     }
 
     setDistanceArray(distanceArray);
-
 
     if(!document.getElementById("distanceThresholdSlider")){
         addDistanceSlider(distanceArray);
@@ -806,10 +672,10 @@ drawShortestPath = function (nodeIndex) {
 
     for(i=0; i < visibleNodes.length; i++){
         if(visibleNodes[i]){
-            var prev = spheres[previousMap[i]];
+            var prev = glyphs[previousMap[i]];
             if(prev) {
-                //line = drawEdgeWithName(spheres[i].position, prev.position, getConnectionMatrix()[i][previousMap[i]]);
-                var start = new THREE.Vector3(spheres[i].position.x, spheres[i].position.y, spheres[i].position.z);
+                //line = drawEdgeWithName(glyphs[i].position, prev.position, getConnectionMatrix()[i][previousMap[i]]);
+                var start = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z);
                 var end = new THREE.Vector3(prev.position.x, prev.position.y, prev.position.z);
                 line = createLine(start,end,getConnectionMatrix()[i][previousMap[i]] );
                 shortestPathEdges[shortestPathEdges.length] = line;
@@ -822,20 +688,12 @@ drawShortestPath = function (nodeIndex) {
 
 };
 
-
 resizeScene = function(){
-
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-
-
     renderer.setSize(window.innerWidth, window.innerHeight);
-
-
     animate();
-
 };
-
 
 drawTopNEdgesByNode = function (nodeIndex, n) {
 
@@ -843,8 +701,8 @@ drawTopNEdgesByNode = function (nodeIndex, n) {
 
     for (var obj in row) {
         if (isRegionActive(getRegionByNode(obj)) && visibleNodes[obj]) {
-            var start = new THREE.Vector3(spheres[nodeIndex].position.x, spheres[nodeIndex].position.y, spheres[nodeIndex].position.z);
-            var end = new THREE.Vector3(spheres[obj].position.x, spheres[obj].position.y, spheres[obj].position.z);
+            var start = new THREE.Vector3(glyphs[nodeIndex].position.x, glyphs[nodeIndex].position.y, glyphs[nodeIndex].position.z);
+            var end = new THREE.Vector3(glyphs[obj].position.x, glyphs[obj].position.y, glyphs[obj].position.z);
             var line = drawEdgeWithName(start, end, row[obj]);
             displayedEdges[displayedEdges.length] = line;
         }
@@ -853,24 +711,19 @@ drawTopNEdgesByNode = function (nodeIndex, n) {
     setEdgesColor();
 };
 
-
-
 changeColorGroup = function (n) {
     activeGroup = parseInt(n);
 
     setRegionsActivated();
-
     setColorGroupScale();
 
-    for(var i=0; i < spheres.length; i++){
-        scene.remove(spheres[i]);
+    for(var i=0; i < glyphs.length; i++){
+        scene.remove(glyphs[i]);
     }
 
-    spheres = [];
+    glyphs = [];
     updateScene();
-
 };
-
 
 changeActiveGeometry = function(n){
     activeCentroids = n;
@@ -883,11 +736,10 @@ changeActiveGeometry = function(n){
     updateNeeded = true;
     computeDistanceMatrix();
 
-
-    for(var i=0; i < spheres.length; i++){
-        scene.remove(spheres[i]);
+    for(var i=0; i < glyphs.length; i++){
+        scene.remove(glyphs[i]);
     }
-    spheres = [];
+    glyphs = [];
     //TODO: switch according to spt
 
     if(spt) {
@@ -897,12 +749,9 @@ changeActiveGeometry = function(n){
     updateScene();
 };
 
-
-
 setGeometryGivenNode = function(nodeIndex, geometry){
-    spheres[nodeIndex].geometry = geometry;
+    glyphs[nodeIndex].geometry = geometry;
 }
-
 
 drawShortestPathHops = function (rootNode,hops){
     var hierarchy = getHierarchy(rootNode);
@@ -913,9 +762,9 @@ drawShortestPathHops = function (rootNode,hops){
             //Visible node branch
             for(var j=0; j < hierarchy[i].length; j++){
                 visibleNodes[hierarchy[i][j]] = true;
-                var prev = spheres[previousMap[hierarchy[i][j]]];
+                var prev = glyphs[previousMap[hierarchy[i][j]]];
                 if(prev){
-                    var start = new THREE.Vector3(spheres[hierarchy[i][j]].position.x, spheres[hierarchy[i][j]].position.y, spheres[hierarchy[i][j]].position.z);
+                    var start = new THREE.Vector3(glyphs[hierarchy[i][j]].position.x, glyphs[hierarchy[i][j]].position.y, glyphs[hierarchy[i][j]].position.z);
                     var end = new THREE.Vector3(prev.position.x, prev.position.y, prev.position.z);
                     var line = createLine(start, end, getConnectionMatrix()[hierarchy[i][j]][previousMap[hierarchy[i][j]]]);
                     shortestPathEdges[shortestPathEdges.length] = line;
@@ -934,7 +783,6 @@ drawShortestPathHops = function (rootNode,hops){
     updateScene();
 };
 
-
 createLine = function (start,end, name){
     var material = new THREE.LineBasicMaterial();
 
@@ -952,10 +800,9 @@ createLine = function (start,end, name){
     return line;
 };
 
-
 addSkybox = function(){
     var folder = 'darkgrid';
-   var images = [
+    var images = [
         'images/'+folder+'/negx.png',
         'images/'+folder+'/negy.png',
         'images/'+folder+'/negz.png',
@@ -964,14 +811,13 @@ addSkybox = function(){
         'images/'+folder+'/posz.png'
     ];
 
-
     var cubemap = THREE.ImageUtils.loadTextureCube(images); // load textures
     cubemap.format = THREE.RGBFormat;
 
     var shader = THREE.ShaderLib['cube']; // init cube shader from built-in lib
     shader.uniforms['tCube'].value = cubemap; // apply textures to shader
 
-// create shader material
+    // create shader material
     var skyBoxMaterial = new THREE.ShaderMaterial( {
         fragmentShader: shader.fragmentShader,
         vertexShader: shader.vertexShader,
@@ -980,30 +826,25 @@ addSkybox = function(){
         side: THREE.BackSide
     });
 
-// create skybox mesh
+    // create skybox mesh
     var skybox = new THREE.Mesh(
         new THREE.CubeGeometry(1500, 1500, 1500),
         skyBoxMaterial
     );
 
     skybox.name = "skybox";
-
     scene.add(skybox);
 };
 
-
 setSkyboxVisibility = function(visible){
-    var results = scene.children.filter(function(d) {return d.name == "skybox"})
+    var results = scene.children.filter(function(d) {return d.name == "skybox"});
     var skybox = results[0];
-
     skybox.visible = visible;
-
 };
 
 shouldDrawRegion = function(region) {
     if(isRegionActive(region.group) && getLabelVisibility(region.label))
         return true;
-
     return false;
 };
 

@@ -155,8 +155,8 @@ getShortestPathBetweenNodes = function(a, b){
     while(previousMap[i]!= null){
         prev = previousMap[i];
         visibleNodes[prev] = true;
-        var start = new THREE.Vector3(spheres[i].position.x, spheres[i].position.y, spheres[i].position.z);
-        var end = new THREE.Vector3(spheres[prev].position.x, spheres[prev].position.y, spheres[prev].position.z);
+        var start = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z);
+        var end = new THREE.Vector3(glyphs[prev].position.x, glyphs[prev].position.y, glyphs[prev].position.z);
 
         line = createLine(start,end,getConnectionMatrix()[i][prev] );
         shortestPathEdges[shortestPathEdges.length] = line;
