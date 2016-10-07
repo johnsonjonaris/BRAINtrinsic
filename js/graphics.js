@@ -10,7 +10,7 @@ var renderer;
 var controls;
 var scene;
 var glyphs;
-var sphereNodeDictionary ={};
+var glyphNodeDictionary ={};
 
 var oculusControl;
 
@@ -55,14 +55,14 @@ function onDocumentMouseMove( event )
 
     var intersectedObject = getIntersectedObject(event);
 
-    if ( intersectedObject  && visibleNodes[sphereNodeDictionary[intersectedObject.object.uuid]] && isRegionActive(getRegionByNode(sphereNodeDictionary[intersectedObject.object.uuid]))) {
-        var i = sphereNodeDictionary[intersectedObject.object.uuid];
+    if ( intersectedObject  && visibleNodes[glyphNodeDictionary[intersectedObject.object.uuid]] && isRegionActive(getRegionByNode(glyphNodeDictionary[intersectedObject.object.uuid]))) {
+        var i = glyphNodeDictionary[intersectedObject.object.uuid];
         var regionName = getRegionNameByIndex(i);
         setNodeInfoPanel(regionName, i);
     }
 
-    if ( intersectedObject && nodesSelected.indexOf(sphereNodeDictionary[intersectedObject.object.uuid]) == -1 && visibleNodes[sphereNodeDictionary[intersectedObject.object.uuid]] && isRegionActive(getRegionByNode(sphereNodeDictionary[intersectedObject.object.uuid]))) {
-        var index = sphereNodeDictionary[intersectedObject.object.uuid];
+    if ( intersectedObject && nodesSelected.indexOf(glyphNodeDictionary[intersectedObject.object.uuid]) == -1 && visibleNodes[glyphNodeDictionary[intersectedObject.object.uuid]] && isRegionActive(getRegionByNode(glyphNodeDictionary[intersectedObject.object.uuid]))) {
+        var index = glyphNodeDictionary[intersectedObject.object.uuid];
         if(pointedObject){
             pointedObject.geometry = createNormalGeometryByObject(pointedObject);
         }
@@ -80,7 +80,7 @@ function onDocumentMouseMove( event )
         }
     } else{
         if(pointedObject){
-            if(sphereNodeDictionary[pointedObject.uuid] == root) {
+            if(glyphNodeDictionary[pointedObject.uuid] == root) {
                 console.log("root creation");
                 pointedObject.geometry = createRootGeometryByObject(pointedObject);
             }
@@ -88,8 +88,8 @@ function onDocumentMouseMove( event )
                 pointedObject.geometry = createNormalGeometryByObject(pointedObject);
             }
 
-            if(nodesSelected.indexOf(sphereNodeDictionary[pointedObject.uuid]) == -1 ) {
-                removeEdgesGivenNode(sphereNodeDictionary[pointedObject.uuid]);
+            if(nodesSelected.indexOf(glyphNodeDictionary[pointedObject.uuid]) == -1 ) {
+                removeEdgesGivenNode(glyphNodeDictionary[pointedObject.uuid]);
             }
             pointedObject = null;
         }
@@ -110,7 +110,7 @@ function onDblClick(event){
     var intersectedObject = getIntersectedObject(event);
     if(intersectedObject) {
         removeElementsFromEdgePanel();
-        var nodeIndex = sphereNodeDictionary[intersectedObject.object.uuid];
+        var nodeIndex = glyphNodeDictionary[intersectedObject.object.uuid];
         spt = true;
         drawShortestPath(nodeIndex);
     }
@@ -123,9 +123,9 @@ function onClick( event ){
 
     event.preventDefault();
     var objectIntersected = getIntersectedObject(event);
-    if (objectIntersected && visibleNodes[sphereNodeDictionary[objectIntersected.object.uuid]]) {
+    if (objectIntersected && visibleNodes[glyphNodeDictionary[objectIntersected.object.uuid]]) {
         if(!spt) {
-            var nodeIndex = sphereNodeDictionary[objectIntersected.object.uuid];
+            var nodeIndex = glyphNodeDictionary[objectIntersected.object.uuid];
             var el = nodesSelected.indexOf(nodeIndex);
             if (el == -1) {
                 //if the node is not already selected -> draw edges and add in the nodesSelected Array
@@ -147,7 +147,7 @@ function onClick( event ){
                 removeEdgesGivenNode(nodeIndex);
             }
         } else{
-            nodeIndex = sphereNodeDictionary[objectIntersected.object.uuid];
+            nodeIndex = glyphNodeDictionary[objectIntersected.object.uuid];
             getShortestPathBetweenNodes(root,nodeIndex);
         }
     }
@@ -268,6 +268,7 @@ initCanvas = function () {
     drawRegions(getDataset());
 
     //Adding light
+    scene.add( new THREE.HemisphereLight(0x606060, 0x080820, 1.5));
     scene.add( new THREE.AmbientLight(0x606060, 1.5));
     light = new THREE.PointLight( 0xffffff, 1.0, 10000 );
     light.position.set( 1000, 1000, 100 );
@@ -308,10 +309,6 @@ animate = function () {
 
     requestAnimationFrame(animate);
     controls.update();
-
-    // for(var i = 0; i < glyphs.length; i++){
-    //     glyphs[i].lookAt(camera.position);
-    // }
 
     //controls.update(  );
     if(vr > 0 ) {
@@ -394,7 +391,7 @@ var drawRegions = function(dataset) {
 
             glyphs[i].position.set(x, y, z);
 
-            sphereNodeDictionary[glyphs[i].uuid] = i;
+            glyphNodeDictionary[glyphs[i].uuid] = i;
 
             if(visibleNodes[i]){
                 // glyphs[i].lookAt( camera.position);
@@ -751,7 +748,7 @@ changeActiveGeometry = function(n){
 
 setGeometryGivenNode = function(nodeIndex, geometry){
     glyphs[nodeIndex].geometry = geometry;
-}
+};
 
 drawShortestPathHops = function (rootNode,hops){
     var hierarchy = getHierarchy(rootNode);

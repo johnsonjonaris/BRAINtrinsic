@@ -12,7 +12,7 @@ createNormalGeometry = function(hemisphere){
     if(hemisphere == "left"){
         return new THREE.SphereGeometry( dimensionFactor * shpereRadius, sphereResolution, sphereResolution);
     } else if(hemisphere == "right"){
-        side = dimensionFactor * shpereRadius;
+        var side = dimensionFactor * shpereRadius;
         return new THREE.BoxGeometry( side, side, side);
     }
 };
@@ -21,7 +21,7 @@ createSelectedGeometry = function (hemisphere) {
     if(hemisphere == "left"){
         return new THREE.SphereGeometry( dimensionFactor * selectedCircleRadius, sphereResolution, sphereResolution);
     } else if(hemisphere == "right"){
-        side = dimensionFactor*selectedCircleRadius;
+        var side = dimensionFactor*selectedCircleRadius;
         return new THREE.BoxGeometry( side, side, side);
     }
 };
@@ -30,7 +30,7 @@ createRootGeometry = function(hemisphere){
     if(hemisphere == "left"){
         return new THREE.SphereGeometry(dimensionFactor * rootCircleRadius, sphereResolution, sphereResolution);
     } else if(hemisphere == "right"){
-        side = dimensionFactor * rootCircleRadius;
+        var side = dimensionFactor * rootCircleRadius;
         return new THREE.BoxGeometry( side, side, side);
     }
 };
@@ -59,8 +59,9 @@ getNormalMaterial = function (group, nodeIndex){
         case 'active':
             material = new THREE.MeshPhongMaterial({
                 color: scaleColorGroup(group, nodeIndex),
-                shininess: 50,
+                shininess: 15,
                 transparent: false,
+                specular: 0x222222,
                 reflectivity:1.3,
                 opacity: 1.0
             });

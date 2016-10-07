@@ -5,7 +5,7 @@
 private variables
  */
 
-var spheres;
+var glyphs;
 var groups = [];
 var labelKeys;
 var centroids = [];
@@ -32,9 +32,6 @@ var metricValues = [];
 
 var numberOfHops;
 
-
-
-
 /*
 Setters
  */
@@ -42,16 +39,16 @@ Setters
 
 setICColor = function(icData){
     icColorTable = icData.data;
-}
+};
 
 setDistanceArray = function(array){
     distanceArray = array;
-}
+};
 
 
 getMaximumDistance = function(){
     return d3.max(distanceArray);
-}
+};
 
 /**
  * Label Keys setter
@@ -69,7 +66,7 @@ setLabelKeys = function(labels){
 setCentroids = function (d, technique) {
     var data = d.data;
     var len = data.length;
-    var centroidGroup;
+    // var centroidGroup;
 
     for(var i=0; i < len; i++){
         var element = {};
@@ -78,7 +75,6 @@ setCentroids = function (d, technique) {
         element.z = data[i][2];
         centroids[i] = centroids[i] || {};
         centroids[i][technique] = element;
-
     }
 };
 
@@ -103,7 +99,7 @@ setThreshold = function (t) {
 
 getThreshold = function () {
     return threshold;
-}
+};
 
 setLookUpTable = function (d) {
     var i, el;
@@ -142,7 +138,7 @@ setConnectionMatrix = function(d, name){
 
 setGroup = function (d) {
     groups[groups.length] = d.data;
-}
+};
 
 /*
  * GETTERS
@@ -372,13 +368,12 @@ setRegionsActivated = function (){
             regionsActivated[element] = true;
             regionState[element] = 'active';
         }
-
 };
 
 
 getConnectionMatrixDimension = function(){
     return connectionMatrix['isomap'].length;
-}
+};
 
 
 getTopConnectionsByNode = function(indexNode, n){
@@ -391,7 +386,7 @@ getTopConnectionsByNode = function(indexNode, n){
     }
 
     return res;
-}
+};
 
 
 getMaximumWeight = function () {
@@ -482,15 +477,15 @@ setNumberOfHops = function (hops) {
     if(document.getElementById("numberOfHopsOutput")){
         document.getElementById("numberOfHopsOutput").value = hops;
     }
-}
+};
 
 getNumberOfHops = function () {
     return numberOfHops;
-}
+};
 
 getLabelVisibility = function(label){
     return labelVisibility[label]['visibility'];
-}
+};
 
 setLabelVisibility = function (label, visibility) {
     if(labelVisibility[label] != undefined)
@@ -498,7 +493,7 @@ setLabelVisibility = function (label, visibility) {
     else{
         console.log("It isn't possible to set visibility of the label");
     }
-}
+};
 
 
 setMetricValues = function (data){
@@ -510,7 +505,7 @@ setMetricValues = function (data){
             '#7dff7a','#b1ff46','#e4ff13','#ffd000','#ff9400','#ff5900','#ff1e00','#c40000']);
 
     console.log("loaded metric file");
-}
+};
 
 // Jet colormap
 //'#000080','#0000c7','#0001ff','#0041ff','#0081ff','#00c1ff','#16ffe1','#49ffad','#7dff7a',

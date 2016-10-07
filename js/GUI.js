@@ -167,10 +167,6 @@ initGUI = function() {
             }
 
         });
-
-
-
-
 };
 
 /*
@@ -184,8 +180,6 @@ removeStartButton = function(){
 
 addDimensionFactorSlider = function() {
     var panel = d3.select("#nodeInfoPanel");
-
-
 
     panel.append("input")
         .attr("type", "range")
@@ -205,10 +199,7 @@ addDimensionFactorSlider = function() {
         .text("Glyph Size");
 
     panel.append("br");
-
-
 };
-
 
 addSkyboxButton = function(){
 
@@ -230,35 +221,19 @@ addSkyboxButton = function(){
 };
 
 setNodeInfoPanel = function (regionName, index){
-    /*
-     var panel = document.getElementById('nodeInfoPanel');
-
-     while (panel.firstChild) {
-     panel.removeChild(panel.firstChild);
-     }*/
 
     var panel = d3.select('#nodeInfoPanel');
 
-
     panel.selectAll("p").remove();
 
-
     var connectionRow = getConnectionMatrixRow(index);
-
-    var nodalStrength = computeNodalStrength(connectionRow);
-
-    nodalStrength = Math.floor(nodalStrength*100)/100;
+    var nodalStrength = Math.floor(computeNodalStrength(connectionRow)*100)/100;
 
     var para = document.createElement("p");
     var node = document.createTextNode(index + " " + regionName + " " + nodalStrength);
-    /*panel.appendChild(para)
-     .appendChild(node);*/
 
     panel.node().appendChild(para).appendChild(node);
-
-
 };
-
 
 addThresholdSlider = function (){
 
@@ -282,8 +257,6 @@ addThresholdSlider = function (){
             updateScene();
         });
 
-
-
     menu.append("output")
         .attr("for","thresholdSlider")
         .attr("id", "thresholdOutput");
@@ -291,21 +264,15 @@ addThresholdSlider = function (){
     setThreshold(Math.floor(getMaximumWeight()*100/2)/100);
 
     document.getElementById("thresholdOutput").value = getThreshold();
-
-
 };
-
 
 setInfoLabel = function(regionName, index){
 
-    var nodalStrength = computeNodalStrength(getConnectionMatrixRow(index));
+    // var nodalStrength = computeNodalStrength(getConnectionMatrixRow(index));
 
     var body = document.body;
-
     var canvas = document.getElementsByTagName("canvas");
-
     var label = document.createElement("div");
-
 
     label.setAttribute("width", "100px");
     label.setAttribute("height", "100px");
@@ -318,26 +285,8 @@ setInfoLabel = function(regionName, index){
     var para = document.createElement("p");
     var node = document.createTextNode("CIAO");
 
-
     body.appendChild(label).appendChild(para).appendChild(node);
-
-
-    /*
-     canvas.append('div')
-     .attr("width", "100px")
-     .attr("height", "50px")
-     .attr("z-index", "2")
-     .attr("class", "menu")
-     .attr("position", "absolute")
-     .attr("left", "100px")
-     .attr("bottom", "400px");*/
-
-
-
 };
-
-
-
 
 /*
  * This method is used to create the legend panel.
@@ -386,7 +335,6 @@ var createLegend = function (active) {
                 .on("click", function(){
                     toggleRegion(this.id);
                 });
-
 
             if(typeof(activeGroup[i]) != 'number' && activeGroup[i].indexOf("right") > -1){
                 elementGroup.append("rect")
@@ -477,17 +425,13 @@ var createLegend = function (active) {
                 .attr("text-anchor","left")
                 .attr("dy",10)
                 .attr("fill","rgb(191,191,191)");
-
         }
     }
 };
 
-
 var updateEdgeLegend = function(){
 
 };
-
-
 
 var addDistanceSlider = function (distances) {
     var menu = d3.select("#edgeInfoPanel");
@@ -527,15 +471,12 @@ var addDistanceSlider = function (distances) {
     setDistanceThreshold(meanDistance);
 };
 
-
 removeThresholdSlider = function(){
-
     var elem = document.getElementById('thresholdSlider');
 
     if(elem) {
         elem.parentNode.removeChild(elem);
     }
-
 
     elem = document.getElementById('thresholdOutput');
     if(elem) {
@@ -563,9 +504,7 @@ addModalityButton = function () {
             changeModality(this.checked);
             updateScene();
         });
-
-}
-
+};
 
 changeModality = function(modality){
     thresholdModality = modality;
@@ -580,12 +519,10 @@ changeModality = function(modality){
         removeThresholdSlider();
         addTopNSlider();
     }
-
 };
 
 addTopNSlider = function(){
-    var menu = d3.select("#edgeInfoPanel")
-
+    var menu = d3.select("#edgeInfoPanel");
 
     menu.append("label")
         .attr("for", "topNThresholdSlider")
@@ -608,9 +545,7 @@ addTopNSlider = function(){
         .attr("for","topNThresholdSlider")
         .attr("id", "topNThresholdSliderOutput")
         .text(getNumberOfEdges());
-
 };
-
 
 removeTopNSlider= function () {
 
@@ -625,19 +560,16 @@ removeTopNSlider= function () {
         elem.parentNode.removeChild(elem);
     }
 
-
     elem = document.getElementById('topNThresholdSliderLabel');
     if(elem) {
         elem.parentNode.removeChild(elem);
     }
 };
 
-
 removeElementsFromEdgePanel = function(){
     removeThresholdSlider();
     removeTopNSlider();
 };
-
 
 removeUploadButtons= function (){
     var menu = document.getElementById("upload");
@@ -646,7 +578,6 @@ removeUploadButtons= function (){
     }
 };
 
-
 addGroupList = function () {
     var menu = d3.select("#upload");
 
@@ -654,22 +585,22 @@ addGroupList = function () {
         .attr("for","colorGroup")
         .text("Color coding:");
 
-    menu.append("br"),
+    menu.append("br");
 
-        menu.append("input")
-            .attr("type", "radio")
-            .attr("name","colorGroup")
-            .attr("id","anatomy")
-            .attr("value","0")
-            .attr("checked","true")
-            .on("change", function () {
-                changeColorGroup(this.value);
-            });
+    menu.append("input")
+        .attr("type", "radio")
+        .attr("name","colorGroup")
+        .attr("id","anatomy")
+        .attr("value","0")
+        .attr("checked","true")
+        .on("change", function () {
+            changeColorGroup(this.value);
+        });
     menu.append("label")
         .attr("for","anatomy")
         .text("Anatomy");
 
-    menu.append("br")
+    menu.append("br");
 
     menu.append("input")
         .attr("type", "radio")
@@ -680,12 +611,11 @@ addGroupList = function () {
             changeColorGroup(this.value);
         });
 
-
     menu.append("label")
         .attr("for","place")
         .text("Embeddedness");
 
-    menu.append("br")
+    menu.append("br");
 
     menu.append("input")
         .attr("type", "radio")
@@ -731,20 +661,17 @@ addGroupList = function () {
             .text("Custom Group");
         menu.append("br");
     }
-
 };
 
-
 shortestPathSliderHops = function(){
-    var menu = document.getElementById("edgeInfoPanel");
+    // var menu = document.getElementById("edgeInfoPanel");
     /*while(menu.hasChildNodes()){
      menu.removeChild(menu.children[0]);
      }*/
 
     removeDistanceSlider();
 
-
-    menu =  d3.select('#edgeInfoPanel');
+    var menu =  d3.select('#edgeInfoPanel');
     if(document.getElementById('numberOfHopsSlider') == null) {
         menu.append("label")
             .attr("for", "numberOfHopsSlider")
@@ -767,7 +694,6 @@ shortestPathSliderHops = function(){
             .attr("for", "numberOfHopsSlider")
             .attr("id", "numberOfHopsOutput");
 
-
         d3.select("#sptFilterButtonSPT").remove();
 
         d3.select("#upload")
@@ -777,11 +703,8 @@ shortestPathSliderHops = function(){
             .on('click', function () {
                 drawShortestPath(root);
             });
-
     }
 };
-
-
 
 shortestPathDistanceUI = function(){
 
@@ -795,7 +718,6 @@ shortestPathDistanceUI = function(){
         btn.remove();
 
     removeNumberOfHopsSlider();
-
 
     var menu = d3.select("#upload");
 
@@ -812,14 +734,12 @@ shortestPathDistanceUI = function(){
 
 };
 
-
 removeDistanceSlider = function () {
     var elem = document.getElementById('distanceThresholdSlider');
 
     if(elem) {
         elem.parentNode.removeChild(elem);
     }
-
 
     elem = document.getElementById('distanceThresholdOutput');
     if(elem) {
@@ -830,9 +750,7 @@ removeDistanceSlider = function () {
     if(elem) {
         elem.parentNode.removeChild(elem);
     }
-
 };
-
 
 removeNumberOfHopsSlider = function(){
     var elem = document.getElementById('numberOfHopsSlider');
@@ -840,7 +758,6 @@ removeNumberOfHopsSlider = function(){
     if(elem) {
         elem.parentNode.removeChild(elem);
     }
-
 
     elem = document.getElementById('numberOfHopsOutput');
     if(elem) {
@@ -852,7 +769,6 @@ removeNumberOfHopsSlider = function(){
         elem.parentNode.removeChild(elem);
     }
 };
-
 
 addGeometryRadioButton = function () {
     var menu = d3.select("#upload");
@@ -877,7 +793,7 @@ addGeometryRadioButton = function () {
         .attr("for","isomap")
         .text("Isomap");
 
-    menu.append("br")
+    menu.append("br");
 
     menu.append("input")
         .attr("type", "radio")
@@ -888,12 +804,11 @@ addGeometryRadioButton = function () {
             changeActiveGeometry(this.value);
         });
 
-
     menu.append("label")
         .attr("for","mds")
         .text("MDS");
 
-    menu.append("br")
+    menu.append("br");
 
     menu.append("input")
         .attr("type", "radio")
@@ -901,7 +816,6 @@ addGeometryRadioButton = function () {
         .attr("value","tsne")
         .attr("id","tsne")
         .on("change", function () {
-
             changeActiveGeometry(this.value);
         });
 
@@ -917,7 +831,6 @@ addGeometryRadioButton = function () {
         .attr("value","anatomy")
         .attr("id","anatomy")
         .on("change", function () {
-
             changeActiveGeometry(this.value);
         });
 
@@ -927,8 +840,7 @@ addGeometryRadioButton = function () {
 
     menu.append("br");
 
-}
-
+};
 
 addFslRadioButton = function () {
     var rightMenu = d3.select("#rightFslLabels");
@@ -943,7 +855,6 @@ addFslRadioButton = function () {
         .text("Left Hemisphere:");
 
     leftMenu.append('br');
-
 
     labelVisibility.forEach(function(labelInfo,index){
         var menu;
@@ -968,11 +879,8 @@ addFslRadioButton = function () {
             .text(" " + labelInfo['name']);
 
         menu.append("br");
-
     });
-
 };
-
 
 addSearchPanel = function(){
     var menu = d3.select("#search");
@@ -993,8 +901,6 @@ addSearchPanel = function(){
             var text = document.getElementById("nodeSearch");
             searchElement(text.value);
         });
-
-
 };
 
 searchElement = function (index) {
@@ -1008,9 +914,8 @@ searchElement = function (index) {
         alert("Node not found");
     }
 
-
     glyphs[index].geometry = drawSelectedNode(index, glyphs[index]);
-}
+};
 
 toggleFslMenu = function (e) {
     $("#rightFslLabels").toggle();
@@ -1020,5 +925,4 @@ toggleFslMenu = function (e) {
     $('#upload').toggle();
     $('#edgeInfoPanel').toggle();
     $('#search').toggle();
-
-}
+};

@@ -2,10 +2,6 @@
  * Created by giorgioconte on 31/01/15.
  */
 
-
-
-
-
 init = function () {
     $(window).resize(function(e){
         e.preventDefault();
@@ -18,8 +14,6 @@ init = function () {
     initGUI();
     initCanvas();
 };
-
-
 
 function getQueryVariable(variable) {
     var query = window.location.search.substring(1);
@@ -39,7 +33,7 @@ var stringToBoolean = function (s) {
         case 'true': return true;
         case 'false': return false;
     }
-}
+};
 
 var parse = function(callback){
     labelKeys = JSON.parse(localStorage.getItem("labelKeys"));
@@ -56,8 +50,7 @@ var parse = function(callback){
     }
 
     callback(null,null);
-}
-
+};
 
 var folder = getQueryVariable("dataset");
 var vr = getQueryVariable("vr");
@@ -66,7 +59,6 @@ metric = stringToBoolean(getQueryVariable("metric"));
 if( metric == undefined){
     metric = false;
 }
-
 
 if(isLoaded == 0) {
     queue()
@@ -94,22 +86,3 @@ if(isLoaded == 0) {
             init();
         })
 }
-
-
-/*
- queue()
- .defer(loadLookUpTable)
- .awaitAll(function(){
- init();
- });
-
-
-init = function () {
-    initGUI();
-};*/
-
-
-/*
- $( document ).ready(function() {
- init();
- });*/
