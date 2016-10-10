@@ -112,25 +112,19 @@ setLookUpTable = function (d) {
             "hemisphere": d.data[i].hemisphere
         };
 
-    lookUpTable[d.data[i].label] = el;
-    var labelInfo = [];
-    labelInfo['name'] = d.data[i].region_name;
+        lookUpTable[d.data[i].label] = el;
+        var labelInfo = [];
+        labelInfo['name'] = d.data[i].region_name;
         labelInfo['visibility'] = true;
         labelInfo['hemisphere'] = d.data[i].hemisphere;
-    labelVisibility[d.data[i].label] = labelInfo;
+        labelVisibility[d.data[i].label] = labelInfo;
     }
-
 };
-
 
 setConnectionMatrix = function(d, name){
     connectionMatrix[name] = d.data;
     console.log("connectionMatrix set");
 };
-
-
-
-
 
 /**
  * Setter for group
@@ -237,15 +231,11 @@ getDataset = function() {
         row.y = centroids[i][activeCentroids].y;
         row.z = centroids[i][activeCentroids].z;
 
-
         var label = labelKeys[i];
 
         row.name = lookUpTable[label].region_name;
-
         row.group = groups[activeGroup][i];
-
         row.hemisphere = lookUpTable[label].hemisphere;
-
         row.label = labelKeys[i];
         result[result.length] = row;
     }
@@ -281,8 +271,8 @@ getActiveGroup = function () {
  */
 
 getConnectionMatrix = function () {
-    /* For performance reasons it is not possible to clone the entire object. Since the matrix is symmetric, and idea could be
-    to clone just one half of the entire matrix. Now.. are we dealing always with symmetric matrices?
+    /* For performance reasons it is not possible to clone the entire object. Since the matrix is symmetric, clone
+        just one half of the entire matrix.
      */
 
     /*
@@ -299,7 +289,6 @@ getConnectionMatrix = function () {
 
     return clone;*/
     return connectionMatrix[activeMatrix];
-    //return connectionMatrix;
 };
 
 
@@ -339,35 +328,19 @@ toggleRegion = function (regionName){
             break;
     }
 
-
-    /*
-    if(regionsActivated[regionName]){
-        regionsActivated[regionName] = false;
-    } else {
-        regionsActivated[regionName] = true;
-    }*/
     updateScene();
 };
 
 setRegionsActivated = function (){
-    /*regionsActivated = [];
-
-    var l = groups[activeGroup].length;;
-    for(var i =0; i < l; i++){
-        var element = groups[activeGroup][i];
-        regionsActivated[element] = true;
-    }*/
-
     regionsActivated = {};
     regionState = {};
 
-
-        var l = groups[activeGroup].length;
-        for(var i = 0; i < l; i++){
-            var element = groups[activeGroup][i];
-            regionsActivated[element] = true;
-            regionState[element] = 'active';
-        }
+    var l = groups[activeGroup].length;
+    for(var i = 0; i < l; i++){
+        var element = groups[activeGroup][i];
+        regionsActivated[element] = true;
+        regionState[element] = 'active';
+    }
 };
 
 
