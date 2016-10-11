@@ -2,15 +2,14 @@
  * Created by giorgioconte on 31/01/15.
  */
 
-//var threshold = 30;
+var cameraLeft, cameraRight;        /// left and right cameras
+var canvasLeft, canvasRight;        /// left and right canvas
+var rendererLeft, rendererRight;    /// left and right renderers
+var controlsLeft, controlsRight;    /// left and right mouse controls
+var sceneLeft, sceneRight;          /// left and right scenes
+var glyphsLeft, glyphsRight;        /// left and right glyphs (spheres and cubes)
 
-var camera;
-var canvas;
-var renderer;
-var controls;
-var scene;
-var glyphs;
-var glyphNodeDictionary ={};
+var glyphNodeDictionary ={};        /// Object that stores uuid of glyphsLeft and glyphsRight
 
 var oculusControl;
 
@@ -18,42 +17,26 @@ var dimensionScale;
 var effect;
 
 var nodesSelected = [];
-
-var visibleNodes =[];
-
+var visibleNodes =[];               /// boolean array storing nodes visibility
 var displayedEdges = [];
-
-var pointedObject;
-
-var root;
-
 var shortestPathEdges = [];
 
+var pointedObject;
+var root;
 var distanceArray;
 
 var thresholdModality = true;
 
-
-var mouse = new THREE.Vector2();
-
-var spt = false;
-
+var spt = false;                    /// enabling shortest path
 var click = true;
 
-
-
-
-
-
-function onDocumentMouseMove( event )
-{
+function onDocumentMouseMove( event ) {
     // the following line would stop any other event handler from firing
     // (such as the mouse's TrackballControls)
     event.preventDefault();
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
     var intersectedObject = getIntersectedObject(event);
+    var isLeft = event.clientX < window.innerWidth/2;
+    var glyphs = isLeft? glyphsLeft:glyphsRight;
 
     if ( intersectedObject  && visibleNodes[glyphNodeDictionary[intersectedObject.object.uuid]] && isRegionActive(getRegionByNode(glyphNodeDictionary[intersectedObject.object.uuid]))) {
         var i = glyphNodeDictionary[intersectedObject.object.uuid];
@@ -73,7 +56,7 @@ function onDocumentMouseMove( event )
         setNodeInfoPanel(regionName, index);
 
         if(thresholdModality) {
-            drawEdgesGivenNode(index);
+            drawEdgesGivenNode(glyphs, index);
         } else{
             console.log("top " + getNumberOfEdges() + "edges");
             drawTopNEdgesByNode(index, getNumberOfEdges());
@@ -89,22 +72,20 @@ function onDocumentMouseMove( event )
             }
 
             if(nodesSelected.indexOf(glyphNodeDictionary[pointedObject.uuid]) == -1 ) {
-                removeEdgesGivenNode(glyphNodeDictionary[pointedObject.uuid]);
+                var scene = isLeft? sceneLeft:sceneRight;
+                removeEdgesGivenNode(glyphs, scene, glyphNodeDictionary[pointedObject.uuid]);
             }
             pointedObject = null;
         }
     }
 }
 
-
 /*
- * This method is used to interact with objects in scene.
+ * This method is used to interact with objects in sceneLeft.
  *
  */
 
-function onDblClick(event){
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+function onDblClick(event) {
     event.preventDefault();
 
     var intersectedObject = getIntersectedObject(event);
@@ -116,13 +97,12 @@ function onDblClick(event){
     }
 }
 
-function onClick( event ){
-
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+function onClick( event ) {
 
     event.preventDefault();
     var objectIntersected = getIntersectedObject(event);
+    var isLeft = event.clientX < window.innerWidth/2;
+
     if (objectIntersected && visibleNodes[glyphNodeDictionary[objectIntersected.object.uuid]]) {
         if(!spt) {
             var nodeIndex = glyphNodeDictionary[objectIntersected.object.uuid];
@@ -144,7 +124,9 @@ function onClick( event ){
                 objectIntersected.object.material.color = new THREE.Color(scaleColorGroup(getRegionByNode(nodeIndex),nodeIndex));
                 objectIntersected.object.geometry = createNormalGeometryByObject(objectIntersected.object);
                 nodesSelected.splice(el, 1);
-                removeEdgesGivenNode(nodeIndex);
+                var scene = isLeft? sceneLeft:sceneRight;
+                var glyphs = isLeft? glyphsLeft:glyphsRight;
+                removeEdgesGivenNode(glyphs, scene, nodeIndex);
             }
         } else{
             nodeIndex = glyphNodeDictionary[objectIntersected.object.uuid];
@@ -171,53 +153,84 @@ function onMouseUp(event) {
     }
 }
 
-/**
- * This method should be called to init th canvas where we render the brain
- */
-
-initCanvas = function () {
-    addThresholdSlider();
-    removeStartButton();
-    removeUploadButtons();
-    addGroupList();
-
-    addModalityButton();
-    addGeometryRadioButton();
-    addSkyboxButton();
-    addDimensionFactorSlider();
-    addFslRadioButton();
-    addSearchPanel();
-
-    setRegionsActivated();
-
-    //setThreshold(30);
-    computeDistanceMatrix();
-    var light;
-
-
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
-
-    camera.position.z = 50;
-    glyphs = [];
-
-    canvas = document.getElementById('canvas');
-
-    renderer = new THREE.WebGLRenderer({antialias: true});
-    renderer.setSize(window.innerWidth, window.innerHeight);
+initScene = function (scene, canvas, renderer, camera) {
 
     canvas.addEventListener('dblclick', onDblClick , true);
     canvas.addEventListener('mousedown', onMouseDown, true);
     canvas.addEventListener('mouseup', onMouseUp);
     canvas.addEventListener('mousemove', onDocumentMouseMove, true );
 
+    renderer.setSize(canvas.clientWidth, window.innerHeight);
     canvas.appendChild(renderer.domElement);
 
-    controls = new THREE.TrackballControls(camera, renderer.domElement);
-    controls.rotateSpeed = 0.5;
+    camera.position.z = 50;
 
-    effect = new THREE.OculusRiftEffect( renderer, { worldScale: 1 } );
-    effect.setSize( window.innerWidth, window.innerHeight );
+    //Adding light
+    scene.add( new THREE.HemisphereLight(0x606060, 0x080820, 1.5));
+    scene.add( new THREE.AmbientLight(0x606060, 1.5));
+    var light = new THREE.PointLight( 0xffffff, 1.0, 10000 );
+    light.position.set( 1000, 1000, 100 );
+    scene.add(light);
+
+    var axisHelper = new THREE.AxisHelper( 5 );
+    scene.add( axisHelper );
+};
+
+createCanvas = function() {
+    sceneLeft = new THREE.Scene();
+    canvasLeft = document.getElementById('canvasLeft');
+    rendererLeft = new THREE.WebGLRenderer({antialias: true});
+    cameraLeft = new THREE.PerspectiveCamera(75, canvasLeft.clientWidth / window.innerHeight, 0.1, 3000);
+    initScene(sceneLeft, canvasLeft, rendererLeft, cameraLeft);
+    controlsLeft = new THREE.TrackballControls(cameraLeft, rendererLeft.domElement);
+    controlsLeft.rotateSpeed = 0.5;
+
+    sceneRight = new THREE.Scene();
+    canvasRight = document.getElementById('canvasRight');
+    rendererRight = new THREE.WebGLRenderer({antialias: true});
+    cameraRight = new THREE.PerspectiveCamera(75, canvasRight.clientWidth / window.innerHeight, 0.1, 3000);
+    initScene(sceneRight, canvasRight, rendererRight, cameraRight);
+    controlsRight = new THREE.TrackballControls(cameraRight, rendererRight.domElement);
+    controlsRight.rotateSpeed = 0.5;
+
+    addSkybox(sceneLeft);
+    addSkybox(sceneRight);
+};
+/**
+ * This method should be called to init th canvas where we render the brain
+ */
+
+initCanvas = function () {
+
+    removeStartButton();
+    removeUploadButtons();
+
+    addThresholdSlider();
+    addGroupList();
+    // addModalityButton();
+    addGeometryRadioButton();
+    // addSkyboxButton();
+    addDimensionFactorSlider();
+
+    addFslRadioButton();
+    // addSearchPanel();
+
+    setRegionsActivated();
+
+    //setThreshold(30);
+    computeDistanceMatrix();
+
+    createLegend(activeGroup);
+
+    glyphsLeft = [];
+    glyphsRight = [];
+    glyphNodeDictionary = {};
+    // create left and right canvas
+    createCanvas();
+
+    /* reactivate with Occlus rift
+    effect = new THREE.OculusRiftEffect( rendererLeft, { worldScale: 1 } );
+    effect.setSize( window.innerWidth/2.0, window.innerHeight );
 
     var HDM;
     vr = parseInt(vr);
@@ -248,50 +261,41 @@ initCanvas = function () {
                 chromaAbParameter: [0.996, -0.004, 1.014, 0.0]
             };
             break;
-
-
-
     }
     if (vr > 0) {
-        oculuscontrol = new THREE.OculusControls(camera);
+        oculuscontrol = new THREE.OculusControls(cameraLeft);
 
         oculuscontrol.connect();
         effect.setHMD(HDM);
         effect.setSize(window.innerWidth, window.innerHeight);
     }
+    */
+    visibleNodes = Array(getConnectionMatrixDimension()).fill(true);
 
-    var len = getConnectionMatrixDimension();
-    for(var i =0; i < len; i++){
-        visibleNodes[visibleNodes.length] = true;
-    }
-
-    drawRegions(getDataset());
-
-    //Adding light
-    scene.add( new THREE.HemisphereLight(0x606060, 0x080820, 1.5));
-    scene.add( new THREE.AmbientLight(0x606060, 1.5));
-    light = new THREE.PointLight( 0xffffff, 1.0, 10000 );
-    light.position.set( 1000, 1000, 100 );
-    scene.add(light);
-
-    var axisHelper = new THREE.AxisHelper( 5 );
-    scene.add( axisHelper );
-
-    createLegend(activeGroup);
-
-    addSkybox();
+    var dataset = getDataset();
+    drawRegions(dataset, glyphsLeft, sceneLeft);
+    drawRegions(dataset, glyphsRight, sceneRight);
     animate();
-
 };
 
 /**
  * This method should be called when a new model is uploaded in the system
  */
 
-updateScene = function(){
+updateLeftScene = function () { updateScene(glyphsLeft, sceneLeft); };
+updateRightScene = function () { updateScene(glyphsRight, sceneRight); };
+
+updateScenes = function() {
+    updateLeftScene();
+    updateRightScene();
+};
+
+updateScene = function(glyphs, scene){
     var l = glyphs.length;
+
     for (var i=0; i < l; i++){
         scene.remove(glyphs[i]);
+        delete glyphNodeDictionary[glyphs[i].uuid];
     }
 
     for(i=0; i < displayedEdges.length; i++){
@@ -300,7 +304,7 @@ updateScene = function(){
 
     displayedEdges = [];
 
-    drawRegions(getDataset());
+    drawRegions(getDataset(), glyphs, scene);
     drawConnections();
     createLegend(activeGroup);
 };
@@ -308,28 +312,21 @@ updateScene = function(){
 animate = function () {
 
     requestAnimationFrame(animate);
-    controls.update();
+    controlsLeft.update();
+    controlsRight.update();
 
-    //controls.update(  );
     if(vr > 0 ) {
         oculuscontrol.update();
     }
     render();
-
 };
 
 render = function() {
-
-    //Use the following line to render normally on the screen of the pc
-    //renderer.render(scene, camera);
-
-    // Use the following line to render the scene on the oculus rift
-    //effect.render( scene, camera );
-
     if(vr == 0){
-        renderer.render(scene, camera);
-    }else{
-        effect.render( scene, camera );
+        rendererLeft.render(sceneLeft, cameraLeft);
+        rendererRight.render(sceneRight, cameraRight);
+    }else{ // occulus rift
+        effect.render( sceneLeft, cameraLeft );
     }
 };
 
@@ -354,7 +351,7 @@ var createCentroidScale = function(d){
  * This method draws all the regions of the brain as glyphs.
  */
 
-var drawRegions = function(dataset) {
+var drawRegions = function(dataset, glyphs, scene) {
 
     var l = dataset.length;
     createCentroidScale(dataset);
@@ -364,16 +361,16 @@ var drawRegions = function(dataset) {
 
     var material;
     var geometry = new THREE.CircleGeometry( 1.0, 10);
+
     for(var i=0; i < l; i++){
         glyphs[i] = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
         if(shouldDrawRegion(dataset[i])) {
+            material = getNormalMaterial(dataset[i].group,i);
+
             if(nodesSelected.indexOf(i) == -1) {
                 //if the node is not selected
-                material = getNormalMaterial(dataset[i].group,i);
                 geometry = createNormalGeometry(dataset[i].hemisphere);
-
             } else {
-                material = getNormalMaterial(dataset[i].group,i);
                 geometry = createSelectedGeometry(dataset[i].hemisphere);
             }
 
@@ -394,7 +391,6 @@ var drawRegions = function(dataset) {
             glyphNodeDictionary[glyphs[i].uuid] = i;
 
             if(visibleNodes[i]){
-                // glyphs[i].lookAt( camera.position);
                 scene.add(glyphs[i]);
             }
         }
@@ -413,7 +409,7 @@ var drawRegions = function(dataset) {
 
  /*
  var line = new THREE.Line( geometry, material );
- scene.add( line );
+ sceneLeft.add( line );
  */
 /*
  var scale = getConnectionMatrixScale();
@@ -432,7 +428,7 @@ var drawRegions = function(dataset) {
  end
  );
  var line = new THREE.Line(geometry, material);
- scene.add(line);
+ sceneLeft.add(line);
  }
  }
  }
@@ -456,13 +452,12 @@ var drawConnections = function () {
             } else{
                 drawTopNEdgesByNode(nodesSelected[i], getNumberOfEdges());
             }
-
         }
     }
 
     for(i=0; i < shortestPathEdges.length; i++){
         displayedEdges[displayedEdges.length] = shortestPathEdges[i];
-        scene.add(shortestPathEdges[i]);
+        sceneLeft.add(shortestPathEdges[i]);
     }
 
     setEdgesColor();
@@ -528,14 +523,11 @@ var setEdgesColor = function () {
     }
 
     updateEdgeLegend();
-
 };
 
-var drawEdgesGivenNode = function (indexNode) {
+var drawEdgesGivenNode = function (glyphs, indexNode) {
 
     var connectionRow = getConnectionMatrixRow(indexNode);
-
-
     var l = connectionRow.length;
     for(var i=0; i < l ; i++){
         if(connectionRow[i] > getThreshold()  && isRegionActive(getRegionByNode(i)) && visibleNodes[i]) {
@@ -543,7 +535,6 @@ var drawEdgesGivenNode = function (indexNode) {
             var end = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z);
             var line = drawEdgeWithName(start,end, connectionRow[i]);
             displayedEdges[displayedEdges.length] = line;
-
         }
     }
     setEdgesColor();
@@ -553,14 +544,13 @@ var drawEdge = function (start,end, opacity) {
 
     var material = new THREE.LineBasicMaterial();
 
-
     var geometry = new THREE.Geometry();
     geometry.vertices.push(
         start,
         end
     );
     var line = new THREE.Line(geometry, material);
-    scene.add(line);
+    sceneLeft.add(line);
 
     return line;
 };
@@ -571,7 +561,7 @@ var drawEdgeWithName = function (start, end, name) {
     return line;
 };
 
-var removeEdgesGivenNode = function (indexNode) {
+var removeEdgesGivenNode = function (glyphs, scene, indexNode) {
     var x = glyphs[indexNode].position.x;
     var y = glyphs[indexNode].position.y;
     var z = glyphs[indexNode].position.z;
@@ -613,20 +603,28 @@ var removeEdgesGivenNode = function (indexNode) {
 
 getIntersectedObject = function (event) {
 
+    var isLeft = event.clientX < window.innerWidth/2;
+
+    // mapping coordinates of the viewport to (-1,1), (1,1), (-1,-1), (1,-1)
+    // TODO: there is a glitch for the right side
     var vector = new THREE.Vector3(
-        ( event.clientX / window.innerWidth ) * 2 - 1,
-        - ( event.clientY / window.innerHeight ) * 2 + 1,
-        0.5
-    );
+            ( event.clientX / window.innerWidth ) * 4 - (isLeft?1:3),
+            - ( event.clientY / window.innerHeight ) * 2 + 1,
+            0.5
+        );
+
+    var camera = isLeft? cameraLeft:cameraRight;
+    var glyphs = isLeft? glyphsLeft:glyphsRight;
+
     vector = vector.unproject( camera );
 
     var ray = new THREE.Raycaster( camera.position,
         vector.sub( camera.position ).normalize() );
 
-
     var objectsIntersected = ray.intersectObjects( glyphs );
 
     if(objectsIntersected[0]){
+        // console.log("object found");
         return objectsIntersected[0];
     }
 
@@ -634,6 +632,7 @@ getIntersectedObject = function (event) {
 };
 
 drawShortestPath = function (nodeIndex) {
+    console.log("drawShortestPath");
     var line;
     root = nodeIndex;
 
@@ -658,13 +657,7 @@ drawShortestPath = function (nodeIndex) {
     shortestPathEdges = [];
 
     for(var i=0; i < len; i++){
-        if(dist[i] < getDistanceThreshold()){
-            visibleNodes[i] = true;
-        }
-        else
-        {
-            visibleNodes[i] = false;
-        }
+        visibleNodes[i] = (dist[i] < getDistanceThreshold()) ? true : false;
     }
 
     for(i=0; i < visibleNodes.length; i++){
@@ -681,14 +674,13 @@ drawShortestPath = function (nodeIndex) {
     }
 
     setEdgesColor();
-    updateScene();
-
+    updateScenes();
 };
 
-resizeScene = function(){
-    camera.aspect = window.innerWidth / window.innerHeight;
+resizeScene = function(camera, renderer){
+    camera.aspect = window.innerWidth/2.0 / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth/2.0, window.innerHeight);
     animate();
 };
 
@@ -714,15 +706,11 @@ changeColorGroup = function (n) {
     setRegionsActivated();
     setColorGroupScale();
 
-    for(var i=0; i < glyphs.length; i++){
-        scene.remove(glyphs[i]);
-    }
-
-    glyphs = [];
-    updateScene();
+    updateScenes();
 };
 
 changeActiveGeometry = function(n){
+    console.log("changeActiveGeometry");
     activeCentroids = n;
     if(n == 'isomap'){
         activeMatrix = 'isomap';
@@ -733,17 +721,27 @@ changeActiveGeometry = function(n){
     updateNeeded = true;
     computeDistanceMatrix();
 
-    for(var i=0; i < glyphs.length; i++){
-        scene.remove(glyphs[i]);
+    /*
+    for(var i=0; i < glyphsLeft.length; i++){
+        sceneLeft.remove(glyphsLeft[i]);
+        delete glyphNodeDictionary[glyphsLeft[i].uuid];
     }
-    glyphs = [];
-    //TODO: switch according to spt
+    glyphsLeft = [];
 
+    for(var i=0; i < glyphsRight.length; i++){
+        sceneRight.remove(glyphsRight[i]);
+        delete glyphNodeDictionary[glyphsRight[i].uuid];
+    }
+    glyphsRight = [];
+    */
+
+    updateScenes();
+
+    //TODO: switch according to spt
     if(spt) {
         drawShortestPath(root);
         console.log("drawing spt");
     }
-    updateScene();
 };
 
 setGeometryGivenNode = function(nodeIndex, geometry){
@@ -777,7 +775,7 @@ drawShortestPathHops = function (rootNode,hops){
 
     shortestPathSliderHops();
 
-    updateScene();
+    updateScenes();
 };
 
 createLine = function (start,end, name){
@@ -797,7 +795,7 @@ createLine = function (start,end, name){
     return line;
 };
 
-addSkybox = function(){
+addSkybox = function(scene){
     var folder = 'darkgrid';
     var images = [
         'images/'+folder+'/negx.png',
@@ -833,7 +831,7 @@ addSkybox = function(){
     scene.add(skybox);
 };
 
-setSkyboxVisibility = function(visible){
+setSkyboxVisibility = function(scene, visible){
     var results = scene.children.filter(function(d) {return d.name == "skybox"});
     var skybox = results[0];
     skybox.visible = visible;

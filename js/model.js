@@ -124,6 +124,7 @@ setLookUpTable = function (d) {
 setConnectionMatrix = function(d, name){
     connectionMatrix[name] = d.data;
     console.log("connectionMatrix set");
+    console.log(connectionMatrix);
 };
 
 /**
@@ -328,7 +329,7 @@ toggleRegion = function (regionName){
             break;
     }
 
-    updateScene();
+    updateScenes();
 };
 
 setRegionsActivated = function (){
@@ -382,7 +383,6 @@ setNumberOfEdges = function(n){
     if(document.getElementById("topNThresholdSliderOutput")){
         document.getElementById("topNThresholdSliderOutput").value = n;
     }
-
     numberOfEdges = n;
 };
 
@@ -428,8 +428,6 @@ createGroups = function () {
             icGroup[icGroup.length] = icColorTable[i][0];
         }*/
         icGroup[icGroup.length] = i;
-
-
     }
     groups[groups.length] = anatomicalGroup;
     groups[groups.length] = placeGroup;
