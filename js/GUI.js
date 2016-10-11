@@ -189,7 +189,7 @@ addDimensionFactorSlider = function() {
         .attr("step","0.01")
         .on("change", function () {
             setDimensionFactor(this.value);
-            updateScene();
+            updateScenes();
         });
 
     panel.append("label")
