@@ -165,7 +165,6 @@ initGUI = function() {
             {
                 console.log("data are missing");
             }
-
         });
 };
 
