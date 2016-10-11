@@ -144,7 +144,7 @@ var uploadCustomMetric = function () {
 
         reader.readAsDataURL(f.files[0]);
     }
-}
+};
 
 var uploadLabelKey = function () {
     var f = document.getElementById("labelkey");
@@ -199,6 +199,5 @@ var getTechnology = function () {
     if( $('#oculusv2').is(':checked') ){
         return 2;
     }
-
-}
+};
 
