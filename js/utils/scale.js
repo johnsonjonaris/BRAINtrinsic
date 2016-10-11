@@ -6,7 +6,6 @@ var connectionMatrixScale;
 var groupColor = d3.scale.category10();
 var metric = false;
 var metricQuantileScale;
-var matricValues;
 var colorMap = {
     'Frontal' : '#2ca02c',
     'Parietal': '#9467bd',
@@ -25,7 +24,7 @@ var colorMap = {
     'Cingulate':'#ff7f0e',
     'Caudate':'#ad494a'
 
-}
+};
 
 scaleColorGroup = function (group, nodeIndex) {
     nodeIndex = (typeof nodeIndex === 'undefined') ? -1 : nodeIndex;
@@ -38,19 +37,14 @@ scaleColorGroup = function (group, nodeIndex) {
         filteredGroup = group;
     }
 
-
     color = groupColor(filteredGroup);
 
     if(typeof (filteredGroup) != 'number' && filteredGroup.indexOf("RichClub") > -1){
-        //color = new THREE.Color( "rgb(108, 122, 137)");
         color = "#6C7A89";
     }
 
-
-
     if(colorMap[filteredGroup] != undefined){
         color = colorMap[filteredGroup];
-       
     }
 
     if(activeGroup == 3){
@@ -60,19 +54,15 @@ scaleColorGroup = function (group, nodeIndex) {
         }
         color = metricQuantileScale(metricValues[nodeIndex][0]);
     }
-
     return color;
-}
-
-
+};
 
 setColorGroupScale = function () {
- if(getActiveGroup().length <= 10){
-     groupColor = d3.scale.category10();
- } else {
-     groupColor = d3.scale.category20c();
- }
-
+    if(getActiveGroup().length <= 10){
+        groupColor = d3.scale.category10();
+    } else {
+        groupColor = d3.scale.category20c();
+    }
 };
 
 getConnectionMatrixScale = function () {
@@ -99,24 +89,20 @@ getConnectionMatrixScale = function () {
         ).range(colorbrewer.Greys[6]);
 
     }
-
     return connectionMatrixScale;
-
 };
-
 
 var round = function(number, digits){
     digits = Math.pow(10,digits);
     return Math.round(number*digits)/digits;
 
-}
-
+};
 
 var foo = function(){
     loadMetricValues();
-}
+};
 
 var foo1 = function () {
     metric = true;
     updateScene();
-}
+};
