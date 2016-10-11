@@ -203,19 +203,19 @@ addDimensionFactorSlider = function() {
 addSkyboxButton = function(){
 
     var menu = d3.select("#nodeInfoPanel");
-
     menu.append("button")
         .text("Skybox")
         .attr("id", "skyboxVisibilityBtn")
+        .on("click", function () {
+            var input = d3.select("input#skyboxVisibilityInput").node();
+            input.checked = !input.checked;
+            setSkyboxVisibility(input.checked);
+            updateScenes();
+        })
         .append("input")
         .attr("type","checkbox")
         .attr("id","skyboxVisibilityInput")
-        .attr("checked", "true")
-        .on("change", function () {
-            setSkyboxVisibility(this.checked);
-            updateScene();
-        });
-
+        .attr("checked", true);
     menu.append("br");
 };
 
@@ -297,7 +297,6 @@ var createLegend = function (active) {
         legendMenu.removeChild(legendMenu.childNodes[0]);
     }
 
-    //var scaleColorGroup = d3.scale.category20();
     legendMenu = d3.select("#legend");
 
     if(active != 3){
@@ -347,7 +346,7 @@ var createLegend = function (active) {
                 elementGroup.append("circle")
                     .attr("cx",5)
                     .attr("cy",10)
-                    .attr("fill",scaleColorGroup(activeGroup[i]))
+                    .attr("fill", scaleColorGroup(activeGroup[i]))
                     .attr('opacity', opacity)
                     .attr("r",8);
             }
@@ -413,7 +412,6 @@ var createLegend = function (active) {
                 .attr("width", 20)
                 .attr("height", 20)
                 .attr("fill", color);
-
 
             elementGroup.append("text")
                 .text(leftRange + " - " + rightRange )
