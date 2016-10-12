@@ -6,68 +6,52 @@ private variables
  */
 
 var glyphs;
-var groups = [];
-var labelKeys;
-var centroids = [];
-var activeGroup = 0;
-var activeCentroids = "isomap";
-var connectionMatrix = [];
-var regionsActivated = [];
-var labelVisibility = [];
-
+var groups = [];                    // contain nodes group affiliation according to Anatomy, place, rich club, id
+var activeGroup = 0;                // 0 = Anatomy, 1 = place, 2 = rich club, 3 = id
+var regionsActivated = [];          // store the group activation boolean according to activeGroup
+var regionState = {};               // group state: active, transparent or inactive
+var labelKeys;                      // map between each node and its corresponding FSL label
+var centroids = [];                 // nodes centroids according to topological spaces: centroids[node][technique] = (x,y,z)
+var activeCentroids = "isomap";     // isomap, MDS, anatomy, tsne, selection from centroids
+var connectionMatrix = {};          // adjacency matrix according to ??? : connectionMatrix[???] = 2D array, ??? = isomap, normal
+var activeMatrix = 'isomap';        // selection from connectionMatrix, isomap, normal ...
+var labelVisibility = [];           // contains FSL label name, visibility and hemisphere
+var lookUpTable = [];               // contains FSL label group name, rich club, name and hemisphere
 var icColorTable = [];
 
-var activeMatrix = 'isomap';
-
-var lookUpTable = [];
-
-var regionState = {};
-
-var distanceThreshold;
-var threshold;
-var distanceArray;
-var numberOfEdges = 5;
+var distanceArray;                  // contain the shortest path for current selected node
+var distanceThreshold;              // threshold for the distanceArray
+var threshold;                      // threshold for the edge value
+var numberOfEdges = 5;              // threshold the number of edges for shortest paths
+var numberOfHops;
 
 var metricValues = [];
 
-var numberOfHops;
-
-/*
-Setters
- */
-
-
+// set the iso center color table ???
 setICColor = function(icData){
     icColorTable = icData.data;
 };
 
+// set distanceArray containing the shortest path for current selected node
 setDistanceArray = function(array){
     distanceArray = array;
 };
 
-
+// get the longest shortest path of the current selected node = the farthest node
 getMaximumDistance = function(){
     return d3.max(distanceArray);
 };
 
-/**
- * Label Keys setter
- */
-
+// store map between each node and its corresponding FSL label
 setLabelKeys = function(labels){
     labelKeys = labels.data;
 };
 
-/**
- *  Centroid Setter
- */
-
-
-setCentroids = function (d, technique) {
+// store nodes centroids according to topological spaces
+// technique can be: Isomap, MDS, tSNE, anatomy ...
+setCentroids = function(d, technique) {
     var data = d.data;
     var len = data.length;
-    // var centroidGroup;
-
     for(var i=0; i < len; i++){
         var element = {};
         element.x = data[i][0];
@@ -78,7 +62,8 @@ setCentroids = function (d, technique) {
     }
 };
 
-setDistanceThreshold = function (dt) {
+// set shortest path distance threshold and update GUI
+setDistanceThreshold = function(dt) {
     if(document.getElementById("distanceThresholdOutput")){
         var percentage = dt/getMaximumDistance()*100;
         var value = Math.floor(percentage*100)/100;
@@ -87,21 +72,26 @@ setDistanceThreshold = function (dt) {
     distanceThreshold = dt;
 };
 
-
-getDistanceThreshold = function () {
+// get shortest path distance threshold
+getDistanceThreshold = function() {
     return distanceThreshold;
 };
 
-setThreshold = function (t) {
+// store edge threshold and update GUI
+setThreshold = function(t) {
     document.getElementById("thresholdOutput").value = t;
     threshold = t;
 };
 
-getThreshold = function () {
+// get edge threshold
+getThreshold = function() {
     return threshold;
 };
 
-setLookUpTable = function (d) {
+// set the look up table filling lookUpTable and labelVisibility
+// from loaded data for each FSL node label
+// for each label, d contains: label#, group, place, rich_club, region_name, hemisphere
+setLookUpTable = function(d) {
     var i, el;
 
     for(i = 0; i < d.data.length ; i++){
@@ -121,46 +111,21 @@ setLookUpTable = function (d) {
     }
 };
 
+// set connection matrix for every name: norma, isomap ...
 setConnectionMatrix = function(d, name){
+    console.log("d", d);
+    console.log("name", name);
     connectionMatrix[name] = d.data;
     console.log("connectionMatrix set");
     console.log(connectionMatrix);
 };
 
-/**
- * Setter for group
- */
-
-setGroup = function (d) {
+// add group data
+setGroup = function(d) {
     groups[groups.length] = d.data;
 };
 
-/*
- * GETTERS
- */
-/**
- * Label keys getter.
- * @returns an array of label keys
- */
-
-getLabelKeys = function(){
-    var l = labelKeys.length;
-    var result = [];
-    //Cloning the array
-
-    for(var i =0; i < l; i++){
-        result[result.length] = labelKeys[i];
-    }
-
-    return result;
-};
-
-
-/**
- *  Centroid getters
- *  @return an array of objects with three fields named "x","y","z"
- */
-
+// never used !!
 getCentroids = function(){
     var l = centroids.length;
     var results = [];
@@ -171,53 +136,11 @@ getCentroids = function(){
         element.z = centroids[i].z;
         results[results.length] = element;
     }
-
     return results;
 };
 
 
-/**
- * Get the entire dataset to render the scene
- */
-
-/*
-getOldDataset = function () {
-    var row;
-    var arrayLength = labelKeys.length;
-    //var index;
-    var result = [];
-
-    for (var i = 0; i < arrayLength; i++) {
-        row = {};
-
-        //getting Centroids
-        row.x = centroids[i].x;
-        row.y = centroids[i].y;
-        row.z = centroids[i].z;
-
-
-        var label = labelKeys[i];
-        var lengthLookUpTable= lookUpTable.length;
-
-        //Looking for the right element in the lookup table
-
-        for (var j = 0, found = false; j < lengthLookUpTable && !found; j++) {
-
-            if (lookUpTable[j].label == label) {
-                found = true;
-                row.name = lookUpTable[j].region_name;
-            }
-        }
-
-        row.group = groups[activeGroup][i];
-
-        result[result.length] = row;
-    }
-    return result;
-};
-*/
-
-
+// get the dataset according to activeCentroids
 getDataset = function() {
     var row;
     var arrayLength = labelKeys.length;
@@ -238,23 +161,13 @@ getDataset = function() {
         row.group = groups[activeGroup][i];
         row.hemisphere = lookUpTable[label].hemisphere;
         row.label = labelKeys[i];
-        result[result.length] = row;
+        result[i] = row;
     }
     return result;
 };
 
-
-getActiveGroup = function () {
-    /*
-    var l = activeGroup.length;
-    var result = [];
-
-    for(var i=0; i < l; i++){
-        result[result.length] = activeGroup[i];
-    }
-    return result;*/
-
-
+// return the group affiliation of every node according to activeGroup
+getActiveGroup = function() {
     var l = groups[activeGroup].length;
     var results = [];
     for(var i = 0; i < l; i++){
@@ -266,35 +179,13 @@ getActiveGroup = function () {
     return results;
 };
 
-/**
- * This method gets the data about the connection matrix.
- * @returns a matrix of connections.
- */
-
-getConnectionMatrix = function () {
-    /* For performance reasons it is not possible to clone the entire object. Since the matrix is symmetric, clone
-        just one half of the entire matrix.
-     */
-
-    /*
-    var clone = [];
-    var clonedRow = [];
-    var l = connectionMatrix.length;
-    for(var i = 0; i < l; i++ ){
-        var l_inner = connectionMatrix;
-        for (var j = 0; j < l_inner; j++ ){
-            clonedRow[clonedRow.length] = connectionMatrix[i][j];
-        }
-        clone[clone.length] = clonedRow;
-    }
-
-    return clone;*/
+// get connection matrix according to activeMatrix
+getConnectionMatrix = function() {
     return connectionMatrix[activeMatrix];
 };
 
-
+// get a row (one node) from connection matrix according to activeMatrix
 getConnectionMatrixRow = function(index){
-
     var row = [];
     for(var i=0; i < connectionMatrix[activeMatrix].length; i++){
         row[row.length] = connectionMatrix[activeMatrix][index][i];
@@ -302,19 +193,20 @@ getConnectionMatrixRow = function(index){
     return row;
 };
 
-
-getRegionByNode = function (nodeIndex) {
+// get the group of a specific node according to activeGroup
+getRegionByNode = function(nodeIndex) {
     return groups[activeGroup][nodeIndex];
 };
 
-
-
-isRegionActive = function(region){
+// return if a specific region is activated
+isRegionActive = function(region) {
     return regionsActivated[region];
 };
 
-toggleRegion = function (regionName){
-    switch (regionState[regionName]){
+// toggle a specific region in order: active, transparent, inactive
+// set activation to false if inactive
+toggleRegion = function(regionName) {
+    switch (regionState[regionName]) {
         case 'active':
             regionState[regionName] = 'transparent';
             regionsActivated[regionName] = true;
@@ -328,11 +220,11 @@ toggleRegion = function (regionName){
             regionsActivated[regionName] = true;
             break;
     }
-
     updateScenes();
 };
 
-setRegionsActivated = function (){
+// set all regions active
+setRegionsActivated = function() {
     regionsActivated = {};
     regionState = {};
 
@@ -344,26 +236,22 @@ setRegionsActivated = function (){
     }
 };
 
-
+// get the connection matrix number of nodes
 getConnectionMatrixDimension = function(){
     return connectionMatrix['isomap'].length;
 };
 
-
-getTopConnectionsByNode = function(indexNode, n){
+getTopConnectionsByNode = function(indexNode, n) {
     var row = getConnectionMatrixRow(indexNode);
     var sortedRow = row.sort(function(a, b){return b-a}); //sort in a descending flavor
-
     var res = {};
     for(var i=0; i < n; i++){
         res[getConnectionMatrixRow(indexNode).indexOf(sortedRow[i])] = sortedRow[i];
     }
-
     return res;
 };
 
-
-getMaximumWeight = function () {
+getMaximumWeight = function() {
 
     var max = d3.max(connectionMatrix['normal'], function(d){
         return d3.max(d, function(d){
@@ -374,8 +262,7 @@ getMaximumWeight = function () {
     return max;
 };
 
-
-getNumberOfEdges = function () {
+getNumberOfEdges = function() {
   return numberOfEdges;
 };
 
@@ -386,33 +273,8 @@ setNumberOfEdges = function(n){
     numberOfEdges = n;
 };
 
-
-
-createOldGroups = function () {
-    var anatomicalGroup = [];
-    var richClubGroup = [];
-    var placeGroup = [];
-
-    for(var i=0; i < labelKeys.length; i++){
-        var labelKey = labelKeys[i];
-
-        for(var j = 0, found = false; j < lookUpTable.length && !found; j++){
-            if(lookUpTable[j].label == labelKey){
-                found = true;
-                anatomicalGroup[anatomicalGroup.length] = lookUpTable[j].group;
-                placeGroup[placeGroup.length] = lookUpTable[j].place;
-                richClubGroup[richClubGroup.length] = lookUpTable[j].rich_club;
-            }
-        }
-
-    }
-    groups[groups.length] = anatomicalGroup;
-    groups[groups.length] = placeGroup;
-    groups[groups.length] = richClubGroup;
-};
-
-
-createGroups = function () {
+// create groups in order: Anatomy, place, rich club, id
+createGroups = function() {
     console.log("create groups");
     var anatomicalGroup = [];
     var richClubGroup = [];
@@ -424,9 +286,6 @@ createGroups = function () {
         anatomicalGroup[anatomicalGroup.length] = lookUpTable[labelKey].group;
         placeGroup[placeGroup.length] = lookUpTable[labelKey].place;
         richClubGroup[richClubGroup.length] = lookUpTable[labelKey].rich_club;
-        /*if(icColorTable[i]){
-            icGroup[icGroup.length] = icColorTable[i][0];
-        }*/
         icGroup[icGroup.length] = i;
     }
     groups[groups.length] = anatomicalGroup;
@@ -435,30 +294,30 @@ createGroups = function () {
     groups[groups.length] = icGroup;
 };
 
-
+// get the region name of a specific node (edge)
 getRegionNameByIndex = function(index){
-    var labelKey = labelKeys[index];
-
-    return lookUpTable[labelKey].region_name;
+    return lookUpTable[labelKeys[index]].region_name;
 };
 
-
-setNumberOfHops = function (hops) {
+setNumberOfHops = function(hops) {
     numberOfHops = hops;
     if(document.getElementById("numberOfHopsOutput")){
         document.getElementById("numberOfHopsOutput").value = hops;
     }
 };
 
-getNumberOfHops = function () {
+
+getNumberOfHops = function() {
     return numberOfHops;
 };
 
+// get the label visibility
 getLabelVisibility = function(label){
     return labelVisibility[label]['visibility'];
 };
 
-setLabelVisibility = function (label, visibility) {
+// set the label visibility: label is an index, visibility is boolean
+setLabelVisibility = function(label, visibility) {
     if(labelVisibility[label] != undefined)
         labelVisibility[label]['visibility'] = visibility;
     else{
@@ -466,8 +325,7 @@ setLabelVisibility = function (label, visibility) {
     }
 };
 
-
-setMetricValues = function (data){
+setMetricValues = function(data){
     metricValues = data.data;
 
     metricQuantileScale  = d3.scale.quantile()
