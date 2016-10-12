@@ -12,30 +12,30 @@ function PriorityQueue () {
     this.enqueue = function (priority, key) {
         this._nodes.push({key: key, priority: priority });
         this.sort();
-    }
+    };
     this.dequeue = function () {
         return this._nodes.shift().key;
-    }
+    };
     this.sort = function () {
         this._nodes.sort(function (a, b) {
             return a.priority - b.priority;
         });
-    }
+    };
     this.isEmpty = function () {
         return !this._nodes.length;
-    }
-}
+    };
+};
 
 /**
  * Pathfinding starts here
  */
-function Graph(){
+function Graph() {
     var INFINITY = 1/0;
     this.vertices = {};
 
     this.addVertex = function(name, edges){
         this.vertices[name] = edges;
-    }
+    };
 
     this.shortestPath = function (start) {
         var nodes = new PriorityQueue(),
@@ -71,17 +71,13 @@ function Graph(){
                 }
             }
         }
-
-
         previousMap = previous;
         dist = distances;
         rootNode = start;
         setHierarchy(rootNode);
         return distances;
     }
-}
-
-
+};
 
 setHierarchy = function(root){
     hierarchy = [];
@@ -89,7 +85,6 @@ setHierarchy = function(root){
     hierarchy[0] = [];
     hierarchy[0].push(parseInt(root));
     var k;
-
 
     for(k=0; k < hierarchy.length; k++){
         el = [];
@@ -107,7 +102,6 @@ setHierarchy = function(root){
     }
 };
 
-
 getShortestPathDistances = function(nodeIndex){
 
     if(updateNeeded){
@@ -115,13 +109,10 @@ getShortestPathDistances = function(nodeIndex){
         rootNode = nodeIndex;
         updateNeeded = false;
        return dist;
-    }else{
+    } else {
         return dist;
     }
-
-    //return dist;
 };
-
 
 getHierarchy = function(nodeIndex){
     if(rootNode && rootNode == nodeIndex){
@@ -132,16 +123,14 @@ getHierarchy = function(nodeIndex){
     rootNode = nodeIndex;
 
     return hierarchy;
-}
-
-
+};
 
 getMaximumNumberOfHops = function(){
     if(hierarchy)
         return hierarchy.length;
 
     return 0;
-}
+};
 
 getShortestPathBetweenNodes = function(a, b){
     var i = b, j;
@@ -162,8 +151,5 @@ getShortestPathBetweenNodes = function(a, b){
         shortestPathEdges[shortestPathEdges.length] = line;
         i = parseInt(prev);
     }
-
-
-
-    updateScene();
-}
+    updateScenes();
+};
