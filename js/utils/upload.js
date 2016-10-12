@@ -47,7 +47,6 @@ uploadNormalConnections = function () {
         };
         reader.readAsDataURL(f.files[0]);
     }
-
 };
 
 
