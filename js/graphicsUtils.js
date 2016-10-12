@@ -8,6 +8,7 @@ var rootCircleRadius = 6.0;
 var sphereResolution = 12;
 var dimensionFactor = 1;
 
+// create normal edge geometry: sphere or cube
 createNormalGeometry = function(hemisphere){
     if(hemisphere == "left"){
         return new THREE.SphereGeometry( dimensionFactor * shpereRadius, sphereResolution, sphereResolution);
@@ -17,6 +18,7 @@ createNormalGeometry = function(hemisphere){
     }
 };
 
+// create selected edge geometry: sphere or cube
 createSelectedGeometry = function (hemisphere) {
     if(hemisphere == "left"){
         return new THREE.SphereGeometry( dimensionFactor * selectedCircleRadius, sphereResolution, sphereResolution);
@@ -26,6 +28,7 @@ createSelectedGeometry = function (hemisphere) {
     }
 };
 
+// create root geometry
 createRootGeometry = function(hemisphere){
     if(hemisphere == "left"){
         return new THREE.SphereGeometry(dimensionFactor * rootCircleRadius, sphereResolution, sphereResolution);
@@ -35,26 +38,30 @@ createRootGeometry = function(hemisphere){
     }
 };
 
+// create root geometry from a 3js object using its userData
 createRootGeometryByObject = function (obj) {
     return createRootGeometry(obj.userData.hemisphere);
 };
 
+// create normal edge geometry from a 3js object using its userData
 createNormalGeometryByObject = function(obj){
     if(obj)
         return createNormalGeometry(obj.userData.hemisphere);
 };
 
+// create selected edge geometry from a 3js object using its userData
 createSelectedGeometryByObject = function (obj) {
     return createSelectedGeometry(obj.userData.hemisphere);
 };
 
+// set the dimension factor
 setDimensionFactor = function(value){
     dimensionFactor = value;
 };
 
+// return the material for an edge according to its state: active or transparent
 getNormalMaterial = function (group, nodeIndex){
     var material;
-
     switch (regionState[group]){
         case 'active':
             material = new THREE.MeshPhongMaterial({
@@ -75,6 +82,5 @@ getNormalMaterial = function (group, nodeIndex){
             });
             break;
     }
-
     return material;
 };
