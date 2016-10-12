@@ -5,7 +5,7 @@
 var connectionMatrixScale;
 var groupColor = d3.scale.category10();
 var metric = false;
-var metricQuantileScale;
+var metricQuantileScale;            // scaling function
 var colorMap = {
     'Frontal' : '#2ca02c',
     'Parietal': '#9467bd',
@@ -26,7 +26,7 @@ var colorMap = {
 
 };
 
-scaleColorGroup = function (group, nodeIndex) {
+scaleColorGroup = function(group, nodeIndex) {
     nodeIndex = (typeof nodeIndex === 'undefined') ? -1 : nodeIndex;
 
     var color;
@@ -57,15 +57,14 @@ scaleColorGroup = function (group, nodeIndex) {
     return color;
 };
 
-setColorGroupScale = function () {
-    if(getActiveGroup().length <= 10){
-        groupColor = d3.scale.category10();
-    } else {
-        groupColor = d3.scale.category20c();
-    }
+// set group color according to the activeGroup number of elements
+setColorGroupScale = function() {
+    groupColor = (getActiveGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20c();
 };
 
-getConnectionMatrixScale = function () {
+// return a power scale function for the adjacency matrix
+// never used !!
+getConnectionMatrixScale = function() {
     var connectionMatrix = getConnectionMatrix();
     var allCells = [];
     if(!connectionMatrixScale){
@@ -78,31 +77,16 @@ getConnectionMatrixScale = function () {
         }
         connectionMatrixScale = d3.scale.pow().domain(
             [
-                d3.min(allCells, function(element){
-                    return element;
-                })
-                ,
-                d3.max(allCells, function(element){
-                    return element;
-                })
+                d3.min(allCells, function(element){ return element; }),
+                d3.max(allCells, function(element){ return element; })
             ]
         ).range(colorbrewer.Greys[6]);
-
     }
     return connectionMatrixScale;
 };
 
+// round a number to specified digits
 var round = function(number, digits){
     digits = Math.pow(10,digits);
     return Math.round(number*digits)/digits;
-
-};
-
-var foo = function(){
-    loadMetricValues();
-};
-
-var foo1 = function () {
-    metric = true;
-    updateScene();
 };
