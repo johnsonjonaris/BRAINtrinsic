@@ -2,13 +2,13 @@
  * Created by giorgioconte on 31/01/15.
  */
 
-    var folder;
+var folder;
 
 var setFolder = function(folderName, callback){
     folder = folderName;
     callback(null,null);
     return;
-}
+};
 
 var loadCentroidsMDS = function (callback) {
 
@@ -21,7 +21,6 @@ var loadCentroidsMDS = function (callback) {
             callback(null, null);
         }
     });
-
 };
 
 var loadCentroidsAnatomy = function (callback){
@@ -35,8 +34,7 @@ var loadCentroidsAnatomy = function (callback){
             callback(null, null);
         }
     });
-}
-
+};
 
 var loadIcColors = function(callback){
     Papa.parse("./data//WB2s1IC.csv", {
@@ -49,7 +47,7 @@ var loadIcColors = function(callback){
             callback(null, null);
         }
     });
-}
+};
 
 var loadCentroidsIsomap = function (callback) {
 
@@ -145,7 +143,7 @@ var loadColorMap = function(callback){
             callback(null,null);
         }
     })
-}
+};
 
 
 var loadMetricValues = function(callback){
@@ -160,4 +158,4 @@ var loadMetricValues = function(callback){
             callback(null,null);
         }
     })
-}
+};
