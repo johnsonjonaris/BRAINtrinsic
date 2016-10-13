@@ -3,8 +3,8 @@
  */
 
 var shpereRadius = 3.0;             // normal sphere radius
-var selectedCircleRadius = 5.0;     // selected sphere radius
-var rootCircleRadius = 8.0;         // root sphere radius
+var selectedCircleRadius = 8.0;     // selected sphere radius
+var rootCircleRadius = 10.0;        // root sphere radius
 var sphereResolution = 12;
 var dimensionFactor = 1;
 
