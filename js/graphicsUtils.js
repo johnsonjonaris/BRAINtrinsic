@@ -2,9 +2,9 @@
  * Created by giorgioconte on 26/02/15.
  */
 
-var shpereRadius = 3.0;
-var selectedCircleRadius = 5.0;
-var rootCircleRadius = 6.0;
+var shpereRadius = 3.0;             // normal sphere radius
+var selectedCircleRadius = 5.0;     // selected sphere radius
+var rootCircleRadius = 8.0;         // root sphere radius
 var sphereResolution = 12;
 var dimensionFactor = 1;
 
