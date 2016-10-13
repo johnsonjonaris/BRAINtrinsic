@@ -84,8 +84,8 @@ var loadLookUpTable = function (callback) {
         dynamicTyping: true,
         header: true,
         complete: function (results) {
+            console.log("Setting up Look-up Table");
             setLookUpTable(results);
-            console.log("lookup");
             callback(null, null);
         }
     });
@@ -147,7 +147,7 @@ var loadColorMap = function(callback){
 
 
 var loadMetricValues = function(callback){
-    console.log("loading metric file");
+    console.log("Loading metric file");
     Papa.parse("data/Anatomic/metric.csv",{
         download: true,
         delimiter: ',',

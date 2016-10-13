@@ -6,10 +6,11 @@ init = function () {
     $(window).resize(function(e){
         e.preventDefault();
         console.log("on resize event");
-        resizeScene();
+        resizeScene(cameraLeft, rendererLeft);
+        resizeScene(cameraRight, rendererRight);
     });
 
-    console.log(folder);
+    console.log("source folder: ", folder);
     createGroups();
     initGUI();
     initCanvas();

@@ -1,8 +1,9 @@
 /**
  * Created by giorgioconte on 31/01/15.
  */
+// this file contains functions that create\delete GUI controlling elements
 
-
+// init the GUI by creating all the data upload buttons
 initGUI = function() {
     var uploadMenu = d3.select("#upload");
 
@@ -168,15 +169,13 @@ initGUI = function() {
         });
 };
 
-/*
- * This method removes the start button so that is not possible to create more than one scene and
- * renderer.
- */
+// remove the start visualization button to allow only one scene and renderer
 removeStartButton = function(){
     var elem = document.getElementById('startVisualization');
     elem.parentNode.removeChild(elem);
 };
 
+// adds a slider to control glyphs size
 addDimensionFactorSlider = function() {
     var panel = d3.select("#nodeInfoPanel");
 
@@ -200,6 +199,7 @@ addDimensionFactorSlider = function() {
     panel.append("br");
 };
 
+// adds a button to toggle skybox visibility
 addSkyboxButton = function(){
 
     var menu = d3.select("#nodeInfoPanel");
@@ -219,6 +219,7 @@ addSkyboxButton = function(){
     menu.append("br");
 };
 
+// adds a text label showing: node index - region name - nodal strength
 setNodeInfoPanel = function (regionName, index){
 
     var panel = d3.select('#nodeInfoPanel');
@@ -234,6 +235,7 @@ setNodeInfoPanel = function (regionName, index){
     panel.node().appendChild(para).appendChild(node);
 };
 
+// add a slider to threshold edges at specific values
 addThresholdSlider = function (){
 
     var menu = d3.select("#edgeInfoPanel");
@@ -253,7 +255,7 @@ addThresholdSlider = function (){
 
             var slider = document.getElementById("thresholdSlider");
             setThreshold(Math.floor(slider.value*100)/100);
-            updateScene();
+            updateScenes();
         });
 
     menu.append("output")
@@ -265,9 +267,8 @@ addThresholdSlider = function (){
     document.getElementById("thresholdOutput").value = getThreshold();
 };
 
+// never used !!
 setInfoLabel = function(regionName, index){
-
-    // var nodalStrength = computeNodalStrength(getConnectionMatrixRow(index));
 
     var body = document.body;
     var canvas = document.getElementsByTagName("canvas");
@@ -287,9 +288,8 @@ setInfoLabel = function(regionName, index){
     body.appendChild(label).appendChild(para).appendChild(node);
 };
 
-/*
- * This method is used to create the legend panel.
- */
+// create legend panel containing different groups
+// the state of each group can be either: active, transparent or inactive
 var createLegend = function (active) {
     var legendMenu = document.getElementById("legend");
 
@@ -299,12 +299,11 @@ var createLegend = function (active) {
 
     legendMenu = d3.select("#legend");
 
-    if(active != 3){
-        console.log("active group value: " + active);
+    if(active != 3) {
         var activeGroup = getActiveGroup();
-        if(typeof(activeGroup[0]) == "number"){
+        if(typeof(activeGroup[0]) == "number"){ // group is numerical
             activeGroup.sort(function(a, b){return a-b});
-        }else{
+        } else { // group is string
             activeGroup.sort();
         }
 
@@ -371,7 +370,7 @@ var createLegend = function (active) {
                 .attr('opacity', opacity)
                 .attr("fill",textColor);
         }
-    }else{
+    } else {
         var quantiles = metricQuantileScale.quantiles();
         var min = d3.min(metricValues, function (d){return d[0]});
         var max = d3.max(metricValues, function (d){return d[0]});
@@ -444,7 +443,6 @@ var addDistanceSlider = function (distances) {
 
     var maxDistance = d3.max(distances);
 
-
     menu.append("input")
         .attr("type", "range")
         .attr("value", meanDistance)
@@ -457,9 +455,9 @@ var addDistanceSlider = function (distances) {
 
             //console.log("on Change distance threshold value:" + slider.value);
             setDistanceThreshold(slider.value);
-            drawShortestPath(root);
+            drawShortestPathLeft(root);
+            drawShortestPathRight(root);
         });
-
 
     menu.append("output")
         .attr("for","distanceThresholdSlider")
@@ -468,6 +466,7 @@ var addDistanceSlider = function (distances) {
     setDistanceThreshold(meanDistance);
 };
 
+// remove threshold slider and its labels
 removeThresholdSlider = function(){
     var elem = document.getElementById('thresholdSlider');
 
@@ -486,6 +485,8 @@ removeThresholdSlider = function(){
     }
 };
 
+// add "Change Modality" button to toggle between:
+// edge threshold and top N edges
 addModalityButton = function () {
 
     var menu = d3.select("#upload");
@@ -503,6 +504,7 @@ addModalityButton = function () {
         });
 };
 
+// change modality callback
 changeModality = function(modality){
     thresholdModality = modality;
 
@@ -518,6 +520,7 @@ changeModality = function(modality){
     }
 };
 
+// add slider to filter the top N edges in terms of value
 addTopNSlider = function(){
     var menu = d3.select("#edgeInfoPanel");
 
@@ -535,7 +538,7 @@ addTopNSlider = function(){
         .attr("step", "1")
         .on("change", function () {
             setNumberOfEdges(this.value);
-            updateScene();
+            updateScenes();
         });
 
     menu.append("output")
@@ -544,6 +547,7 @@ addTopNSlider = function(){
         .text(getNumberOfEdges());
 };
 
+// remove top N edges slider and its labels
 removeTopNSlider= function () {
 
     var elem = document.getElementById('topNThresholdSlider');
@@ -563,11 +567,13 @@ removeTopNSlider= function () {
     }
 };
 
+// remove all DOM elements from the edgeInfoPanel
 removeElementsFromEdgePanel = function(){
     removeThresholdSlider();
     removeTopNSlider();
 };
 
+// remove all upload buttons
 removeUploadButtons= function (){
     var menu = document.getElementById("upload");
     while(menu.hasChildNodes()){
@@ -575,6 +581,8 @@ removeUploadButtons= function (){
     }
 };
 
+// add "Color Coding" radio button group containing:
+// Anatomy, Embeddedness and Rich Club groups
 addGroupList = function () {
     var menu = d3.select("#upload");
 
@@ -660,11 +668,8 @@ addGroupList = function () {
     }
 };
 
+// add a slider that filters shortest paths by the number of hops
 shortestPathSliderHops = function(){
-    // var menu = document.getElementById("edgeInfoPanel");
-    /*while(menu.hasChildNodes()){
-     menu.removeChild(menu.children[0]);
-     }*/
 
     removeDistanceSlider();
 
@@ -698,10 +703,11 @@ shortestPathSliderHops = function(){
             .attr("id", "sptFilterButtonDistance")
             .text("Distance Filter")
             .on('click', function () {
-                drawShortestPath(root);
+                drawAllShortestPath(root);
             });
     }
 };
+
 
 shortestPathDistanceUI = function(){
 
@@ -728,9 +734,9 @@ shortestPathDistanceUI = function(){
                 setNumberOfHops(2);
             })
     }
-
 };
 
+// remove
 removeDistanceSlider = function () {
     var elem = document.getElementById('distanceThresholdSlider');
 
@@ -749,6 +755,7 @@ removeDistanceSlider = function () {
     }
 };
 
+// remove the shortest path number of hops filter
 removeNumberOfHopsSlider = function(){
     var elem = document.getElementById('numberOfHopsSlider');
 
@@ -767,6 +774,8 @@ removeNumberOfHopsSlider = function(){
     }
 };
 
+// add "Topological Spaces" radio button group containing:
+// Isomap, MDS, tSNE and anatomy spaces
 addGeometryRadioButton = function () {
     var menu = d3.select("#upload");
 
@@ -839,6 +848,7 @@ addGeometryRadioButton = function () {
 
 };
 
+// add labels check boxes, appear/disappear on right click
 addFslRadioButton = function () {
     var rightMenu = d3.select("#rightFslLabels");
     var leftMenu = d3.select("#leftFslLabels");
@@ -868,7 +878,7 @@ addFslRadioButton = function () {
             .attr("checked", "true")
             .on("change", function () {
                 setLabelVisibility(index, this.checked);
-                updateScene();
+                updateScenes();
             });
 
         menu.append("label")
@@ -879,6 +889,7 @@ addFslRadioButton = function () {
     });
 };
 
+// add search nodes by index panel, appear/disappear on right click
 addSearchPanel = function(){
     var menu = d3.select("#search");
 
@@ -900,6 +911,7 @@ addSearchPanel = function(){
         });
 };
 
+// search by index callback
 searchElement = function (index) {
     index = parseInt(index);
     console.log(index);
@@ -911,9 +923,10 @@ searchElement = function (index) {
         alert("Node not found");
     }
 
-    glyphs[index].geometry = drawSelectedNode(index, glyphs[index]);
+    drawSelectedNode(index, glyphs[index]);
 };
 
+// toggle labels check boxes on right click
 toggleFslMenu = function (e) {
     $("#rightFslLabels").toggle();
     $('#leftFslLabels').toggle();

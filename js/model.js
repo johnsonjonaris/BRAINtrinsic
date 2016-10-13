@@ -5,7 +5,6 @@
 private variables
  */
 
-var glyphs;
 var groups = [];                    // contain nodes group affiliation according to Anatomy, place, rich club, id
 var activeGroup = 0;                // 0 = Anatomy, 1 = place, 2 = rich club, 3 = id
 var regionsActivated = [];          // store the group activation boolean according to activeGroup
@@ -111,13 +110,9 @@ setLookUpTable = function(d) {
     }
 };
 
-// set connection matrix for every name: norma, isomap ...
+// set connection matrix for every name: normal, isomap ...
 setConnectionMatrix = function(d, name){
-    console.log("d", d);
-    console.log("name", name);
     connectionMatrix[name] = d.data;
-    console.log("connectionMatrix set");
-    console.log(connectionMatrix);
 };
 
 // add group data
@@ -241,12 +236,15 @@ getConnectionMatrixDimension = function(){
     return connectionMatrix['isomap'].length;
 };
 
+// get top n edges connected to a specific node
 getTopConnectionsByNode = function(indexNode, n) {
     var row = getConnectionMatrixRow(indexNode);
     var sortedRow = row.sort(function(a, b){return b-a}); //sort in a descending flavor
     var res = {};
+    var val;
     for(var i=0; i < n; i++){
-        res[getConnectionMatrixRow(indexNode).indexOf(sortedRow[i])] = sortedRow[i];
+        val = sortedRow[i];
+        res[row.indexOf(val)] = val;
     }
     return res;
 };
@@ -258,7 +256,7 @@ getMaximumWeight = function() {
             return d;
         })
     });
-    console.log(max);
+    // console.log(max);
     return max;
 };
 
