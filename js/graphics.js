@@ -18,7 +18,8 @@ var effect;
 
 var nodesSelected = [];
 var visibleNodes =[];               // boolean array storing nodes visibility
-var displayedEdges = [];            // store displayed edges
+var displayedEdgesLeft = [],
+    displayedEdgesRight = [];       // store displayed edges for left and right scenes
 var shortestPathEdges = [];
 
 var pointedObject;                  // node object under mouse
@@ -58,14 +59,14 @@ function onDocumentMouseMove( event ) {
         // draw edges in one two ways:
         if(thresholdModality) {
             // 1) all edges from a given node
-            drawEdgesGivenNode(glyphsLeft, sceneLeft, nodeIdx);
-            drawEdgesGivenNode(glyphsRight, sceneRight, nodeIdx);
+            drawEdgesGivenNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIdx);
+            drawEdgesGivenNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIdx);
         } else{
             // 2) strongest n edges from the node
             var n = getNumberOfEdges();
             console.log("Drawing top " + n + " edges");
-            drawTopNEdgesByNode(glyphsLeft, sceneLeft, nodeIdx, n);
-            drawTopNEdgesByNode(glyphsRight, sceneRight, nodeIdx, n);
+            drawTopNEdgesByNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIdx, n);
+            drawTopNEdgesByNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIdx, n);
         }
     } else {
         if(pointedObject){
@@ -284,9 +285,9 @@ updateScenes = function() {
     updateLeftScene();
     updateRightScene();
 };
-updateLeftScene = function () { updateScene(glyphsLeft, sceneLeft); };
-updateRightScene = function () { updateScene(glyphsRight, sceneRight); };
-updateScene = function(glyphs, scene){
+updateLeftScene = function () { updateScene(glyphsLeft, sceneLeft, displayedEdgesLeft); };
+updateRightScene = function () { updateScene(glyphsRight, sceneRight, displayedEdgesRight); };
+updateScene = function(glyphs, scene, displayedEdges){
     console.log("Scene update");
     var l = glyphs.length;
 
@@ -302,7 +303,7 @@ updateScene = function(glyphs, scene){
     displayedEdges = [];
 
     drawRegions(getDataset(), glyphs, scene);
-    drawConnections(glyphs, scene);
+    drawConnections(glyphs, scene, displayedEdges);
     createLegend(activeGroup);
 };
 
@@ -415,7 +416,7 @@ drawRegions = function(dataset, glyphs, scene) {
 
 // draw all connections between the selected nodes, needs the connection matrix.
 // don't draw edges belonging to inactive nodes
-var drawConnections = function (glyphs, scene) {
+var drawConnections = function (glyphs, scene, displayedEdges) {
     var nodeIdx;
     for(var i= 0; i < nodesSelected.length; i++){
         nodeIdx = nodesSelected[i];
@@ -438,11 +439,11 @@ var drawConnections = function (glyphs, scene) {
         scene.add(shortestPathEdges[i]);
     }
 
-    setEdgesColor();
+    setEdgesColor(displayedEdges);
 };
 
 // set the color and thickness of displayed edges
-var setEdgesColor = function () {
+var setEdgesColor = function (displayedEdges) {
     var allDisplayedWeights =[];
     for(var i = 0; i < displayedEdges.length; i++){
         allDisplayedWeights[allDisplayedWeights.length] = displayedEdges[i].name;
@@ -479,7 +480,7 @@ var setEdgesColor = function () {
                 opacity: edgeOpacityScale(displayedEdges[i].name),
                 transparent: true,
                 //color: edgeColor,
-                linewidth: 2
+                linewidth: 4
             });
 
         displayedEdges[i].material = material;
@@ -489,25 +490,24 @@ var setEdgesColor = function () {
 };
 
 // draw the top n edges connected to a specific node
-drawTopNEdgesByNode = function (glyphs, scene, nodeIndex, n) {
+drawTopNEdgesByNode = function (glyphs, scene, displayedEdges, nodeIndex, n) {
 
     var row = getTopConnectionsByNode(nodeIndex, n);
     for (var obj in row) {
         if (isRegionActive(getRegionByNode(obj)) && visibleNodes[obj]) {
             var start = new THREE.Vector3(  glyphs[nodeIndex].position.x,
-                glyphs[nodeIndex].position.y,
-                glyphs[nodeIndex].position.z );
+                                            glyphs[nodeIndex].position.y,
+                                            glyphs[nodeIndex].position.z );
             var end = new THREE.Vector3(glyphs[obj].position.x, glyphs[obj].position.y, glyphs[obj].position.z);
-            var line = drawEdgeWithName(scene, start, end, row[obj]);
-            displayedEdges[displayedEdges.length] = line;
+            displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, start, end, row[obj]);
         }
     }
 
-    setEdgesColor();
+    setEdgesColor(displayedEdges);
 };
 
 // draw edges given a node following edge threshold
-var drawEdgesGivenNode = function (glyphs, scene, indexNode) {
+var drawEdgesGivenNode = function (glyphs, scene, displayedEdges, indexNode) {
 
     var row = getConnectionMatrixRow(indexNode);
     for(var i=0; i < row.length ; i++){
@@ -516,11 +516,10 @@ var drawEdgesGivenNode = function (glyphs, scene, indexNode) {
                                             glyphs[indexNode].position.y,
                                             glyphs[indexNode].position.z );
             var end = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z );
-            var line = drawEdgeWithName(scene, start, end, row[i]);
-            displayedEdges[displayedEdges.length] = line;
+            displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, start, end, row[i]);
         }
     }
-    setEdgesColor();
+    setEdgesColor(displayedEdges);
 };
 
 // create a line using start and end points and give it a name
@@ -541,29 +540,15 @@ var drawEdgeWithName = function (scene, start, end, name) {
 };
 
 removeEdgesGivenNodeFromScenes = function(nodeIndex) {
-    removeEdgesGivenNode(glyphsLeft, sceneLeft, nodeIndex);
-    var removedEdges = removeEdgesGivenNode(glyphsRight, sceneRight, nodeIndex);
+    removeEdgesGivenNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex);
+    removeEdgesGivenNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIndex);
 
-    // update the displayedEdges array
-    var updatedDisplayEdges = [];
-    for(var i=0; i < displayedEdges.length; i++){
-        //if the edge should not be removed
-        if( removedEdges.indexOf(i) == -1){
-            updatedDisplayEdges[updatedDisplayEdges.length] = displayedEdges[i];
-        }
-    }
-
-    for(i=0; i < shortestPathEdges.length; i++){
-        updatedDisplayEdges[updatedDisplayEdges.length] = shortestPathEdges[i];
-    }
-
-    displayedEdges = updatedDisplayEdges;
-
-    setEdgesColor();
+    setEdgesColor(displayedEdgesLeft);
+    setEdgesColor(displayedEdgesRight);
 };
 
 // give a specific node index, remove all edges from a specific node in a specific scene
-var removeEdgesGivenNode = function (glyphs, scene, indexNode) {
+removeEdgesGivenNode = function (glyphs, scene, displayedEdges, indexNode) {
     var x = glyphs[indexNode].position.x;
     var y = glyphs[indexNode].position.y;
     var z = glyphs[indexNode].position.z;
@@ -586,7 +571,20 @@ var removeEdgesGivenNode = function (glyphs, scene, indexNode) {
         }
     }
 
-    return removedEdges;
+    // update the displayedEdges array
+    var updatedDisplayEdges = [];
+    for(i=0; i < displayedEdges.length; i++){
+        //if the edge should not be removed
+        if( removedEdges.indexOf(i) == -1){
+            updatedDisplayEdges[updatedDisplayEdges.length] = displayedEdges[i];
+        }
+    }
+
+    for(i=0; i < shortestPathEdges.length; i++){
+        updatedDisplayEdges[updatedDisplayEdges.length] = shortestPathEdges[i];
+    }
+
+    displayedEdges = updatedDisplayEdges;
 };
 
 // get intersected object beneath the mouse pointer
@@ -625,8 +623,11 @@ getIntersectedObject = function (event) {
 drawAllShortestPath = function(nodeIndex) {
     drawShortestPathLeft(nodeIndex);
     drawShortestPathRight(nodeIndex);
+    setEdgesColor(displayedEdgesLeft);
+    setEdgesColor(displayedEdgesRight);
+    updateScenes();
 };
-drawShortestPathLeft = function(nodeIndex) { drawShortestPath(glyphsLeft, nodeIndex);};
+drawShortestPathLeft = function(nodeIndex) { drawShortestPath(glyphsLeft,  nodeIndex);};
 drawShortestPathRight = function(nodeIndex) { drawShortestPath(glyphsRight, nodeIndex);};
 
 // draw shortest path for a specific node
@@ -668,9 +669,6 @@ drawShortestPath = function (glyphs, nodeIndex) {
             }
         }
     }
-
-    setEdgesColor();
-    updateScenes();
 };
 
 // callback when window is resized
@@ -723,12 +721,11 @@ drawShortestPathHops = function (glyphs, rootNode, hops){
                                                     glyphs[hierarchy[i][j]].position.y,
                                                     glyphs[hierarchy[i][j]].position.z);
                     var end = new THREE.Vector3(prev.position.x, prev.position.y, prev.position.z);
-                    var line = createLine(start, end, getConnectionMatrix()[hierarchy[i][j]][previousMap[hierarchy[i][j]]]);
-                    shortestPathEdges[shortestPathEdges.length] = line;
+                    shortestPathEdges[shortestPathEdges.length] = createLine(start, end,
+                        getConnectionMatrix()[hierarchy[i][j]][previousMap[hierarchy[i][j]]]);
                 }
             }
-
-        } else{
+        } else {
             for(var j=0; j < hierarchy[i].length; j++){
                 visibleNodes[hierarchy[i][j]] = false;
             }
@@ -736,7 +733,6 @@ drawShortestPathHops = function (glyphs, rootNode, hops){
     }
 
     shortestPathSliderHops();
-
     updateScenes();
 };
 
@@ -784,17 +780,17 @@ setSkyboxVisibility = function(scene, visible){
     skybox.visible = visible;
 };
 
-// draw a selected node
+// draw a selected node in both scenes
 drawSelectedNode = function (nodeIndex, mesh) {
     // if node not selected, draw the edges connected to it and add it to selected nodes
     if(nodesSelected.indexOf(nodeIndex) == -1) {
         if (thresholdModality) {
-            drawEdgesGivenNode(glyphsLeft, sceneLeft, nodeIndex);
-            drawEdgesGivenNode(glyphsRight, sceneRight, nodeIndex);
+            drawEdgesGivenNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex);
+            drawEdgesGivenNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIndex);
         } else {
             var n = getNumberOfEdges();
-            drawTopNEdgesByNode(glyphsLeft, sceneLeft, nodeIndex, n);
-            drawTopNEdgesByNode(glyphsRight, sceneRight, nodeIndex, n);
+            drawTopNEdgesByNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex, n);
+            drawTopNEdgesByNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIndex, n);
         }
         nodesSelected[nodesSelected.length] = nodeIndex;
     }
