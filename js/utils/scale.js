@@ -2,7 +2,7 @@
  * Created by giorgioconte on 02/02/15.
  */
 
-var connectionMatrixScale;
+// var connectionMatrixScale;
 var groupColor = d3.scale.category10();
 var metric = false;
 var metricQuantileScale;            // scaling function
@@ -23,7 +23,6 @@ var colorMap = {
     'Pallidum':'#8c564b',
     'Cingulate':'#ff7f0e',
     'Caudate':'#ad494a'
-
 };
 
 scaleColorGroup = function(model, group, nodeIndex) {
@@ -59,31 +58,31 @@ scaleColorGroup = function(model, group, nodeIndex) {
 
 // set group color according to the activeGroup number of elements
 setColorGroupScale = function() {
-    groupColor = (getActiveGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20c();
+    groupColor = (modelLeft.getActiveGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20c();
 };
 
 // return a power scale function for the adjacency matrix
 // never used !!
-getConnectionMatrixScale = function() {
-    var connectionMatrix = getConnectionMatrix();
-    var allCells = [];
-    if(!connectionMatrixScale){
-        //This code is optimized for symmetric matrices
-        var rows = connectionMatrix.length;
-        for(var i=0; i < rows; i++){
-            for(var j = 0; j<i; j++){
-                allCells[allCells.length] = connectionMatrix[i][j];
-            }
-        }
-        connectionMatrixScale = d3.scale.pow().domain(
-            [
-                d3.min(allCells, function(element){ return element; }),
-                d3.max(allCells, function(element){ return element; })
-            ]
-        ).range(colorbrewer.Greys[6]);
-    }
-    return connectionMatrixScale;
-};
+// getConnectionMatrixScale = function() {
+//     var connectionMatrix = getConnectionMatrix();
+//     var allCells = [];
+//     if(!connectionMatrixScale){
+//         //This code is optimized for symmetric matrices
+//         var rows = connectionMatrix.length;
+//         for(var i=0; i < rows; i++){
+//             for(var j = 0; j<i; j++){
+//                 allCells[allCells.length] = connectionMatrix[i][j];
+//             }
+//         }
+//         connectionMatrixScale = d3.scale.pow().domain(
+//             [
+//                 d3.min(allCells, function(element){ return element; }),
+//                 d3.max(allCells, function(element){ return element; })
+//             ]
+//         ).range(colorbrewer.Greys[6]);
+//     }
+//     return connectionMatrixScale;
+// };
 
 // round a number to specified digits
 var round = function(number, digits){

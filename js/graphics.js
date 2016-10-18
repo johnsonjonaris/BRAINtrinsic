@@ -698,11 +698,12 @@ resizeScene = function(camera, renderer){
 };
 
 
-changeColorGroup = function (model, n) {
-    //activeGroup = parseInt(n);
-    model.setActiveGroup(parseInt(n));
+changeColorGroup = function (n) {
+    modelLeft.setActiveGroup(parseInt(n));
+    modelRight.setActiveGroup(parseInt(n));
 
-    model.setRegionsActivated();
+    modelLeft.setRegionsActivated();
+    modelRight.setRegionsActivated();
     setColorGroupScale();
 
     updateScenes();
