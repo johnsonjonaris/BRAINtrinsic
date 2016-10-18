@@ -26,7 +26,8 @@ initGUI = function() {
                             dynamicTyping: true,
                             complete: function (results) {
                                 console.log("complete uploading centroids");
-                                setCentroids(results);
+                                modelLeft.setCentroids(results);
+                                modelRight.setCentroids(results);
                                 //updateScene();
                             }
                         }
@@ -57,7 +58,8 @@ initGUI = function() {
                             header: false,
                             complete: function (results) {
                                 console.log("complete Uploading Label Keys ");
-                                setLabelKeys(results);
+                                modelLeft.setLabelKeys(results);
+                                modelRight.setLabelKeys(results);
                             }
                         }
                     );
@@ -148,7 +150,8 @@ initGUI = function() {
                         header: false,
                         complete: function (results) {
                             console.log("Connection Matrix uploaded");
-                            setConnectionMatrix(results);
+                            modelLeft.setConnectionMatrix(results);
+                            modelRight.setConnectionMatrix(results);
                         }
                     })
                 };
@@ -160,10 +163,9 @@ initGUI = function() {
         .text("Start Visualization")
         .attr("id", "startVisualization")
         .on("click", function() {
-            if(lookUpTable && labelKeys && centroids && connectionMatrix){
+            if(modelLeft.ready() && modelRight.ready()){
                 initCanvas();
-            } else
-            {
+            } else {
                 console.log("data are missing");
             }
         });
@@ -220,13 +222,14 @@ addSkyboxButton = function(){
 };
 
 // adds a text label showing: node index - region name - nodal strength
+// TODO add one left and one right
 setNodeInfoPanel = function (regionName, index){
 
     var panel = d3.select('#nodeInfoPanel');
 
     panel.selectAll("p").remove();
 
-    var connectionRow = getConnectionMatrixRow(index);
+    var connectionRow = modelLeft.getConnectionMatrixRow(index);
     var nodalStrength = Math.floor(computeNodalStrength(connectionRow)*100)/100;
 
     var para = document.createElement("p");
@@ -238,6 +241,7 @@ setNodeInfoPanel = function (regionName, index){
 // add a slider to threshold edges at specific values
 addThresholdSlider = function (){
 
+    var max = modelLeft.getMaximumWeight();
     var menu = d3.select("#edgeInfoPanel");
     menu.append("label")
         .attr("for", "thresholdSlider")
@@ -246,15 +250,15 @@ addThresholdSlider = function (){
 
     menu.append("input")
         .attr("type", "range")
-        .attr("value", getMaximumWeight()/2)
+        .attr("value", max/2)
         .attr("id", "thresholdSlider")
         .attr("min","0")
-        .attr("max", getMaximumWeight())
-        .attr("step",getMaximumWeight()/1000)
+        .attr("max", max)
+        .attr("step",max/1000)
         .on("change", function () {
-
             var slider = document.getElementById("thresholdSlider");
-            setThreshold(Math.floor(slider.value*100)/100);
+            modelLeft.setThreshold(Math.floor(slider.value*100)/100);
+            modelRight.setThreshold(Math.floor(slider.value*100)/100);
             updateScenes();
         });
 
@@ -262,35 +266,36 @@ addThresholdSlider = function (){
         .attr("for","thresholdSlider")
         .attr("id", "thresholdOutput");
 
-    setThreshold(Math.floor(getMaximumWeight()*100/2)/100);
+    modelLeft.setThreshold(Math.floor(max*100/2)/100);
+    modelRight.setThreshold(Math.floor(max*100/2)/100);
 
-    document.getElementById("thresholdOutput").value = getThreshold();
+    document.getElementById("thresholdOutput").value = modelLeft.getThreshold();
 };
 
 // never used !!
-setInfoLabel = function(regionName, index){
-
-    var body = document.body;
-    var canvas = document.getElementsByTagName("canvas");
-    var label = document.createElement("div");
-
-    label.setAttribute("width", "100px");
-    label.setAttribute("height", "100px");
-    label.setAttribute("background-color", "white");
-    label.setAttribute("position", "fixed");
-    label.setAttribute("left", "100px");
-    label.setAttribute("z-index", "9");
-    label.setAttribute("bottom", "200px");
-
-    var para = document.createElement("p");
-    var node = document.createTextNode("CIAO");
-
-    body.appendChild(label).appendChild(para).appendChild(node);
-};
+// setInfoLabel = function(regionName, index){
+//
+//     var body = document.body;
+//     var canvas = document.getElementsByTagName("canvas");
+//     var label = document.createElement("div");
+//
+//     label.setAttribute("width", "100px");
+//     label.setAttribute("height", "100px");
+//     label.setAttribute("background-color", "white");
+//     label.setAttribute("position", "fixed");
+//     label.setAttribute("left", "100px");
+//     label.setAttribute("z-index", "9");
+//     label.setAttribute("bottom", "200px");
+//
+//     var para = document.createElement("p");
+//     var node = document.createTextNode("CIAO");
+//
+//     body.appendChild(label).appendChild(para).appendChild(node);
+// };
 
 // create legend panel containing different groups
 // the state of each group can be either: active, transparent or inactive
-var createLegend = function (active) {
+var createLegend = function (model) {
     var legendMenu = document.getElementById("legend");
 
     while(legendMenu.hasChildNodes()){
@@ -299,8 +304,8 @@ var createLegend = function (active) {
 
     legendMenu = d3.select("#legend");
 
-    if(active != 3) {
-        var activeGroup = getActiveGroup();
+    if(model.getActiveGroup() != 3) {
+        var activeGroup = model.getActiveGroup();
         if(typeof(activeGroup[0]) == "number"){ // group is numerical
             activeGroup.sort(function(a, b){return a-b});
         } else { // group is string
@@ -313,7 +318,7 @@ var createLegend = function (active) {
         for(var i=0; i < l; i++){
             var opacity;
 
-            switch (regionState[activeGroup[i]]){
+            switch (modelLeft.getRegionState(activeGroup[i])){
                 case 'active':
                     opacity = 1;
                     break;
@@ -330,7 +335,8 @@ var createLegend = function (active) {
                 .attr("id",activeGroup[i])
                 .style("cursor","pointer")
                 .on("click", function(){
-                    toggleRegion(this.id);
+                    modelLeft.toggleRegion(this.id);
+                    modelRight.toggleRegion(this.id);
                 });
 
             if(typeof(activeGroup[i]) != 'number' && activeGroup[i].indexOf("right") > -1){
@@ -339,20 +345,20 @@ var createLegend = function (active) {
                     .attr("y",0)
                     .attr("width", 20)
                     .attr("height", 20)
-                    .attr("fill", scaleColorGroup(activeGroup[i]))
+                    .attr("fill", scaleColorGroup(model, activeGroup[i]))
                     .attr('opacity',opacity);
             } else {
                 elementGroup.append("circle")
                     .attr("cx",5)
                     .attr("cy",10)
-                    .attr("fill", scaleColorGroup(activeGroup[i]))
+                    .attr("fill", scaleColorGroup(model, activeGroup[i]))
                     .attr('opacity', opacity)
                     .attr("r",8);
             }
 
             //choose color of the text
             var textColor;
-            if(regionsActivated[activeGroup[i]]){
+            if(modelLeft.getRegionActivation(activeGroup[i])){
                 textColor = "rgb(191,191,191)";
             } else{
                 textColor = "rgb(0,0,0)";
@@ -425,10 +431,6 @@ var createLegend = function (active) {
     }
 };
 
-var updateEdgeLegend = function(){
-
-};
-
 var addDistanceSlider = function (distances) {
     var menu = d3.select("#edgeInfoPanel");
 
@@ -440,7 +442,6 @@ var addDistanceSlider = function (distances) {
         .text("Max Distance");
 
     var meanDistance = d3.mean(distances);
-
     var maxDistance = d3.max(distances);
 
     menu.append("input")
@@ -452,9 +453,9 @@ var addDistanceSlider = function (distances) {
         .attr("step", maxDistance/1000)
         .on("change", function () {
             var slider = document.getElementById("distanceThresholdSlider");
-
             //console.log("on Change distance threshold value:" + slider.value);
-            setDistanceThreshold(slider.value);
+            modelLeft.setDistanceThreshold(slider.value);
+            modelRight.setDistanceThreshold(slider.value);
             drawShortestPathLeft(root);
             drawShortestPathRight(root);
         });
@@ -463,7 +464,8 @@ var addDistanceSlider = function (distances) {
         .attr("for","distanceThresholdSlider")
         .attr("id", "distanceThresholdOutput");
 
-    setDistanceThreshold(meanDistance);
+    modelLeft.setDistanceThreshold(meanDistance);
+    modelRight.setDistanceThreshold(meanDistance);
 };
 
 // remove threshold slider and its labels
@@ -531,20 +533,21 @@ addTopNSlider = function(){
 
     menu.append("input")
         .attr("type", "range")
-        .attr("value", getNumberOfEdges())
+        .attr("value", modelLeft.getNumberOfEdges())
         .attr("id", "topNThresholdSlider")
         .attr("min","0")
         .attr("max", "20")
         .attr("step", "1")
         .on("change", function () {
-            setNumberOfEdges(this.value);
+            modelLeft.setNumberOfEdges(this.value);
+            modelRight.setNumberOfEdges(this.value);
             updateScenes();
         });
 
     menu.append("output")
         .attr("for","topNThresholdSlider")
         .attr("id", "topNThresholdSliderOutput")
-        .text(getNumberOfEdges());
+        .text(modelLeft.getNumberOfEdges());
 };
 
 // remove top N edges slider and its labels
@@ -682,13 +685,14 @@ shortestPathSliderHops = function(){
 
         menu.append("input")
             .attr("type", "range")
-            .attr("value", getNumberOfHops())
+            .attr("value", modelLeft.getNumberOfHops())
             .attr("id", "numberOfHopsSlider")
             .attr("min", "0")
             .attr("max", getMaximumNumberOfHops())
             .attr("step", 1)
             .on("change", function () {
-                setNumberOfHops(parseInt(this.value));
+                modelLeft.setNumberOfHops(parseInt(this.value));
+                modelRight.setNumberOfHops(parseInt(this.value));
                 drawShortestPathHops(root, parseInt(this.value));
             });
 
@@ -729,9 +733,11 @@ shortestPathDistanceUI = function(){
             .attr("id", "sptFilterButtonSPT")
             .text("Number of Hops Filter")
             .on('click', function () {
-                setNumberOfHops(2);
-                drawShortestPathHops(rootNode, getNumberOfHops());
-                setNumberOfHops(2);
+                modelLeft.setNumberOfHops(2);
+                modelRight.setNumberOfHops(2);
+                drawShortestPathHops(rootNode, modelLeft.getNumberOfHops());
+                modelLeft.setNumberOfHops(2);
+                modelRight.setNumberOfHops(2);
             })
     }
 };
@@ -774,26 +780,26 @@ removeNumberOfHopsSlider = function(){
     }
 };
 
-// add "Topological Spaces" radio button group containing:
+// add "Topological Spaces" radio button group for left scene containing:
 // Isomap, MDS, tSNE and anatomy spaces
-addGeometryRadioButton = function () {
+addGeometryRadioButtonsLeft = function () {
     var menu = d3.select("#upload");
 
     menu.append("br");
 
     menu.append("label")
-        .attr("for","geometry")
+        .attr("for","geometryLef")
         .text("Topological Space:");
     menu.append("br");
 
     menu.append("input")
         .attr("type", "radio")
-        .attr("name","geometry")
-        .attr("id","isomap")
+        .attr("name","geometryLef")
+        .attr("id","isomapLeft")
         .attr("value","isomap")
         .attr("checked","true")
         .on("change", function () {
-            changeActiveGeometry(this.value);
+            changeActiveGeometry(modelLeft, 'left', this.value);
         });
     menu.append("label")
         .attr("for","isomap")
@@ -803,11 +809,11 @@ addGeometryRadioButton = function () {
 
     menu.append("input")
         .attr("type", "radio")
-        .attr("name","geometry")
-        .attr("id","mds")
+        .attr("name","geometryLef")
+        .attr("id","mdsLeft")
         .attr("value","MDS")
         .on("change", function () {
-            changeActiveGeometry(this.value);
+            changeActiveGeometry(modelLeft, 'left', this.value);
         });
 
     menu.append("label")
@@ -818,11 +824,11 @@ addGeometryRadioButton = function () {
 
     menu.append("input")
         .attr("type", "radio")
-        .attr("name","geometry")
+        .attr("name","geometryLef")
+        .attr("id","tsneLeft")
         .attr("value","tsne")
-        .attr("id","tsne")
         .on("change", function () {
-            changeActiveGeometry(this.value);
+            changeActiveGeometry(modelLeft, 'left', this.value);
         });
 
     menu.append("label")
@@ -833,11 +839,11 @@ addGeometryRadioButton = function () {
 
     menu.append("input")
         .attr("type", "radio")
-        .attr("name","geometry")
+        .attr("name","geometryLef")
+        .attr("id","anatomyLeft")
         .attr("value","anatomy")
-        .attr("id","anatomy")
         .on("change", function () {
-            changeActiveGeometry(this.value);
+            changeActiveGeometry(modelLeft, 'left', this.value);
         });
 
     menu.append("label")
@@ -845,7 +851,78 @@ addGeometryRadioButton = function () {
         .text("anatomy");
 
     menu.append("br");
+};
 
+// add "Topological Spaces" radio button group for right scene containing:
+addGeometryRadioButtonsRight = function () {
+    var menu = d3.select("#upload");
+
+    menu.append("br");
+
+    menu.append("label")
+        .attr("for","geometryRight")
+        .text("Topological Space:");
+    menu.append("br");
+
+    menu.append("input")
+        .attr("type", "radio")
+        .attr("name","geometryRight")
+        .attr("id","isomapRight")
+        .attr("value","isomap")
+        .attr("checked","true")
+        .on("change", function () {
+            changeActiveGeometry(modelRight, 'right', this.value);
+        });
+    menu.append("label")
+        .attr("for","isomap")
+        .text("Isomap");
+
+    menu.append("br");
+
+    menu.append("input")
+        .attr("type", "radio")
+        .attr("name","geometryRight")
+        .attr("id","mdsRight")
+        .attr("value","MDS")
+        .on("change", function () {
+            changeActiveGeometry(modelRight, 'right', this.value);
+        });
+
+    menu.append("label")
+        .attr("for","mds")
+        .text("MDS");
+
+    menu.append("br");
+
+    menu.append("input")
+        .attr("type", "radio")
+        .attr("name","geometryRight")
+        .attr("id","tsneRight")
+        .attr("value","tsne")
+        .on("change", function () {
+            changeActiveGeometry(modelRight, 'right', this.value);
+        });
+
+    menu.append("label")
+        .attr("for","tsne")
+        .text("tSNE");
+
+    menu.append("br");
+
+    menu.append("input")
+        .attr("type", "radio")
+        .attr("name","geometryRight")
+        .attr("id","anatomyRight")
+        .attr("value","anatomy")
+        .on("change", function () {
+            changeActiveGeometry(modelRight, 'right', this.value);
+        });
+
+    menu.append("label")
+        .attr("for","anatomy")
+        .text("anatomy");
+
+    menu.append("br");
 };
 
 // add labels check boxes, appear/disappear on right click
@@ -863,13 +940,8 @@ addFslRadioButton = function () {
 
     leftMenu.append('br');
 
-    labelVisibility.forEach(function(labelInfo,index){
-        var menu;
-        if(labelInfo['hemisphere'] == 'right') {
-            menu = rightMenu;
-        }else {
-            menu = leftMenu;
-        }
+    labelVisibility.forEach( function(labelInfo, index) {
+        var menu = (labelInfo['hemisphere'] == 'right') ? rightMenu : leftMenu;
         menu.append("input")
             .attr("type", "checkbox")
             .attr("name", "fslLabel")
@@ -877,7 +949,8 @@ addFslRadioButton = function () {
             .attr("value", index)
             .attr("checked", "true")
             .on("change", function () {
-                setLabelVisibility(index, this.checked);
+                modelLeft.setLabelVisibility(index, this.checked);
+                modelRight.setLabelVisibility(index, this.checked);
                 updateScenes();
             });
 

@@ -60,12 +60,12 @@ setDimensionFactor = function(value){
 };
 
 // return the material for an edge according to its state: active or transparent
-getNormalMaterial = function (group, nodeIndex){
+getNormalMaterial = function (model, group, nodeIndex){
     var material;
-    switch (regionState[group]){
+    switch (model.getRegionState(group)){
         case 'active':
             material = new THREE.MeshPhongMaterial({
-                color: scaleColorGroup(group, nodeIndex),
+                color: scaleColorGroup(model, group, nodeIndex),
                 shininess: 15,
                 transparent: false,
                 specular: 0x222222,
@@ -75,7 +75,7 @@ getNormalMaterial = function (group, nodeIndex){
             break;
         case 'transparent':
             material = new THREE.MeshPhongMaterial({
-                color: scaleColorGroup(group, nodeIndex),
+                color: scaleColorGroup(model, group, nodeIndex),
                 shininess: 50,
                 transparent: true,
                 opacity: 0.3

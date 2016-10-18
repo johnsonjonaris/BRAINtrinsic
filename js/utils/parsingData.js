@@ -17,7 +17,8 @@ var loadCentroidsMDS = function (callback) {
         delimiter: ",",
         dynamicTyping: true,
         complete: function (results) {
-            setCentroids(results, "MDS");
+            modelLeft.setCentroids(results, "MDS");
+            modelRight.setCentroids(results, "MDS");
             callback(null, null);
         }
     });
@@ -30,7 +31,8 @@ var loadCentroidsAnatomy = function (callback){
         dynamicTyping: true,
         error:"continue",
         complete: function (results) {
-            setCentroids(results, "anatomy");
+            modelLeft.setCentroids(results, "anatomy");
+            modelRight.setCentroids(results, "anatomy");
             callback(null, null);
         }
     });
@@ -43,7 +45,8 @@ var loadIcColors = function(callback){
         dynamicTyping: true,
         error:"continue",
         complete: function (results) {
-            setICColor(results);
+            modelLeft.setICColor(results);
+            modelRight.setICColor(results);
             callback(null, null);
         }
     });
@@ -56,7 +59,8 @@ var loadCentroidsIsomap = function (callback) {
         delimiter: ",",
         dynamicTyping: true,
         complete: function (results) {
-            setCentroids(results, "isomap");
+            modelLeft.setCentroids(results, "isomap");
+            modelRight.setCentroids(results, "isomap");
             callback(null, null);
         }
     });
@@ -70,7 +74,8 @@ var loadCentroidstSNE = function (callback) {
         delimiter: ",",
         dynamicTyping: true,
         complete: function (results) {
-            setCentroids(results, "tsne");
+            modelLeft.setCentroids(results, "tsne");
+            modelRight.setCentroids(results, "tsne");
             callback(null, null);
         }
     });
@@ -85,7 +90,8 @@ var loadLookUpTable = function (callback) {
         header: true,
         complete: function (results) {
             console.log("Setting up Look-up Table");
-            setLookUpTable(results);
+            modelLeft.setLookUpTable(results);
+            modelRight.setLookUpTable(results);
             callback(null, null);
         }
     });
@@ -97,7 +103,8 @@ var loadLabelKeys = function (callback) {
         download: true,
         dynamicTyping: true,
         complete: function (results) {
-            setLabelKeys(results);
+            modelLeft.setLabelKeys(results);
+            modelRight.setLabelKeys(results);
             callback(null, null);
         }
     });
@@ -110,7 +117,8 @@ var loadConnections = function(callback){
         delimiter: ',',
         header: false,
         complete: function(results){
-            setConnectionMatrix(results, 'normal');
+            modelLeft.setConnectionMatrix(results, 'normal');
+            modelRight.setConnectionMatrix(results, 'normal');
             //computeDistanceMatrix();
             callback(null,null);
         }
@@ -124,7 +132,8 @@ var loadConnectionsIsomap = function(callback){
         delimiter: ',',
         header: false,
         complete: function(results){
-            setConnectionMatrix(results, 'isomap');
+            modelLeft.setConnectionMatrix(results, 'isomap');
+            modelRight.setConnectionMatrix(results, 'isomap');
             //computeDistanceMatrix();
             callback(null,null);
         }
@@ -139,7 +148,8 @@ var loadColorMap = function(callback){
         dynamicTyping: true,
         header: false,
         complete: function(results){
-            setGroup(results);
+            modelLeft.setGroup(results);
+            modelRight.setGroup(results);
             callback(null,null);
         }
     })
@@ -154,7 +164,8 @@ var loadMetricValues = function(callback){
         dynamicTyping: true,
         header: false,
         complete: function(results){
-            setMetricValues(results);
+            modelLeft.setMetricValues(results);
+            modelRight.setMetricValues(results);
             callback(null,null);
         }
     })

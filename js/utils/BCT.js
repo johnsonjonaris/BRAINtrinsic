@@ -17,7 +17,7 @@ var computeNodalStrength = function (connectionRow) {
 // compute distance matrix = 1/(adjacency matrix)
 var computeDistanceMatrix = function(){
     distanceMatrix = [];
-    var adjacencyMatrix = getConnectionMatrix();
+    var adjacencyMatrix = modelLeft.getConnectionMatrix();
     graph = new Graph();
     // for every node, add the distance to all other nodes
     for(var i = 0; i < adjacencyMatrix.length; i++){

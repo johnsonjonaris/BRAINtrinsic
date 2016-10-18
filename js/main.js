@@ -11,7 +11,8 @@ init = function () {
     });
 
     console.log("source folder: ", folder);
-    createGroups();
+    modelLeft.createGroups();
+    modelRight.createGroups();
     initGUI();
     initCanvas();
 };

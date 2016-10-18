@@ -22,6 +22,7 @@ var displayedEdgesLeft = [],
     displayedEdgesRight = [];       // store displayed edges for left and right scenes
 var shortestPathEdges = [];
 
+var pointedNodeIdx = -1;            // index of node under the mouse
 var pointedObject;                  // node object under mouse
 var root;                           // the index of the root node = start point of shortest path computation
 var distanceArray;                  // contain the shortest path for current selected node (root)
@@ -32,7 +33,7 @@ var spt = false;                    // enabling shortest path
 var click = true;
 
 // callback on mouse moving, expected action: node beneath pointer are drawn bigger
-function onDocumentMouseMove( event ) {
+function onDocumentMouseMove(model, event) {
     // the following line would stop any other event handler from firing
     // (such as the mouse's TrackballControls)
     event.preventDefault();
@@ -41,36 +42,41 @@ function onDocumentMouseMove( event ) {
     var nodeIdx, regionName, nodeRegion;
     if ( intersectedObject ) {
         nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
-        regionName = getRegionNameByIndex(nodeIdx);
-        nodeRegion = getRegionByNode(nodeIdx);
+        regionName = model.getRegionNameByIndex(nodeIdx);
+        nodeRegion = model.getRegionByNode(nodeIdx);
     }
-    var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && isRegionActive(nodeRegion));
+    var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
     // update node information label
     if ( nodeExistAndVisible ) {
         setNodeInfoPanel(regionName, nodeIdx);
     }
 
-    if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1) ) { // not selected
+    var nodeIsUnderMouse = pointedNodeIdx > -1;
+    if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
         // create a selected node (bigger) from the pointed node
         pointedObject = intersectedObject.object;
         glyphsLeft[nodeIdx].geometry = createSelectedGeometryByObject(pointedObject);
         glyphsRight[nodeIdx].geometry = createSelectedGeometryByObject(pointedObject);
         // console.log("Drawing edges from node ", nodeIdx);
         // draw edges in one two ways:
-        if(thresholdModality) {
-            // 1) all edges from a given node
-            drawEdgesGivenNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIdx);
-            drawEdgesGivenNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIdx);
-        } else{
-            // 2) strongest n edges from the node
-            var n = getNumberOfEdges();
-            console.log("Drawing top " + n + " edges");
-            drawTopNEdgesByNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIdx, n);
-            drawTopNEdgesByNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIdx, n);
+        if (!nodeIsUnderMouse) {
+            if (thresholdModality) {
+                // 1) all edges from a given node
+                drawEdgesGivenNode(modelLeft, glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIdx);
+                drawEdgesGivenNode(modelRight, glyphsRight, sceneRight, displayedEdgesRight, nodeIdx);
+            } else {
+                // 2) strongest n edges from the node
+                var n = model.getNumberOfEdges();
+                console.log("Drawing top " + n + " edges");
+                drawTopNEdgesByNode(modelLeft, glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIdx, n);
+                drawTopNEdgesByNode(modelRight, glyphsRight, sceneRight, displayedEdgesRight, nodeIdx, n);
+            }
         }
+        pointedNodeIdx = nodeIdx;
     } else {
         if(pointedObject){
             nodeIdx = glyphNodeDictionary[pointedObject.uuid];
+            pointedNodeIdx = -1;
             if(nodeIdx == root) {
                 console.log("Root creation");
                 glyphsLeft[nodeIdx].geometry = createRootGeometryByObject(pointedObject);
@@ -106,7 +112,7 @@ function onDblClick(event) {
 }
 
 // callback to select a node on mouse click
-function onClick( event ) {
+function onClick(model, event) {
 
     event.preventDefault();
     var objectIntersected = getIntersectedObject(event);
@@ -125,8 +131,8 @@ function onClick( event ) {
                 pointedObject = null;
             } else {
                 //if the node is already selected, remove edges and remove from the nodeSelected Array
-                glyphsLeft[nodeIndex].material.color = new THREE.Color(scaleColorGroup(getRegionByNode(nodeIndex), nodeIndex));
-                glyphsRight[nodeIndex].material.color = new THREE.Color(scaleColorGroup(getRegionByNode(nodeIndex), nodeIndex));
+                glyphsLeft[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, model.getRegionByNode(nodeIndex), nodeIndex));
+                glyphsRight[nodeIndex].material.color = new THREE.Color(scaleColorGroup(model, model.getRegionByNode(nodeIndex), nodeIndex));
                 glyphsLeft[nodeIndex].geometry = createNormalGeometryByObject(objectIntersected.object);
                 glyphsRight[nodeIndex].geometry = createNormalGeometryByObject(objectIntersected.object);
                 nodesSelected.splice(el, 1);
@@ -136,14 +142,15 @@ function onClick( event ) {
             getShortestPathBetweenNodes(glyphs, root, nodeIndex);
         }
     }
+    pointedNodeIdx = -1;
 }
 
 // callback on mouse press
-function onMouseDown(event) {
+function onMouseDown(model, event) {
     click = true;
     switch (event.button) {
         case 0: // left click
-            onClick(event);
+            onClick(model, event);
             break;
         case 2: // right click -> should be < 200 msec
             setTimeout(function () {click = false;}, 200);
@@ -159,12 +166,12 @@ function onMouseUp(event) {
 }
 
 // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
-initScene = function (scene, canvas, renderer, camera) {
+initScene = function (model, scene, canvas, renderer, camera) {
 
-    canvas.addEventListener('dblclick', onDblClick , true);
-    canvas.addEventListener('mousedown', onMouseDown, true);
+    canvas.addEventListener('dblclick', onDblClick, true);
+    canvas.addEventListener('mousedown', function(e) {onMouseDown(model,e);}, true);
     canvas.addEventListener('mouseup', onMouseUp);
-    canvas.addEventListener('mousemove', onDocumentMouseMove, true );
+    canvas.addEventListener('mousemove', function(e){onDocumentMouseMove(model,e);} , true );
 
     renderer.setSize(canvas.clientWidth, window.innerHeight);
     canvas.appendChild(renderer.domElement);
@@ -188,7 +195,7 @@ createCanvas = function() {
     canvasLeft = document.getElementById('canvasLeft');
     rendererLeft = new THREE.WebGLRenderer({antialias: true});
     cameraLeft = new THREE.PerspectiveCamera(75, canvasLeft.clientWidth / window.innerHeight, 0.1, 3000);
-    initScene(sceneLeft, canvasLeft, rendererLeft, cameraLeft);
+    initScene(modelLeft, sceneLeft, canvasLeft, rendererLeft, cameraLeft);
     controlsLeft = new THREE.TrackballControls(cameraLeft, rendererLeft.domElement);
     controlsLeft.rotateSpeed = 0.5;
 
@@ -196,7 +203,7 @@ createCanvas = function() {
     canvasRight = document.getElementById('canvasRight');
     rendererRight = new THREE.WebGLRenderer({antialias: true});
     cameraRight = new THREE.PerspectiveCamera(75, canvasRight.clientWidth / window.innerHeight, 0.1, 3000);
-    initScene(sceneRight, canvasRight, rendererRight, cameraRight);
+    initScene(modelRight, sceneRight, canvasRight, rendererRight, cameraRight);
     controlsRight = new THREE.TrackballControls(cameraRight, rendererRight.domElement);
     controlsRight.rotateSpeed = 0.5;
 
@@ -214,18 +221,20 @@ initCanvas = function () {
     addThresholdSlider();
     addGroupList();
     // addModalityButton();
-    addGeometryRadioButton();
+    addGeometryRadioButtonsLeft();
+    addGeometryRadioButtonsRight();
     // addSkyboxButton();
     addDimensionFactorSlider();
-    addFslRadioButton();
+    // addFslRadioButton();
     // addSearchPanel();
 
-    setRegionsActivated();
+    modelLeft.setRegionsActivated();
+    modelRight.setRegionsActivated();
 
     //setThreshold(30);
     computeDistanceMatrix();
 
-    createLegend(activeGroup);
+    createLegend(modelLeft);
     // create visualization
     glyphsLeft = [];
     glyphsRight = [];
@@ -274,21 +283,27 @@ initCanvas = function () {
         effect.setSize(window.innerWidth, window.innerHeight);
     }
     */
-    visibleNodes = Array(getConnectionMatrixDimension()).fill(true);
+    visibleNodes = Array(modelLeft.getConnectionMatrixDimension()).fill(true);
     // draw connectomes and start animation
-    drawAllRegions(getDataset());
+    drawAllRegions();
     animate();
 };
 
 // updating scenes: redrawing glyphs and displayed edges
 updateScenes = function() {
+    console.log("Scene update");
     updateLeftScene();
     updateRightScene();
 };
-updateLeftScene = function () { updateScene(glyphsLeft, sceneLeft, displayedEdgesLeft); };
-updateRightScene = function () { updateScene(glyphsRight, sceneRight, displayedEdgesRight); };
-updateScene = function(glyphs, scene, displayedEdges){
-    console.log("Scene update");
+updateLeftScene = function () {
+    console.log("Scene update left");
+    displayedEdgesLeft = updateScene(modelLeft, glyphsLeft, sceneLeft, displayedEdgesLeft);
+};
+updateRightScene = function () {
+    console.log("Scene update right");
+    displayedEdgesRight = updateScene(modelRight,glyphsRight, sceneRight, displayedEdgesRight);
+};
+updateScene = function(model, glyphs, scene, displayedEdges){
     var l = glyphs.length;
 
     for (var i=0; i < l; i++){
@@ -302,9 +317,11 @@ updateScene = function(glyphs, scene, displayedEdges){
 
     displayedEdges = [];
 
-    drawRegions(getDataset(), glyphs, scene);
-    drawConnections(glyphs, scene, displayedEdges);
-    createLegend(activeGroup);
+    drawRegions(model, model.getDataset(), glyphs, scene);
+    drawConnections(model, glyphs, scene, displayedEdges);
+    createLegend(model);
+
+    return displayedEdges;
 };
 
 // animate scenes and capture control inputs
@@ -352,18 +369,18 @@ var createCentroidScale = function(d){
 
 
 // determine if a region should be drawn
-shouldDrawRegion = function(region) {
-    if(isRegionActive(region.group) && getLabelVisibility(region.label))
+shouldDrawRegion = function(model, region) {
+    if(model.isRegionActive(region.group) && model.getLabelVisibility(region.label))
         return true;
     return false;
 };
 
 // draw the brain regions as glyphs (the edges)
-drawAllRegions = function(dataset) {
-    drawRegions(dataset, glyphsLeft, sceneLeft);
-    drawRegions(dataset, glyphsRight, sceneRight);
+drawAllRegions = function() {
+    drawRegions(modelLeft, modelLeft.getDataset(), glyphsLeft, sceneLeft);
+    drawRegions(modelRight, modelRight.getDataset(), glyphsRight, sceneRight);
 };
-drawRegions = function(dataset, glyphs, scene) {
+drawRegions = function(model, dataset, glyphs, scene) {
 
     var l = dataset.length;
     var centroidScale = createCentroidScale(dataset);
@@ -377,8 +394,8 @@ drawRegions = function(dataset, glyphs, scene) {
 
     for(var i=0; i < l; i++){
         glyphs[i] = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
-        if(shouldDrawRegion(dataset[i])) {
-            material = getNormalMaterial(dataset[i].group,i);
+        if(shouldDrawRegion(model, dataset[i])) {
+            material = getNormalMaterial(model, dataset[i].group,i);
 
             if(nodesSelected.indexOf(i) == -1) {
                 //if the node is not selected
@@ -416,19 +433,19 @@ drawRegions = function(dataset, glyphs, scene) {
 
 // draw all connections between the selected nodes, needs the connection matrix.
 // don't draw edges belonging to inactive nodes
-var drawConnections = function (glyphs, scene, displayedEdges) {
+drawConnections = function(model, glyphs, scene, displayedEdges) {
     var nodeIdx;
     for(var i= 0; i < nodesSelected.length; i++){
         nodeIdx = nodesSelected[i];
         // draw only edges belonging to active nodes
-        if(isRegionActive(getRegionByNode(nodeIdx))) {
+        if(model.isRegionActive(model.getRegionByNode(nodeIdx))) {
             // two ways to draw edges
             if(thresholdModality) {
                 // 1) filter edges according to threshold
-                drawEdgesGivenNode(glyphs, scene, nodeIdx);
+                drawEdgesGivenNode(model, glyphs, scene, displayedEdges, nodeIdx);
             } else {
                 // 2) draw top n edges connected to the selected node
-                drawTopNEdgesByNode(glyphs, scene, nodeIdx, getNumberOfEdges());
+                drawTopNEdgesByNode(model, glyphs, scene, nodeIdx, model.getNumberOfEdges());
             }
         }
     }
@@ -461,7 +478,7 @@ var setEdgesColor = function (displayedEdges) {
             d3.min(allDisplayedWeights, function(e) { return e; }),
             d3.max(allDisplayedWeights, function(e) { return e; })
         ]
-    ).range([0.1,1]);
+    ).range([0.5,1]);
 
     // var edgeDimensionScale = d3.scale.linear().domain(
     //     [
@@ -480,7 +497,9 @@ var setEdgesColor = function (displayedEdges) {
                 opacity: edgeOpacityScale(displayedEdges[i].name),
                 transparent: true,
                 //color: edgeColor,
-                linewidth: 4
+                // Due to limitations in the ANGLE layer, with the WebGL renderer on Windows platforms linewidth
+                // will always be 1 regardless of the set value.!!!
+                linewidth: 1
             });
 
         displayedEdges[i].material = material;
@@ -490,11 +509,11 @@ var setEdgesColor = function (displayedEdges) {
 };
 
 // draw the top n edges connected to a specific node
-drawTopNEdgesByNode = function (glyphs, scene, displayedEdges, nodeIndex, n) {
+drawTopNEdgesByNode = function (model, glyphs, scene, displayedEdges, nodeIndex, n) {
 
-    var row = getTopConnectionsByNode(nodeIndex, n);
+    var row = model.getTopConnectionsByNode(nodeIndex, n);
     for (var obj in row) {
-        if (isRegionActive(getRegionByNode(obj)) && visibleNodes[obj]) {
+        if (model.isRegionActive(model.getRegionByNode(obj)) && visibleNodes[obj]) {
             var start = new THREE.Vector3(  glyphs[nodeIndex].position.x,
                                             glyphs[nodeIndex].position.y,
                                             glyphs[nodeIndex].position.z );
@@ -507,11 +526,11 @@ drawTopNEdgesByNode = function (glyphs, scene, displayedEdges, nodeIndex, n) {
 };
 
 // draw edges given a node following edge threshold
-var drawEdgesGivenNode = function (glyphs, scene, displayedEdges, indexNode) {
+drawEdgesGivenNode = function(model, glyphs, scene, displayedEdges, indexNode) {
 
-    var row = getConnectionMatrixRow(indexNode);
+    var row = model.getConnectionMatrixRow(indexNode);
     for(var i=0; i < row.length ; i++){
-        if(row[i] > getThreshold()  && isRegionActive(getRegionByNode(i)) && visibleNodes[i]) {
+        if(row[i] > model.getThreshold()  && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
             var start = new THREE.Vector3(  glyphs[indexNode].position.x,
                                             glyphs[indexNode].position.y,
                                             glyphs[indexNode].position.z );
@@ -523,7 +542,7 @@ var drawEdgesGivenNode = function (glyphs, scene, displayedEdges, indexNode) {
 };
 
 // create a line using start and end points and give it a name
-createLine = function (start, end, name){
+createLine = function(start, end, name){
     var material = new THREE.LineBasicMaterial();
     var geometry = new THREE.Geometry();
     geometry.vertices.push(start, end);
@@ -540,15 +559,15 @@ var drawEdgeWithName = function (scene, start, end, name) {
 };
 
 removeEdgesGivenNodeFromScenes = function(nodeIndex) {
-    removeEdgesGivenNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex);
-    removeEdgesGivenNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIndex);
+    displayedEdgesLeft = removeEdgesGivenNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex);
+    displayedEdgesRight = removeEdgesGivenNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIndex);
 
     setEdgesColor(displayedEdgesLeft);
     setEdgesColor(displayedEdgesRight);
 };
 
 // give a specific node index, remove all edges from a specific node in a specific scene
-removeEdgesGivenNode = function (glyphs, scene, displayedEdges, indexNode) {
+removeEdgesGivenNode = function(glyphs, scene, displayedEdges, indexNode) {
     var x = glyphs[indexNode].position.x;
     var y = glyphs[indexNode].position.y;
     var z = glyphs[indexNode].position.z;
@@ -583,14 +602,13 @@ removeEdgesGivenNode = function (glyphs, scene, displayedEdges, indexNode) {
     for(i=0; i < shortestPathEdges.length; i++){
         updatedDisplayEdges[updatedDisplayEdges.length] = shortestPathEdges[i];
     }
-
-    displayedEdges = updatedDisplayEdges;
+    return updatedDisplayEdges;
 };
 
 // get intersected object beneath the mouse pointer
 // detects which scene: left or right
 // return undefined if no object was found
-getIntersectedObject = function (event) {
+getIntersectedObject = function(event) {
 
     var isLeft = event.clientX < window.innerWidth/2;
 
@@ -627,22 +645,22 @@ drawAllShortestPath = function(nodeIndex) {
     setEdgesColor(displayedEdgesRight);
     updateScenes();
 };
-drawShortestPathLeft = function(nodeIndex) { drawShortestPath(glyphsLeft,  nodeIndex);};
-drawShortestPathRight = function(nodeIndex) { drawShortestPath(glyphsRight, nodeIndex);};
+drawShortestPathLeft = function(nodeIndex) { drawShortestPath(modelLeft, glyphsLeft,  nodeIndex);};
+drawShortestPathRight = function(nodeIndex) { drawShortestPath(modelRight, glyphsRight, nodeIndex);};
 
 // draw shortest path for a specific node
-drawShortestPath = function (glyphs, nodeIndex) {
+drawShortestPath = function(model, glyphs, nodeIndex) {
     console.log("Draw Shortest Path");
     var line;
     root = nodeIndex;
 
-    var len = getConnectionMatrixDimension();
+    var len = model.getConnectionMatrixDimension();
     var dist = getShortestPathDistances(nodeIndex);
     distanceArray = [];
-    for(var i=0; i < getConnectionMatrixDimension(); i++){
+    for(var i=0; i < model.getConnectionMatrixDimension(); i++){
         distanceArray[i] = dist[i];
     }
-    setDistanceArray(distanceArray);
+    model.setDistanceArray(distanceArray);
 
     if(!document.getElementById("distanceThresholdSlider")){
         addDistanceSlider(distanceArray);
@@ -655,7 +673,7 @@ drawShortestPath = function (glyphs, nodeIndex) {
 
     // show only nodes with shortest paths distance less than a threshold
     for(i=0; i < len; i++){
-        visibleNodes[i] = (dist[i] < getDistanceThreshold());
+        visibleNodes[i] = (dist[i] < model.getDistanceThreshold());
     }
 
     for(i=0; i < visibleNodes.length; i++){
@@ -664,7 +682,7 @@ drawShortestPath = function (glyphs, nodeIndex) {
             if(prev) {
                 var start = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z);
                 var end = new THREE.Vector3(prev.position.x, prev.position.y, prev.position.z);
-                line = createLine(start, end, getConnectionMatrix()[i][previousMap[i]] );
+                line = createLine(start, end, model.getConnectionMatrix()[i][previousMap[i]] );
                 shortestPathEdges[shortestPathEdges.length] = line;
             }
         }
@@ -680,23 +698,31 @@ resizeScene = function(camera, renderer){
 };
 
 
-changeColorGroup = function (n) {
-    activeGroup = parseInt(n);
+changeColorGroup = function (model, n) {
+    //activeGroup = parseInt(n);
+    model.setActiveGroup(parseInt(n));
 
-    setRegionsActivated();
+    model.setRegionsActivated();
     setColorGroupScale();
 
     updateScenes();
 };
 
 // change the active geometry
-changeActiveGeometry = function(n){
+changeActiveGeometry = function(model, side, n){
     console.log("Change Active Geometry to: ", n);
-    activeCentroids = n;
-    activeMatrix = (n == 'isomap') ?  'isomap' : 'normal';
+    model.setActiveCentroids(n);
+    model.setActiveMatrix((n == 'isomap') ?  'isomap' : 'normal');
     updateNeeded = true;
     computeDistanceMatrix();
-    updateScenes();
+    switch(side) {
+        case 'left':
+            updateLeftScene();
+            break;
+        case 'right':
+            updateRightScene();
+            break;
+    }
 
     //TODO: switch according to spt
     if(spt) {
@@ -706,7 +732,7 @@ changeActiveGeometry = function(n){
 };
 
 // draw shortest path from root node up to a number of hops
-drawShortestPathHops = function (glyphs, rootNode, hops){
+drawShortestPathHops = function(model, glyphs, rootNode, hops){
     var hierarchy = getHierarchy(rootNode);
 
     shortestPathEdges = [];
@@ -722,7 +748,7 @@ drawShortestPathHops = function (glyphs, rootNode, hops){
                                                     glyphs[hierarchy[i][j]].position.z);
                     var end = new THREE.Vector3(prev.position.x, prev.position.y, prev.position.z);
                     shortestPathEdges[shortestPathEdges.length] = createLine(start, end,
-                        getConnectionMatrix()[hierarchy[i][j]][previousMap[hierarchy[i][j]]]);
+                        model.getConnectionMatrix()[hierarchy[i][j]][previousMap[hierarchy[i][j]]]);
                 }
             }
         } else {
@@ -784,14 +810,6 @@ setSkyboxVisibility = function(scene, visible){
 drawSelectedNode = function (nodeIndex, mesh) {
     // if node not selected, draw the edges connected to it and add it to selected nodes
     if(nodesSelected.indexOf(nodeIndex) == -1) {
-        if (thresholdModality) {
-            drawEdgesGivenNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex);
-            drawEdgesGivenNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIndex);
-        } else {
-            var n = getNumberOfEdges();
-            drawTopNEdgesByNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex, n);
-            drawTopNEdgesByNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIndex, n);
-        }
         nodesSelected[nodesSelected.length] = nodeIndex;
     }
     glyphsLeft[nodeIndex].geometry = createSelectedGeometry(mesh.userData['hemisphere']);
