@@ -25,6 +25,10 @@ function Model () {
     var numberOfEdges = 5;              // threshold the number of edges for shortest paths
     var numberOfHops;
 
+    var graph;
+    var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
+
+
     var metricValues = [];
 
     // data ready in model ready
@@ -40,6 +44,11 @@ function Model () {
     // set distanceArray containing the shortest path for current selected node
     this.setDistanceArray = function(array) {
         distanceArray = array;
+    };
+
+    // set the distance matrix of the model
+    this.setDistanceMatrix = function(array) {
+        distanceMatrix = array;
     };
 
     // get the longest shortest path of the current selected node = the farthest node
@@ -368,6 +377,36 @@ function Model () {
 
 // Mine colormap
 //'#c6dbef', '#9ecae1', '#6baed6', '#3182bd', '#08519c'
+
+    /* BCT Stuff*/
+    // compute nodal strength of a specific node given its row
+    this.computeNodalStrength = function (connectionRow) {
+        return d3.sum(connectionRow);
+    };
+
+    // compute distance matrix = 1/(adjacency matrix)
+    this.computeDistanceMatrix = function(){
+        distanceMatrix = [];
+        var adjacencyMatrix = this.getConnectionMatrix();
+        graph = new Graph();
+        // for every node, add the distance to all other nodes
+        for(var i = 0; i < adjacencyMatrix.length; i++){
+            var vertexes = {};
+            var row = [];
+            for(var j = 0; j < adjacencyMatrix[i].length; j++){
+                vertexes[j] = 1/adjacencyMatrix[i][j];
+                row[row.length] = 1/adjacencyMatrix[i][j];
+            }
+            distanceMatrix[distanceMatrix.length] = row;
+            graph.addVertex(i,vertexes);
+        }
+    };
+
+    // compute shortest path from a specific node to the rest of the nodes
+    this.computeShortestPathDistances = function(rootNode) {
+        console.log("computing spt");
+        return graph.shortestPath(String(rootNode));
+    };
 
 }
 

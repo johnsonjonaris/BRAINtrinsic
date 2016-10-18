@@ -223,14 +223,14 @@ addSkyboxButton = function(){
 
 // adds a text label showing: node index - region name - nodal strength
 // TODO add one left and one right
-setNodeInfoPanel = function (regionName, index){
+setNodeInfoPanel = function (model, regionName, index){
 
     var panel = d3.select('#nodeInfoPanel');
 
     panel.selectAll("p").remove();
 
     var connectionRow = modelLeft.getConnectionMatrixRow(index);
-    var nodalStrength = Math.floor(computeNodalStrength(connectionRow)*100)/100;
+    var nodalStrength = Math.floor(model.computeNodalStrength(connectionRow)*100)/100;
 
     var para = document.createElement("p");
     var node = document.createTextNode(index + " " + regionName + " " + nodalStrength);

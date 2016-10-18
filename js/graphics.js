@@ -48,7 +48,7 @@ function onDocumentMouseMove(model, event) {
     var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
     // update node information label
     if ( nodeExistAndVisible ) {
-        setNodeInfoPanel(regionName, nodeIdx);
+        setNodeInfoPanel(model, regionName, nodeIdx);
     }
 
     var nodeIsUnderMouse = pointedNodeIdx > -1;
@@ -232,7 +232,8 @@ initCanvas = function () {
     modelRight.setRegionsActivated();
 
     //setThreshold(30);
-    computeDistanceMatrix();
+    modelLeft.computeDistanceMatrix();
+    modelRight.computeDistanceMatrix();
 
     createLegend(modelLeft);
     // create visualization
@@ -287,6 +288,12 @@ initCanvas = function () {
     // draw connectomes and start animation
     drawAllRegions();
     animate();
+};
+
+// set the threshold for both models
+setThreshold = function(value) {
+    modelLeft.setThreshold(value);
+    modelRight.setThreshold(value);
 };
 
 // updating scenes: redrawing glyphs and displayed edges
@@ -655,7 +662,7 @@ drawShortestPath = function(model, glyphs, nodeIndex) {
     root = nodeIndex;
 
     var len = model.getConnectionMatrixDimension();
-    var dist = getShortestPathDistances(nodeIndex);
+    var dist = getShortestPathDistances(model, nodeIndex);
     distanceArray = [];
     for(var i=0; i < model.getConnectionMatrixDimension(); i++){
         distanceArray[i] = dist[i];
@@ -715,7 +722,7 @@ changeActiveGeometry = function(model, side, n){
     model.setActiveCentroids(n);
     model.setActiveMatrix((n == 'isomap') ?  'isomap' : 'normal');
     updateNeeded = true;
-    computeDistanceMatrix();
+    model.computeDistanceMatrix();
     switch(side) {
         case 'left':
             updateLeftScene();
@@ -734,7 +741,7 @@ changeActiveGeometry = function(model, side, n){
 
 // draw shortest path from root node up to a number of hops
 drawShortestPathHops = function(model, glyphs, rootNode, hops){
-    var hierarchy = getHierarchy(rootNode);
+    var hierarchy = getHierarchy(model, rootNode);
 
     shortestPathEdges = [];
     for(var i = 0; i < hierarchy.length; i++){

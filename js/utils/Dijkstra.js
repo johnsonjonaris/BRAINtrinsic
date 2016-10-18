@@ -102,10 +102,10 @@ setHierarchy = function(root){
     }
 };
 
-getShortestPathDistances = function(nodeIndex){
+getShortestPathDistances = function(model, nodeIndex){
 
     if(updateNeeded){
-        computeShortestPathDistances(nodeIndex);
+        model.computeShortestPathDistances(nodeIndex);
         rootNode = nodeIndex;
         updateNeeded = false;
        return dist;
@@ -115,12 +115,12 @@ getShortestPathDistances = function(nodeIndex){
     console.log("dist", dist)
 };
 
-getHierarchy = function(nodeIndex){
+getHierarchy = function(model, nodeIndex){
     if(rootNode && rootNode == nodeIndex){
         return hierarchy;
     }
 
-    computeShortestPathDistances(nodeIndex);
+    model.computeShortestPathDistances(nodeIndex);
     rootNode = nodeIndex;
 
     return hierarchy;
