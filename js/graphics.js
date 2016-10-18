@@ -139,7 +139,7 @@ function onClick(model, event) {
                 removeEdgesGivenNodeFromScenes(nodeIndex);
             }
         } else {
-            getShortestPathBetweenNodes(glyphs, root, nodeIndex);
+            getShortestPathBetweenNodes(model, glyphs, root, nodeIndex);
         }
     }
     pointedNodeIdx = -1;
