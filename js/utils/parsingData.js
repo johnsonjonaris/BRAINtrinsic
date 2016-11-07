@@ -6,6 +6,7 @@ var folder;
 
 var setFolder = function(folderName, callback){
     folder = folderName;
+    console.log("Source folder set to: ", folder);
     callback(null,null);
 };
 
