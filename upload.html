@@ -38,43 +38,59 @@
 <h1>Upload Your Data</h1>
 
 <div class = "menu" id  = 'full'>
-    <button type = 'button' id = 'anatomyBtn'>
-        <input id = 'anatomyCentroids' type = 'file' onchange="uploadAnatomyCentroids()">Upload Centroids</input>
+    <button type = 'button' id = 'anatomyBtnLeft'>
+        <input id = 'anatomyCentroidsLeft' type = 'file' onchange="uploadAnatomyCentroids(modelLeft)">Upload Left Centroids</input>
+    </button>
+
+    <button type = 'button' id = 'anatomyBtnRight'>
+        <input id = 'anatomyCentroidsRight' type = 'file' onchange="uploadAnatomyCentroids(modelRight)">Upload Right Centroids</input>
     </button>
     <br>
 
-    <button type = 'button' id = 'isomapBtn'>
-        <input id = 'isomapCentroid' type = 'file' onchange="uploadIsomapCentroids()">Upload Iso Centroids</input>
+    <button type = 'button' id = 'isomapBtnLeft'>
+        <input id = 'isomapCentroidLeft' type = 'file' onchange="uploadIsomapCentroids(modelLeft)">Upload Left ISO Centroids</input>
     </button>
 
+    <button type = 'button' id = 'isomapBtnRight'>
+        <input id = 'isomapCentroidRight' type = 'file' onchange="uploadIsomapCentroids(modelRight)">Upload Right ISO Centroids</input>
+    </button>
     <br>
 
-    <button type = 'button' id = 'mdsBtn'>
-        <input id = 'mdsCentroid' type = 'file' onchange="uploadMDSCentroids()">Upload MDS Centroids</input>
+    <button type = 'button' id = 'mdsBtnLeft'>
+        <input id = 'mdsCentroidLeft' type = 'file' onchange="uploadMDSCentroids(modelLeft)">Upload Left MDS Centroids</input>
     </button>
-
-    <br>
-    <button type = 'button' id = 'tsneBtn'>
-        <input id = 'tsneCentroid' type = 'file' onchange="uploadtSNECentroids()">Upload tSNE Centroids</input>
+    <button type = 'button' id = 'mdsBtnRight'>
+        <input id = 'mdsCentroidRight' type = 'file' onchange="uploadMDSCentroids(modelRight)">Upload Right MDS Centroids</input>
     </button>
-
     <br>
 
-    <button type = 'button' id = 'connectionsBtn'>
-        <input id = 'anatomyConnections' type = 'file' onchange="uploadNormalConnections()">Upload Connections</input>
+    <button type = 'button' id = 'tsneBtnLeft'>
+        <input id = 'tsneCentroidLeft' type = 'file' onchange="uploadtSNECentroids(modelLeft)">Upload Left tSNE Centroids</input>
     </button>
-
+    <button type = 'button' id = 'tsneBtnRight'>
+        <input id = 'tsneCentroidRight' type = 'file' onchange="uploadtSNECentroids(modelRight)">Upload Right tSNE Centroids</input>
+    </button>
     <br>
 
-    <button type = 'button' id = 'labelKeyBtn'>
-        <input id = 'labelkey' type = 'file' onchange="uploadLabelKey()">Upload Label Key</input>
+    <button type = 'button' id = 'connectionsBtnLeft'>
+        <input id = 'anatomyConnectionsLeft' type = 'file' onchange="uploadNormalConnections(modelLeft)">Upload Left Connections</input>
     </button>
-
+    <button type = 'button' id = 'connectionsBtnRight'>
+        <input id = 'anatomyConnectionsRight' type = 'file' onchange="uploadNormalConnections(modelRight)">Upload Right Connections</input>
+    </button>
     <br>
 
-    <button type = 'button' id = 'customMetricBtn'>
-        <input id = 'customMetric' type = 'file' onchange="uploadCustomMetric()">Upload Custom Value</input>
+    <button type = 'button' id = 'labelKeyBtnLeft'>
+        <input id = 'labelkeyLeft' type = 'file' onchange="uploadLabelKey(modelLeft)">Upload Left Label Key</input>
     </button>
+    <button type = 'button' id = 'labelKeyBtnRight'>
+        <input id = 'labelkeyRight' type = 'file' onchange="uploadLabelKey(modelRight)">Upload Right Label Key</input>
+    </button>
+    <br>
+
+    <!--<button type = 'button' id = 'customMetricBtn'>-->
+        <!--<input id = 'customMetric' type = 'file' onchange="uploadCustomMetric()">Upload Custom Value</input>-->
+    <!--</button>-->
 
 
 

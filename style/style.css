@@ -28,8 +28,8 @@ input[type="file"] {
     border: solid 2px #c9c9c9;
     background-color: red;
     transition: border 0.3s;
-    -webkit-border-radius: 5;
-    -moz-border-radius: 5;
+    /*-webkit-border-radius: 5;*/
+    /*-moz-border-radius: 5;*/
     border-radius: 5px;
     font-family: 'Open Sans', sans-serif;
     opacity: 0;
@@ -46,8 +46,8 @@ button > input[type="checkbox"]{
     border: solid 2px #c9c9c9;
     background-color: red;
     transition: border 0.3s;
-    -webkit-border-radius: 5;
-    -moz-border-radius: 5;
+    /*-webkit-border-radius: 5;*/
+    /*-moz-border-radius: 5;*/
     border-radius: 5px;
     font-family: 'Open Sans', sans-serif;
     opacity: 0;
@@ -65,7 +65,7 @@ button > input[type="checkbox"]{
 
 .menu > button{
     position: relative;
-    width : 89px;
+    width : 95px;
     height: 40px;
     margin: 4px;
     font-size: 11px;
@@ -104,12 +104,24 @@ button > input[type="checkbox"]{
     z-index: 2
 }
 
+#uploadLeft{
+    width: 150px;
+    height: 200px;
+    float: left;
+}
+
+#uploadRight{
+    width: 150px;
+    height: 200px;
+    float: right;
+}
+
 #upload{
     position: absolute;
-    width: 200px;
+    width: 300px;
     height: 280px;
-    top: 10px;
-    left: 10px
+    top: 20px;
+    left: 20px
 }
 
 #nodeInfoPanel{

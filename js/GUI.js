@@ -3,18 +3,21 @@
  */
 // this file contains functions that create\delete GUI controlling elements
 
+// TODO create uploadData function and prevent code repetition
 // init the GUI by creating all the data upload buttons
 initGUI = function() {
     var uploadMenu = d3.select("#upload");
+    var uploadMenuLeft = d3.select("#uploadLeft");
+    var uploadMenuRight = d3.select("#uploadRight");
 
-    uploadMenu.append("button")
-        .text("Upload Centroids")
-        .attr("id", "centroidUploadBtn")
+    uploadMenuLeft.append("button")
+        .text("Upload Left Centroids")
+        .attr("id", "centroidUploadBtnLeft")
         .append("input")
         .attr("type", "file")
-        .attr("id", "centroids")
+        .attr("id", "centroidsLeft")
         .on("change", function () {
-            var f = document.getElementById("centroids");
+            var f = document.getElementById("centroidsLeft");
             if (f.files && f.files[0]) {
                 var reader = new FileReader();
 
@@ -27,8 +30,6 @@ initGUI = function() {
                             complete: function (results) {
                                 console.log("complete uploading centroids");
                                 modelLeft.setCentroids(results);
-                                modelRight.setCentroids(results);
-                                //updateScene();
                             }
                         }
                     )};
@@ -36,15 +37,14 @@ initGUI = function() {
             }
         });
 
-
-    uploadMenu.append("button")
-        .text("Upload labelKey")
-        .attr("id", "labelKeyUploadBtn")
+    uploadMenuLeft.append("button")
+        .text("Upload Left labelKey")
+        .attr("id", "labelKeyUploadBtnLeft")
         .append("input")
         .attr("type", "file")
-        .attr("id","labelKey")
+        .attr("id","labelKeyLeft")
         .on("change", function () {
-            var f = document.getElementById("labelKey");
+            var f = document.getElementById("labelKeyLeft");
             if (f.files && f.files[0]) {
                 var reader = new FileReader();
 
@@ -59,7 +59,6 @@ initGUI = function() {
                             complete: function (results) {
                                 console.log("complete Uploading Label Keys ");
                                 modelLeft.setLabelKeys(results);
-                                modelRight.setLabelKeys(results);
                             }
                         }
                     );
@@ -130,14 +129,14 @@ initGUI = function() {
 
      });*/
 
-    uploadMenu.append("button")
-        .text("Upload Connections")
-        .attr("id","uploadConnectionsButton")
+    uploadMenuLeft.append("button")
+        .text("Upload Left Connections")
+        .attr("id","uploadConnectionsButtonLeft")
         .append("input")
         .attr("type","file")
-        .attr("id","connections")
+        .attr("id","connectionsLeft")
         .on("change", function() {
-            f = document.getElementById("connections");
+            f = document.getElementById("connectionsLeft");
             if (f.files && f.files[0]) {
                 var reader = new FileReader();
 
@@ -151,7 +150,91 @@ initGUI = function() {
                         complete: function (results) {
                             console.log("Connection Matrix uploaded");
                             modelLeft.setConnectionMatrix(results);
-                            modelRight.setConnectionMatrix(results);
+                        }
+                    })
+                };
+                reader.readAsDataURL(f.files[0]);
+            }
+        });
+
+    uploadMenuRight.append("button")
+        .text("Upload Right Centroids")
+        .attr("id", "centroidUploadBtnRight")
+        .append("input")
+        .attr("type", "file")
+        .attr("id", "centroidsRight")
+        .on("change", function () {
+            var f = document.getElementById("centroidsRight");
+            if (f.files && f.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    var v = e.target.result;
+                    Papa.parse(v, {
+                            download: true,
+                            delimiter: ",",
+                            dynamicTyping: true,
+                            complete: function (results) {
+                                console.log("complete uploading centroids");
+                                modelRight.setCentroids(results);
+                            }
+                        }
+                    )};
+                reader.readAsDataURL(f.files[0]);
+            }
+        });
+
+    uploadMenuRight.append("button")
+        .text("Upload Right labelKey")
+        .attr("id", "labelKeyUploadBtnRight")
+        .append("input")
+        .attr("type", "file")
+        .attr("id","labelKeyRight")
+        .on("change", function () {
+            var f = document.getElementById("labelKeyRight");
+            if (f.files && f.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    console.log("On load event");
+                    console.log(e);
+                    var v = e.target.result;
+                    Papa.parse(v, {
+                            download: true,
+                            dynamicTyping: true,
+                            header: false,
+                            complete: function (results) {
+                                console.log("complete Uploading Label Keys ");
+                                modelRight.setLabelKeys(results);
+                            }
+                        }
+                    );
+                };
+                reader.readAsDataURL(f.files[0]);
+            }
+        });
+
+    uploadMenuRight.append("button")
+        .text("Upload Left Connections")
+        .attr("id","uploadConnectionsButtonRight")
+        .append("input")
+        .attr("type","file")
+        .attr("id","connectionsRight")
+        .on("change", function() {
+            f = document.getElementById("connectionsRight");
+            if (f.files && f.files[0]) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    var v = e.target.result;
+                    Papa.parse(v, {
+                        download: true,
+                        delimiter:',',
+                        dynamicTyping: true,
+                        header: false,
+                        complete: function (results) {
+                            console.log("Connection Matrix uploaded");
+                            modelLeft.setConnectionMatrix(results);
                         }
                     })
                 };
@@ -174,7 +257,24 @@ initGUI = function() {
 // remove the start visualization button to allow only one scene and renderer
 removeStartButton = function(){
     var elem = document.getElementById('startVisualization');
-    elem.parentNode.removeChild(elem);
+    if (elem) {
+        elem.parentNode.removeChild(elem);
+    }
+
+};
+
+// remove all upload buttons
+removeUploadButtons= function (){
+    var menu = document.getElementById("uploadLeft");
+    while(menu.hasChildNodes()){
+        menu.removeChild(menu.children[0]);
+    }
+    menu.remove();
+    menu = document.getElementById("uploadRight");
+    while(menu.hasChildNodes()){
+        menu.removeChild(menu.children[0]);
+    }
+    menu.remove();
 };
 
 // adds a slider to control glyphs size
@@ -574,14 +674,6 @@ removeTopNSlider= function () {
 removeElementsFromEdgePanel = function(){
     removeThresholdSlider();
     removeTopNSlider();
-};
-
-// remove all upload buttons
-removeUploadButtons= function (){
-    var menu = document.getElementById("upload");
-    while(menu.hasChildNodes()){
-        menu.removeChild(menu.children[0]);
-    }
 };
 
 // add "Color Coding" radio button group containing:

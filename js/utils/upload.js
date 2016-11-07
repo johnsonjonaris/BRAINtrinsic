@@ -2,8 +2,18 @@
  * Created by giorgioconte on 16/04/15.
  */
 
-var uploadAnatomyCentroids = function () {
-    var f = document.getElementById("anatomyCentroids");
+// TODO fix all upload buttons 
+var uploadAnatomyCentroids = function (model) {
+    var f;
+    if (model == modelLeft) {
+        f = document.getElementById("anatomyCentroidsLeft");
+        console.log("I am here left");
+    }
+    else {
+        f = document.getElementById("anatomyCentroidsRight");
+        console.log("I am here right");
+    }
+
     if (f.files && f.files[0]) {
         var reader = new FileReader();
 
@@ -14,7 +24,7 @@ var uploadAnatomyCentroids = function () {
                     delimiter: ",",
                     dynamicTyping: true,
                     complete: function (results) {
-                        setCentroids(results, "anatomy");
+                        model.setCentroids(results, "anatomy");
                         d3.select('#anatomyBtn').attr('class','load');
                         dhtmlx.message("Anatomical Centroids Uploaded");
                     }
@@ -25,7 +35,7 @@ var uploadAnatomyCentroids = function () {
     }
 };
 
-uploadNormalConnections = function () {
+uploadNormalConnections = function (model) {
     var f = document.getElementById("anatomyConnections");
     if (f.files && f.files[0]) {
         var reader = new FileReader();
@@ -37,8 +47,8 @@ uploadNormalConnections = function () {
                     delimiter: ',',
                     header: false,
                     complete: function (results) {
-                        setConnectionMatrix(results, 'normal');
-                        setConnectionMatrix(results, 'isomap');
+                        model.setConnectionMatrix(results, 'normal');
+                        model.setConnectionMatrix(results, 'isomap');
                         d3.select('#connectionsBtn').attr('class','load');
                         dhtmlx.message("Adjacency Matrix Uploaded");
                     }
@@ -50,7 +60,7 @@ uploadNormalConnections = function () {
 };
 
 
-var uploadIsomapCentroids = function(){
+var uploadIsomapCentroids = function(model){
     var f = document.getElementById("isomapCentroid");
     if (f.files && f.files[0]) {
         var reader = new FileReader();
@@ -61,7 +71,7 @@ var uploadIsomapCentroids = function(){
                     delimiter: ",",
                     dynamicTyping: true,
                     complete: function (results) {
-                        setCentroids(results, "isomap");
+                        model.setCentroids(results, "isomap");
                         d3.select('#isomapBtn').attr('class','load');
                         dhtmlx.message("Isomap Centroids Uploaded");
 
@@ -74,7 +84,7 @@ var uploadIsomapCentroids = function(){
 };
 
 
-var uploadMDSCentroids = function(){
+var uploadMDSCentroids = function(model){
     var f = document.getElementById("mdsCentroid");
     if (f.files && f.files[0]) {
         var reader = new FileReader();
@@ -85,7 +95,7 @@ var uploadMDSCentroids = function(){
                     delimiter: ",",
                     dynamicTyping: true,
                     complete: function (results) {
-                        setCentroids(results, "MDS");
+                        model.setCentroids(results, "MDS");
                         d3.select('#mdsBtn').attr('class','load');
                         dhtmlx.message("MDS Centroids Uploaded");
 
@@ -98,7 +108,7 @@ var uploadMDSCentroids = function(){
 };
 
 
-var uploadtSNECentroids = function(){
+var uploadtSNECentroids = function(model){
     var f = document.getElementById("tsneCentroid");
     if (f.files && f.files[0]) {
         var reader = new FileReader();
@@ -109,7 +119,7 @@ var uploadtSNECentroids = function(){
                     delimiter: ",",
                     dynamicTyping: true,
                     complete: function (results) {
-                        setCentroids(results, "tsne");
+                        model.setCentroids(results, "tsne");
                         d3.select('#tsneBtn').attr('class','load');
                         dhtmlx.message("tSNE Centroids Uploaded");
 
@@ -121,7 +131,7 @@ var uploadtSNECentroids = function(){
     }
 };
 
-var uploadCustomMetric = function () {
+var uploadCustomMetric = function (model) {
     var f = document.getElementById("customMetric");
     if (f.files && f.files[0]) {
         var reader = new FileReader();
@@ -132,7 +142,7 @@ var uploadCustomMetric = function () {
                     delimiter: ",",
                     dynamicTyping: true,
                     complete: function (results) {
-                        setMetricValues(results);
+                        model.setMetricValues(results);
                         metric = true;
                         d3.select('#customMetricBtn').attr('class','load');
                         dhtmlx.message("Custom Metric Uploaded");
@@ -145,7 +155,7 @@ var uploadCustomMetric = function () {
     }
 };
 
-var uploadLabelKey = function () {
+var uploadLabelKey = function (model) {
     var f = document.getElementById("labelkey");
     if (f.files && f.files[0]) {
         var reader = new FileReader();
@@ -156,7 +166,7 @@ var uploadLabelKey = function () {
                     delimiter: ",",
                     dynamicTyping: true,
                     complete: function (results) {
-                        setLabelKeys(results);
+                        model.setLabelKeys(results);
                         d3.select('#labelKeyBtn').attr('class','load');
                         dhtmlx.message("Label Keys Uploaded");
 

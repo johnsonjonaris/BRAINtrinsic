@@ -3,6 +3,9 @@
  */
 
 init = function () {
+
+    console.log("Init ... ");
+
     $(window).resize(function(e){
         e.preventDefault();
         console.log("on resize event");
@@ -10,9 +13,9 @@ init = function () {
         resizeScene(cameraRight, rendererRight);
     });
 
-    console.log("source folder: ", folder);
     modelLeft.createGroups();
     modelRight.createGroups();
+
     initGUI();
     initCanvas();
 };
@@ -68,16 +71,16 @@ if(isLoaded == 0) {
     console.log("Loading data ... ");
 
     queue()
+        .defer(loadCentroidsAnatomy)
         .defer(loadCentroidsIsomap)
         .defer(loadCentroidsMDS)
         .defer(loadCentroidstSNE)
+        .defer(loadConnectionsIsomap)
         .defer(loadLabelKeys)
         .defer(loadLookUpTable)
         .defer(loadConnections)
-        .defer(loadConnectionsIsomap)
-        .defer(loadCentroidsAnatomy)
         .defer(loadIcColors)
-        //.defer(loadColorMap)
+        // .defer(loadColorMap)
         .awaitAll(function () {
             init();
         });
