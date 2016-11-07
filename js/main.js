@@ -38,6 +38,8 @@ var stringToBoolean = function (s) {
 };
 
 var parse = function(callback){
+
+    console.log("Parsing data ... ");
     labelKeys = JSON.parse(localStorage.getItem("labelKeys"));
     centroids = JSON.parse(localStorage.getItem("centroids"));
     connectionMatrix['normal'] = JSON.parse(localStorage.getItem("normal"));
@@ -63,6 +65,8 @@ if( metric == undefined){
 }
 
 if(isLoaded == 0) {
+    console.log("Loading data ... ");
+
     queue()
         .defer(loadCentroidsIsomap)
         .defer(loadCentroidsMDS)
