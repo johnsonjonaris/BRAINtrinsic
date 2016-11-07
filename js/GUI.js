@@ -875,7 +875,7 @@ removeNumberOfHopsSlider = function(){
 // add "Topological Spaces" radio button group for left scene containing:
 // Isomap, MDS, tSNE and anatomy spaces
 addGeometryRadioButtonsLeft = function () {
-    var menu = d3.select("#upload");
+    var menu = d3.select("#topologyLeft");
 
     menu.append("br");
 
@@ -947,7 +947,7 @@ addGeometryRadioButtonsLeft = function () {
 
 // add "Topological Spaces" radio button group for right scene containing:
 addGeometryRadioButtonsRight = function () {
-    var menu = d3.select("#upload");
+    var menu = d3.select("#topologyRight");
 
     menu.append("br");
 
@@ -1093,11 +1093,13 @@ searchElement = function (index) {
 
 // toggle labels check boxes on right click
 toggleFslMenu = function (e) {
-    $("#rightFslLabels").toggle();
-    $('#leftFslLabels').toggle();
+    $('#topologyLeft').toggle();
+    $('#topologyRight').toggle();
     $('#legend').toggle();
     $('#nodeInfoPanel').toggle();
     $('#upload').toggle();
     $('#edgeInfoPanel').toggle();
     $('#search').toggle();
+    $("#rightFslLabels").toggle();
+    $('#leftFslLabels').toggle();
 };

@@ -124,6 +124,22 @@ button > input[type="checkbox"]{
     left: 20px
 }
 
+#topologyLeft{
+    position: absolute;
+    width: 180px;
+    height: 150px;
+    top: 200px;
+    left: 20px
+}
+
+#topologyRight{
+    position: absolute;
+    width: 180px;
+    height: 150px;
+    top: 200px;
+    right: 20px
+}
+
 #nodeInfoPanel{
     position: absolute;
     width: 300px;
