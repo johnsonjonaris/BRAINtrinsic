@@ -880,13 +880,13 @@ addGeometryRadioButtonsLeft = function () {
     menu.append("br");
 
     menu.append("label")
-        .attr("for","geometryLef")
+        .attr("for","geometryLeft")
         .text("Topological Space:");
     menu.append("br");
 
     menu.append("input")
         .attr("type", "radio")
-        .attr("name","geometryLef")
+        .attr("name","geometryLeft")
         .attr("id","isomapLeft")
         .attr("value","isomap")
         .attr("checked","true")
@@ -901,7 +901,7 @@ addGeometryRadioButtonsLeft = function () {
 
     menu.append("input")
         .attr("type", "radio")
-        .attr("name","geometryLef")
+        .attr("name","geometryLeft")
         .attr("id","mdsLeft")
         .attr("value","MDS")
         .on("change", function () {
@@ -916,7 +916,7 @@ addGeometryRadioButtonsLeft = function () {
 
     menu.append("input")
         .attr("type", "radio")
-        .attr("name","geometryLef")
+        .attr("name","geometryLeft")
         .attr("id","tsneLeft")
         .attr("value","tsne")
         .on("change", function () {
@@ -931,7 +931,7 @@ addGeometryRadioButtonsLeft = function () {
 
     menu.append("input")
         .attr("type", "radio")
-        .attr("name","geometryLef")
+        .attr("name","geometryLeft")
         .attr("id","anatomyLeft")
         .attr("value","anatomy")
         .on("change", function () {
@@ -941,6 +941,21 @@ addGeometryRadioButtonsLeft = function () {
     menu.append("label")
         .attr("for","anatomy")
         .text("anatomy");
+
+    menu.append("br");
+
+    menu.append("input")
+        .attr("type", "radio")
+        .attr("name","geometryLeft")
+        .attr("id","placeLeft")
+        .attr("value","PLACE_EB")
+        .on("change", function () {
+            //changeActiveGeometry(modelLeft, 'left', this.value);
+        });
+
+    menu.append("label")
+        .attr("for","place")
+        .text("PLACE + EB");
 
     menu.append("br");
 };
@@ -1013,6 +1028,21 @@ addGeometryRadioButtonsRight = function () {
     menu.append("label")
         .attr("for","anatomy")
         .text("anatomy");
+
+    menu.append("br");
+
+    menu.append("input")
+        .attr("type", "radio")
+        .attr("name","geometryRight")
+        .attr("id","placeRight")
+        .attr("value","PLACE_EB")
+        .on("change", function () {
+            //changeActiveGeometry(modelLeft, 'left', this.value);
+        });
+
+    menu.append("label")
+        .attr("for","place")
+        .text("PLACE + EB");
 
     menu.append("br");
 };
