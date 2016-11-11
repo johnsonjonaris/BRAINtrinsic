@@ -80,6 +80,7 @@ if(isLoaded == 0) {
         .defer(loadLookUpTable)
         .defer(loadConnections)
         .defer(loadIcColors)
+        .defer(loadPLACE)
         // .defer(loadColorMap)
         .awaitAll(function () {
             init();

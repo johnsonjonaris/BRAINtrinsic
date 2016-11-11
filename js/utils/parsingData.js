@@ -213,6 +213,32 @@ var loadConnectionsIsomap = function(callback){
     });
 };
 
+var loadPLACE = function(callback){
+    Papa.parse("data/"+folder+"/placeLeft.csv",{
+        download: true,
+        dynamicTyping: true,
+        delimiter: ',',
+        header: false,
+        complete: function(results){
+            modelLeft.setPlace(results);
+            console.log("Left PLACE loaded ... ");
+        }
+    });
+
+    Papa.parse("data/"+folder+"/placeRight.csv",{
+        download: true,
+        dynamicTyping: true,
+        delimiter: ',',
+        header: false,
+        complete: function(results){
+            modelRight.setPlace(results);
+            console.log("Right PALCE loaded ... ");
+            callback(null,null);
+        }
+    });
+};
+
+
 
 var loadColorMap = function(callback){
     Papa.parse("data/colorMap.csv", {

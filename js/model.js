@@ -18,6 +18,7 @@ function Model () {
     var labelVisibility = [];           // contains FSL label name, visibility and hemisphere
     var lookUpTable = [];               // contains FSL label group name, rich club, name and hemisphere
     var icColorTable = [];
+    var placeClusters = [];             // PLACE clusters, assumed level 4: clusters from 1 to 16
 
     var distanceArray;                  // contain the shortest path for current selected node
     var distanceThreshold;              // threshold for the distanceArray
@@ -58,7 +59,7 @@ function Model () {
 
     // store map between each node and its corresponding FSL label
     this.setLabelKeys = function(labels) {
-        labelKeys = labels.data;
+        labelKeys = math.squeeze(labels.data);
     };
 
     // setting activeGroup: 0 = Anatomy, 1 = place, 2 = rich club, 3 = id
@@ -380,7 +381,7 @@ function Model () {
 
     /* BCT Stuff*/
     // compute nodal strength of a specific node given its row
-    this.computeNodalStrength = function (connectionRow) {
+    this.computeNodalStrength = function(connectionRow) {
         return d3.sum(connectionRow);
     };
 
@@ -408,6 +409,9 @@ function Model () {
         return graph.shortestPath(String(rootNode));
     };
 
+    this.setPlace = function(clusters) {
+        placeClusters = math.squeeze(clusters.data);
+    };
 }
 
 var modelLeft = new Model();
