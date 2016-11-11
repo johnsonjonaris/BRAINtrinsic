@@ -552,7 +552,14 @@ drawEdgesGivenNode = function(model, glyphs, scene, displayedEdges, indexNode) {
 createLine = function(start, end, name){
     var material = new THREE.LineBasicMaterial();
     var geometry = new THREE.Geometry();
-    geometry.vertices.push(start, end);
+    geometry.vertices.push(start,end);
+    // TODO use this to allow different line sizes
+    // https://github.com/spite/THREE.MeshLine#create-a-threemeshline-and-assign-the-geometry
+    // geometry.vertices.push(end);
+    // var line = new THREE.MeshLine();
+    // line.setGeometry( geometry );
+    // material = new THREE.MeshLineMaterial();
+    // var mesh  = new THREE.Mesh(line.geometry, material);
     var line  = new THREE.Line(geometry, material);
     line.name = name;
     return line;
