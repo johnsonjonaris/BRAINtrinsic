@@ -948,9 +948,9 @@ addGeometryRadioButtonsLeft = function () {
         .attr("type", "radio")
         .attr("name","geometryLeft")
         .attr("id","placeLeft")
-        .attr("value","PLACE_EB")
+        .attr("value","PLACE")
         .on("change", function () {
-            //changeActiveGeometry(modelLeft, 'left', this.value);
+            changeActiveGeometry(modelLeft, 'left', this.value);
         });
 
     menu.append("label")
@@ -1035,9 +1035,9 @@ addGeometryRadioButtonsRight = function () {
         .attr("type", "radio")
         .attr("name","geometryRight")
         .attr("id","placeRight")
-        .attr("value","PLACE_EB")
+        .attr("value","PLACE")
         .on("change", function () {
-            //changeActiveGeometry(modelLeft, 'left', this.value);
+            //changeActiveGeometry(modelLeft, 'right', this.value);
         });
 
     menu.append("label")
