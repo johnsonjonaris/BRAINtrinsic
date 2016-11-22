@@ -111,7 +111,6 @@ function Model () {
 
     // store edge threshold and update GUI
     this.setThreshold = function(t) {
-        document.getElementById("thresholdOutput").value = t;
         threshold = t;
     };
 
