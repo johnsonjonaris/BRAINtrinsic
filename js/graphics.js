@@ -726,28 +726,23 @@ changeColorGroup = function (n) {
 // change the active geometry
 changeActiveGeometry = function(model, side, type){
     console.log("Change Active Geometry to: ", type);
-    if (type == 'PLACE') {
-
-
-    } else {
-        model.setActiveCentroids(type);
-        model.setActiveMatrix((type == 'isomap') ? 'isomap' : 'normal');
-        updateNeeded = true;
-        model.computeDistanceMatrix();
-    }
+    model.setActiveCentroids(type);
+    model.setActiveMatrix((type == 'isomap') ? 'isomap' : 'normal');
+    updateNeeded = true;
+    model.computeDistanceMatrix();
     switch(side) {
         case 'left':
             updateLeftScene();
+            if(spt) {
+                drawShortestPathLeft(root);
+            }
             break;
         case 'right':
             updateRightScene();
+            if(spt) {
+                drawShortestPathRight(root);
+            }
             break;
-    }
-
-    //TODO: switch according to spt
-    if(spt) {
-        drawShortestPathLeft(root);
-        drawShortestPathRight(root);
     }
 };
 

@@ -18,7 +18,10 @@ function Model () {
     var labelVisibility = [];           // contains FSL label name, visibility and hemisphere
     var lookUpTable = [];               // contains FSL label group name, rich club, name and hemisphere
     var icColorTable = [];
+
     var placeClusters = [];             // PLACE clusters, assumed level 4: clusters from 1 to 16
+    var placeLevel = 4;                 // default place level
+    var placeRadius = 5;                // sphere radius of PLACE visualization
 
     var distanceArray;                  // contain the shortest path for current selected node
     var distanceThreshold;              // threshold for the distanceArray
@@ -28,7 +31,6 @@ function Model () {
 
     var graph;
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
-
 
     var metricValues = [];
 
@@ -409,9 +411,88 @@ function Model () {
         return graph.shortestPath(String(rootNode));
     };
 
-    this.setPlace = function(clusters) {
-        placeClusters = math.squeeze(clusters.data);
+    this.computeNodesLocationForPlace = function() {
+        var platonic = new Platonics();
+        switch (placeLevel) {
+            case 1:
+                platonic.createTetrahedron();
+                break;
+            case 2:
+                platonic.createCube();
+                break;
+            case 3:
+                platonic.createDodecahedron();
+                break;
+            case 4:
+                platonic.createIcosahedron();
+                break;
+        }
+        // use one of the faces to compute primary variables
+        var face = platonic.getFace(0);
+        var coneAxis = math.mean(face,0);
+        coneAxis = math.divide(coneAxis, math.norm(coneAxis));
+        var theta = Math.abs( Math.acos(math.dot(coneAxis, face[0]) ));
+        var coneAngle = theta*0.6;
+        var coneR = placeRadius*Math.sin(coneAngle/2);
+        var coneH = placeRadius*Math.cos(coneAngle/2);
+        var v1 = [], v2 = [], center = [];
+        var totalNNodes = placeClusters[0].length;
+        var centroids = [];
+        centroids.data = new Array(totalNNodes);
+        var level = placeLevel-1;
+        var nClusters = Math.pow(2, placeLevel);
+
+        for (var i = 0; i < nClusters; i++) {
+            var clusterIdx = [];
+            for (var s = 0; s < totalNNodes; s++) {
+                if (placeClusters[level][s] == (i+1)) clusterIdx.push(s);
+            }
+            var nNodes = clusterIdx.length;
+            face = platonic.getFace(i);
+            coneAxis = math.mean(face,0);
+            coneAxis = math.divide(coneAxis, math.norm(coneAxis));
+            v1 = math.subtract(face[0], face[1]);
+            v1 = math.divide(v1, math.norm(v1));
+            v2 = math.cross(coneAxis, v1);
+            center = math.multiply(coneH, coneAxis);
+            var points = sunflower(nNodes, coneR, center, v1, v2);
+            // normalize and store
+            for (var k = 0; k < nNodes; k++) {
+                centroids.data[clusterIdx[k]] = math.multiply(placeRadius, math.divide(points[k], math.norm(points[k])));
+            }
+        }
+        this.setCentroids(centroids, 'PLACE');
     };
+
+    // assume last level = 4 => 16 clusters at most
+    this.setPlace = function(clusters) {
+        placeClusters = new Array(4); // 4 levels
+        placeClusters[3] = math.squeeze(clusters.data);
+        for (var i = 2; i >= 0; i--) {
+            placeClusters[i] =  math.ceil(math.divide(placeClusters[i+1],2.0));
+        }
+        this.computeNodesLocationForPlace();
+    };
+
+    this.setPlaceLevel = function(level) {
+        if (level == placeLevel){
+            return;
+        }
+        placeLevel = level;
+        this.computeNodesLocationForPlace();
+    };
+
+    this.setPlaceSphereRadius = function(r) {
+        if (r == placeRadius) {
+            return;
+        }
+        placeRadius = r;
+        this.computeNodesLocationForPlace();
+    };
+
+    this.getPlaceLevel = function() {
+        return placeLevel;
+    }
 }
 
 var modelLeft = new Model();

@@ -260,7 +260,6 @@ removeStartButton = function(){
     if (elem) {
         elem.parentNode.removeChild(elem);
     }
-
 };
 
 // remove all upload buttons
@@ -370,6 +369,25 @@ addThresholdSlider = function (){
     modelRight.setThreshold(Math.floor(max*100/2)/100);
 
     document.getElementById("thresholdOutput").value = modelLeft.getThreshold();
+};
+
+// remove threshold slider and its labels
+removeThresholdSlider = function(){
+    var elem = document.getElementById('thresholdSlider');
+
+    if(elem) {
+        elem.parentNode.removeChild(elem);
+    }
+
+    elem = document.getElementById('thresholdOutput');
+    if(elem) {
+        elem.parentNode.removeChild(elem);
+    }
+
+    elem = document.getElementById('thresholdSliderLabel');
+    if(elem) {
+        elem.parentNode.removeChild(elem);
+    }
 };
 
 // never used !!
@@ -531,7 +549,7 @@ var createLegend = function (model) {
     }
 };
 
-var addDistanceSlider = function (distances) {
+var addDistanceSlider = function(distances) {
     var menu = d3.select("#edgeInfoPanel");
 
     menu.append("br");
@@ -568,20 +586,20 @@ var addDistanceSlider = function (distances) {
     modelRight.setDistanceThreshold(meanDistance);
 };
 
-// remove threshold slider and its labels
-removeThresholdSlider = function(){
-    var elem = document.getElementById('thresholdSlider');
+// remove
+removeDistanceSlider = function() {
+    var elem = document.getElementById('distanceThresholdSlider');
 
     if(elem) {
         elem.parentNode.removeChild(elem);
     }
 
-    elem = document.getElementById('thresholdOutput');
+    elem = document.getElementById('distanceThresholdOutput');
     if(elem) {
         elem.parentNode.removeChild(elem);
     }
 
-    elem = document.getElementById('thresholdSliderLabel');
+    elem = document.getElementById('distanceThresholdSliderLabel');
     if(elem) {
         elem.parentNode.removeChild(elem);
     }
@@ -589,7 +607,7 @@ removeThresholdSlider = function(){
 
 // add "Change Modality" button to toggle between:
 // edge threshold and top N edges
-addModalityButton = function () {
+addModalityButton = function() {
 
     var menu = d3.select("#upload");
 
@@ -651,7 +669,7 @@ addTopNSlider = function(){
 };
 
 // remove top N edges slider and its labels
-removeTopNSlider= function () {
+removeTopNSlider= function() {
 
     var elem = document.getElementById('topNThresholdSlider');
     if(elem) {
@@ -678,7 +696,7 @@ removeElementsFromEdgePanel = function(){
 
 // add "Color Coding" radio button group containing:
 // Anatomy, Embeddedness and Rich Club groups
-addGroupList = function () {
+addGroupList = function() {
     var menu = d3.select("#upload");
 
     menu.append("label")
@@ -804,7 +822,6 @@ shortestPathSliderHops = function(){
     }
 };
 
-
 shortestPathDistanceUI = function(){
 
     var btn = d3.select('#changeModalityBtn');
@@ -834,25 +851,6 @@ shortestPathDistanceUI = function(){
     }
 };
 
-// remove
-removeDistanceSlider = function () {
-    var elem = document.getElementById('distanceThresholdSlider');
-
-    if(elem) {
-        elem.parentNode.removeChild(elem);
-    }
-
-    elem = document.getElementById('distanceThresholdOutput');
-    if(elem) {
-        elem.parentNode.removeChild(elem);
-    }
-
-    elem = document.getElementById('distanceThresholdSliderLabel');
-    if(elem) {
-        elem.parentNode.removeChild(elem);
-    }
-};
-
 // remove the shortest path number of hops filter
 removeNumberOfHopsSlider = function(){
     var elem = document.getElementById('numberOfHopsSlider');
@@ -874,7 +872,7 @@ removeNumberOfHopsSlider = function(){
 
 // add "Topological Spaces" radio button group for left scene containing:
 // Isomap, MDS, tSNE and anatomy spaces
-addGeometryRadioButtonsLeft = function () {
+addGeometryRadioButtonsLeft = function() {
     var menu = d3.select("#topologyLeft");
 
     menu.append("br");
@@ -891,6 +889,7 @@ addGeometryRadioButtonsLeft = function () {
         .attr("value","isomap")
         .attr("checked","true")
         .on("change", function () {
+            removePlaceSliderLeft();
             changeActiveGeometry(modelLeft, 'left', this.value);
         });
     menu.append("label")
@@ -905,6 +904,7 @@ addGeometryRadioButtonsLeft = function () {
         .attr("id","mdsLeft")
         .attr("value","MDS")
         .on("change", function () {
+            removePlaceSliderLeft();
             changeActiveGeometry(modelLeft, 'left', this.value);
         });
 
@@ -920,6 +920,7 @@ addGeometryRadioButtonsLeft = function () {
         .attr("id","tsneLeft")
         .attr("value","tsne")
         .on("change", function () {
+            removePlaceSliderLeft();
             changeActiveGeometry(modelLeft, 'left', this.value);
         });
 
@@ -935,6 +936,7 @@ addGeometryRadioButtonsLeft = function () {
         .attr("id","anatomyLeft")
         .attr("value","anatomy")
         .on("change", function () {
+            removePlaceSliderLeft();
             changeActiveGeometry(modelLeft, 'left', this.value);
         });
 
@@ -950,18 +952,19 @@ addGeometryRadioButtonsLeft = function () {
         .attr("id","placeLeft")
         .attr("value","PLACE")
         .on("change", function () {
+            addPlaceSliderLeft();
             changeActiveGeometry(modelLeft, 'left', this.value);
         });
 
     menu.append("label")
         .attr("for","place")
-        .text("PLACE + EB");
+        .text("PLACE");
 
     menu.append("br");
 };
 
 // add "Topological Spaces" radio button group for right scene containing:
-addGeometryRadioButtonsRight = function () {
+addGeometryRadioButtonsRight = function() {
     var menu = d3.select("#topologyRight");
 
     menu.append("br");
@@ -978,6 +981,7 @@ addGeometryRadioButtonsRight = function () {
         .attr("value","isomap")
         .attr("checked","true")
         .on("change", function () {
+            removePlaceSliderRight();
             changeActiveGeometry(modelRight, 'right', this.value);
         });
     menu.append("label")
@@ -992,6 +996,7 @@ addGeometryRadioButtonsRight = function () {
         .attr("id","mdsRight")
         .attr("value","MDS")
         .on("change", function () {
+            removePlaceSliderRight();
             changeActiveGeometry(modelRight, 'right', this.value);
         });
 
@@ -1007,6 +1012,7 @@ addGeometryRadioButtonsRight = function () {
         .attr("id","tsneRight")
         .attr("value","tsne")
         .on("change", function () {
+            removePlaceSliderRight();
             changeActiveGeometry(modelRight, 'right', this.value);
         });
 
@@ -1022,6 +1028,7 @@ addGeometryRadioButtonsRight = function () {
         .attr("id","anatomyRight")
         .attr("value","anatomy")
         .on("change", function () {
+            removePlaceSliderRight();
             changeActiveGeometry(modelRight, 'right', this.value);
         });
 
@@ -1037,18 +1044,93 @@ addGeometryRadioButtonsRight = function () {
         .attr("id","placeRight")
         .attr("value","PLACE")
         .on("change", function () {
-            //changeActiveGeometry(modelLeft, 'right', this.value);
+            addPlaceSliderRight();
+            changeActiveGeometry(modelRight, 'right', this.value);
         });
 
     menu.append("label")
         .attr("for","place")
-        .text("PLACE + EB");
+        .text("PLACE");
 
     menu.append("br");
 };
 
+addPlaceSliderLeft = function() {
+    var menu = d3.select("#topologyLeft");
+
+    menu.append("br");
+
+    menu.append("label")
+        .attr("for", "placeSliderLeft")
+        .attr("id", "placeSliderLeftLabel")
+        .text("Level " + modelLeft.getPlaceLevel());
+
+    menu.append("input")
+        .attr("type", "range")
+        .attr("value", modelLeft.getPlaceLevel())
+        .attr("id", "placeSliderLeft")
+        .attr("min", 1)
+        .attr("max", 4)
+        .attr("step", 1)
+        .on("change", function () {
+            modelLeft.setPlaceLevel(parseInt(this.value));
+            changeActiveGeometry(modelLeft, 'left', "PLACE");
+            document.getElementById("placeSliderLeftLabel").innerHTML = "Level " + this.value;
+        });
+};
+
+removePlaceSliderLeft = function() {
+    var elem = document.getElementById('placeSliderLeft');
+
+    if(elem) {
+        elem.parentNode.removeChild(elem);
+    }
+
+    elem = document.getElementById('placeSliderLeftLabel');
+    if(elem) {
+        elem.parentNode.removeChild(elem);
+    }
+};
+
+addPlaceSliderRight = function() {
+    var menu = d3.select("#topologyRight");
+
+    menu.append("br");
+
+    menu.append("label")
+        .attr("for", "placeSliderRight")
+        .attr("id", "placeSliderRightLabel")
+        .text("Level " + modelRight.getPlaceLevel());
+
+    menu.append("input")
+        .attr("type", "range")
+        .attr("value", modelRight.getPlaceLevel())
+        .attr("id", "placeSliderRight")
+        .attr("min", 1)
+        .attr("max", 4)
+        .attr("step", 1)
+        .on("change", function () {
+            modelRight.setPlaceLevel(parseInt(this.value));
+            changeActiveGeometry(modelRight, 'right', "PLACE");
+            document.getElementById("placeSliderRightLabel").innerHTML = "Level " + this.value;
+        });
+};
+
+removePlaceSliderRight = function() {
+    var elem = document.getElementById('placeSliderRight');
+
+    if(elem) {
+        elem.parentNode.removeChild(elem);
+    }
+
+    elem = document.getElementById('placeSliderRightLabel');
+    if(elem) {
+        elem.parentNode.removeChild(elem);
+    }
+};
+
 // add labels check boxes, appear/disappear on right click
-addFslRadioButton = function () {
+addFslRadioButton = function() {
     var rightMenu = d3.select("#rightFslLabels");
     var leftMenu = d3.select("#leftFslLabels");
 
@@ -1107,7 +1189,7 @@ addSearchPanel = function(){
 };
 
 // search by index callback
-searchElement = function (index) {
+searchElement = function(index) {
     index = parseInt(index);
     console.log(index);
     if(typeof(index) != 'number' || isNaN(index)){
