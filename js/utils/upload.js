@@ -47,8 +47,7 @@ uploadNormalConnections = function (model) {
                     delimiter: ',',
                     header: false,
                     complete: function (results) {
-                        model.setConnectionMatrix(results, 'normal');
-                        model.setConnectionMatrix(results, 'isomap');
+                        model.setConnectionMatrix(results);
                         d3.select('#connectionsBtn').attr('class','load');
                         dhtmlx.message("Adjacency Matrix Uploaded");
                     }

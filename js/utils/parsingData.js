@@ -166,8 +166,7 @@ var loadConnections = function(callback){
         delimiter: ',',
         header: false,
         complete: function(results){
-            modelLeft.setConnectionMatrix(results, 'normal');
-            //computeDistanceMatrix();
+            modelLeft.setConnectionMatrix(results);
             console.log("Left NW loaded ... ");
         }
     });
@@ -178,36 +177,8 @@ var loadConnections = function(callback){
         delimiter: ',',
         header: false,
         complete: function(results){
-            modelRight.setConnectionMatrix(results, 'normal');
-            //computeDistanceMatrix();
+            modelRight.setConnectionMatrix(results);
             console.log("Right NW loaded ... ");
-            callback(null,null);
-        }
-    });
-};
-
-var loadConnectionsIsomap = function(callback){
-    Papa.parse("data/"+folder+"/isomapNWLeft.csv",{
-        download: true,
-        dynamicTyping: true,
-        delimiter: ',',
-        header: false,
-        complete: function(results){
-            modelLeft.setConnectionMatrix(results, 'isomap');
-            //computeDistanceMatrix();
-            console.log("Left isomap NW loaded ... ");
-        }
-    });
-
-    Papa.parse("data/"+folder+"/isomapNWRight.csv",{
-        download: true,
-        dynamicTyping: true,
-        delimiter: ',',
-        header: false,
-        complete: function(results){
-            modelRight.setConnectionMatrix(results, 'isomap');
-            //computeDistanceMatrix();
-            console.log("Right isomap NW loaded ... ");
             callback(null,null);
         }
     });

@@ -232,8 +232,6 @@ initCanvas = function () {
     modelRight.setRegionsActivated();
 
     //setThreshold(30);
-    modelLeft.computeDistanceMatrix();
-    modelRight.computeDistanceMatrix();
 
     createLegend(modelLeft);
     // create visualization
@@ -727,9 +725,7 @@ changeColorGroup = function (n) {
 changeActiveGeometry = function(model, side, type){
     console.log("Change Active Geometry to: ", type);
     model.setActiveCentroids(type);
-    model.setActiveMatrix((type == 'isomap') ? 'isomap' : 'normal');
     updateNeeded = true;
-    model.computeDistanceMatrix();
     switch(side) {
         case 'left':
             updateLeftScene();

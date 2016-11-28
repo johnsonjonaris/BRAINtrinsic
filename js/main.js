@@ -71,19 +71,24 @@ if(isLoaded == 0) {
     console.log("Loading data ... ");
 
     queue()
+        .defer(loadConnections)
         .defer(loadCentroidsAnatomy)
         .defer(loadCentroidsIsomap)
         .defer(loadCentroidsMDS)
         .defer(loadCentroidstSNE)
-        .defer(loadConnectionsIsomap)
         .defer(loadLabelKeys)
         .defer(loadLookUpTable)
-        .defer(loadConnections)
         .defer(loadIcColors)
-        .defer(loadPLACE)
         // .defer(loadColorMap)
         .awaitAll(function () {
-            init();
+            queue()
+                // PLACE depends on connection matrix
+                .defer(loadPLACE)
+                .awaitAll( function () {
+                    console.log("Loading data done.");
+                    init();
+                })
+            ;
         });
 } else{
     console.log("loaded from different files");

@@ -11,17 +11,15 @@ function Model () {
     var regionsActivated = [];          // store the group activation boolean according to activeGroup
     var regionState = {};               // group state: active, transparent or inactive
     var labelKeys;                      // map between each node and its corresponding FSL label
-    var centroids = [];                 // nodes centroids according to topological spaces: centroids[node][technique] = (x,y,z)
-    var activeCentroids = "isomap";     // isomap, MDS, anatomy, tsne, selection from centroids
-    var connectionMatrix = {};          // adjacency matrix according to ??? : connectionMatrix[???] = 2D array, ??? = isomap, normal
-    var activeMatrix = 'isomap';        // selection from connectionMatrix, isomap, normal ...
     var labelVisibility = [];           // contains FSL label name, visibility and hemisphere
     var lookUpTable = [];               // contains FSL label group name, rich club, name and hemisphere
     var icColorTable = [];
 
-    var placeClusters = [];             // PLACE clusters, assumed level 4: clusters from 1 to 16
-    var placeLevel = 4;                 // default place level
-    var placeRadius = 5;                // sphere radius of PLACE visualization
+    var centroids = [];                 // nodes centroids according to topological spaces: centroids[node][technique] = (x,y,z)
+    var activeCentroids = "isomap";     // isomap, MDS, anatomy, tsne, PLACE, selection from centroids
+
+    var connectionMatrix = [];          // adjacency matrix
+    var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
 
     var distanceArray;                  // contain the shortest path for current selected node
     var distanceThreshold;              // threshold for the distanceArray
@@ -30,9 +28,12 @@ function Model () {
     var numberOfHops;
 
     var graph;
-    var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
 
     var metricValues = [];
+
+    var placeClusters = [];             // PLACE clusters, assumed level 4: clusters from 1 to 16
+    var placeLevel = 4;                 // default place level
+    var placeRadius = 5;                // sphere radius of PLACE visualization
 
     // data ready in model ready
     this.ready = function() {
@@ -47,11 +48,6 @@ function Model () {
     // set distanceArray containing the shortest path for current selected node
     this.setDistanceArray = function(array) {
         distanceArray = array;
-    };
-
-    // set the distance matrix of the model
-    this.setDistanceMatrix = function(array) {
-        distanceMatrix = array;
     };
 
     // get the longest shortest path of the current selected node = the farthest node
@@ -74,23 +70,18 @@ function Model () {
         activeCentroids = centroids;
     };
 
-    // selection from connectionMatrix, isomap, normal ...
-    this.setActiveMatrix = function(matrixName) {
-        activeMatrix = matrixName;
-    };
-
     // store nodes centroids according to topological spaces
     // technique can be: Isomap, MDS, tSNE, anatomy ...
     this.setCentroids = function(d, technique) {
         var data = d.data;
         var len = data.length;
+        centroids[technique] = [];
         for (var i = 0; i < len; i++) {
             var element = {};
             element.x = data[i][0];
             element.y = data[i][1];
             element.z = data[i][2];
-            centroids[i] = centroids[i] || {};
-            centroids[i][technique] = element;
+            centroids[technique][i] = element;
         }
     };
 
@@ -143,30 +134,16 @@ function Model () {
         }
     };
 
-    // set connection matrix for every name: normal, isomap ...
-    this.setConnectionMatrix = function(d, name) {
-        connectionMatrix[name] = d.data;
+    // set connection matrix
+    this.setConnectionMatrix = function(d) {
+        connectionMatrix = d.data;
+        this.computeDistanceMatrix();
     };
 
     // add group data
     this.setGroup = function(d) {
         groups[groups.length] = d.data;
     };
-
-    // never used !!
-    this.getCentroids = function() {
-        var l = centroids.length;
-        var results = [];
-        for (var i = 0; i < l; i++) {
-            var element = {};
-            element.x = centroids[i].x;
-            element.y = centroids[i].y;
-            element.z = centroids[i].z;
-            results[results.length] = element;
-        }
-        return results;
-    };
-
 
     // get the dataset according to activeCentroids
     this.getDataset = function() {
@@ -179,9 +156,9 @@ function Model () {
             row = {};
 
             //getting Centroids
-            row.x = centroids[i][activeCentroids].x;
-            row.y = centroids[i][activeCentroids].y;
-            row.z = centroids[i][activeCentroids].z;
+            row.x = centroids[activeCentroids][i].x;
+            row.y = centroids[activeCentroids][i].y;
+            row.z = centroids[activeCentroids][i].z;
 
             var label = labelKeys[i];
 
@@ -209,14 +186,14 @@ function Model () {
 
     // get connection matrix according to activeMatrix
     this.getConnectionMatrix = function() {
-        return connectionMatrix[activeMatrix];
+        return connectionMatrix;
     };
 
-    // get a row (one node) from connection matrix according to activeMatrix
+    // get a row (one node) from connection matrix
     this.getConnectionMatrixRow = function (index) {
         var row = [];
-        for (var i = 0; i < connectionMatrix[activeMatrix].length; i++) {
-            row[row.length] = connectionMatrix[activeMatrix][index][i];
+        for (var i = 0; i < connectionMatrix.length; i++) {
+            row[row.length] = connectionMatrix[index][i];
         }
         return row;
     };
@@ -275,7 +252,7 @@ function Model () {
 
     // get the connection matrix number of nodes
     this.getConnectionMatrixDimension = function () {
-        return connectionMatrix['isomap'].length;
+        return connectionMatrix.length;
     };
 
     // get top n edges connected to a specific node
@@ -294,7 +271,7 @@ function Model () {
     };
 
     this.getMaximumWeight = function () {
-        return d3.max(connectionMatrix['normal'], function (d) {
+        return d3.max(connectionMatrix, function (d) {
             return d3.max(d, function (d) { return d; })
         });
     };
@@ -387,7 +364,7 @@ function Model () {
     };
 
     // compute distance matrix = 1/(adjacency matrix)
-    this.computeDistanceMatrix = function(){
+    this.computeDistanceMatrix = function() {
         distanceMatrix = [];
         var adjacencyMatrix = this.getConnectionMatrix();
         graph = new Graph();
@@ -402,6 +379,7 @@ function Model () {
             distanceMatrix[distanceMatrix.length] = row;
             graph.addVertex(i,vertexes);
         }
+        console.log("Distance Matrix Computed");
     };
 
     // compute shortest path from a specific node to the rest of the nodes
@@ -471,6 +449,7 @@ function Model () {
             placeClusters[i] =  math.ceil(math.divide(placeClusters[i+1],2.0));
         }
         this.computeNodesLocationForPlace();
+        this.performEBOnNodes();
     };
 
     this.setPlaceLevel = function(level) {
@@ -491,6 +470,25 @@ function Model () {
 
     this.getPlaceLevel = function() {
         return placeLevel;
+    };
+
+    this.performEBOnNodes = function() {
+        var edges = [];
+        var nNodes = connectionMatrix.length;
+        for (var i = 0; i < nNodes; i++) {
+            for (var j = i+1; j < nNodes; j++) {
+                if (connectionMatrix[i][j] > 0) {
+                    edges.push({
+                        'source': i,
+                        'target': j
+                    });
+                }
+            }
+        }
+        console.log(edges);
+        // var fbundling = d3.ForceEdgeBundling().nodes(centroids["PLACE"]).edges(edges);
+        // var results = fbundling();
+        // console.log(results);
     }
 }
 
