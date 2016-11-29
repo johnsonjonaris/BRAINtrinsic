@@ -1,7 +1,7 @@
 /*
  FDEB algorithm implementation [www.win.tue.nl/~dholten/papers/forcebundles_eurovis.pdf].
 
- Author: Corneliu S. (github.com/upphiminn)
+ Author: Corneliu S. (https://github.com/upphiminn/d3.ForceBundle)
  2013
 
  Algorithm augmented to 3D by Johnson J. G. Keiriz in 2016
