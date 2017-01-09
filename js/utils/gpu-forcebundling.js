@@ -17,7 +17,7 @@
             P = P_initial,
             P_rate = 2, // subdivision rate increase
             oldP = 0.5, // @ Ci = 0
-            C = 6, // number of cycles to perform
+            C = 5, // number of cycles to perform
             I_initial = 90, // 90, init. number of iterations for cycle
             I = I_initial,
             I_rate = 0.6666667, // rate at which iteration number decreases i.e. 2/3
@@ -113,8 +113,8 @@
 
         function createPrograms() {
             // Note that the preprocessor requires the newlines.
-            programSubdivision = gpgpuUility.createProgram(null, gpgpuUility.loadShader('../subdivision.glsl'));
-            programUpdate = gpgpuUility.createProgram(null, gpgpuUility.loadShader('../update.glsl'));
+            programSubdivision = gpgpuUility.createProgram(null, gpgpuUility.loadShader('.//js/utils/subdivision.glsl'));
+            programUpdate = gpgpuUility.createProgram(null, gpgpuUility.loadShader('./js/utils/update.glsl'));
         }
 
         function doBundling() {
