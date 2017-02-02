@@ -26,6 +26,8 @@ function Model () {
     var threshold;                      // threshold for the edge value
     var numberOfEdges = 5;              // threshold the number of edges for shortest paths
     var numberOfHops;
+    var edgesEB = [];                   // contains the edges computed using edge-bundling algorithm per type
+    var edgeIdx = [];                   // 2D matrix where entries are the corresponding edge index
 
     var graph;
 
@@ -368,16 +370,29 @@ function Model () {
         distanceMatrix = [];
         var adjacencyMatrix = this.getConnectionMatrix();
         graph = new Graph();
+        var idx = 0;
         // for every node, add the distance to all other nodes
         for(var i = 0; i < adjacencyMatrix.length; i++){
             var vertexes = {};
             var row = [];
+            edgeIdx.push([]);
             for(var j = 0; j < adjacencyMatrix[i].length; j++){
                 vertexes[j] = 1/adjacencyMatrix[i][j];
                 row[row.length] = 1/adjacencyMatrix[i][j];
+                if (j > i && adjacencyMatrix[i][j] > 0) {
+                    edgeIdx[i][j] = idx;
+                    idx++;
+                }
             }
             distanceMatrix[distanceMatrix.length] = row;
             graph.addVertex(i,vertexes);
+        }
+
+        // mirror it
+        for(var i = 0; i < adjacencyMatrix.length; i++) {
+            for(var j = i+1; j < adjacencyMatrix[i].length; j++) {
+                edgeIdx[j][i] = edgeIdx[i][j];
+            }
         }
         console.log("Distance Matrix Computed");
     };
@@ -449,7 +464,6 @@ function Model () {
             placeClusters[i] =  math.ceil(math.divide(placeClusters[i+1],2.0));
         }
         this.computeNodesLocationForPlace();
-        this.performEBOnNodes();
     };
 
     this.setPlaceLevel = function(level) {
@@ -485,10 +499,23 @@ function Model () {
                 }
             }
         }
-        console.log(edges);
-        // var fbundling = d3.ForceEdgeBundling().nodes(centroids["PLACE"]).edges(edges);
-        // var results = fbundling();
-        // console.log(results);
+        // console.log(edges);
+        var fbundling = d3.GPUForceEdgeBundling().nodes(centroids[activeCentroids]).edges(edges).cycles(3).iterations(1);
+        edgesEB[activeCentroids] = fbundling();
+    };
+
+    this.getActiveEdges = function() {
+        if (edgesEB[activeCentroids] === undefined ) {
+            console.log("Computing edge bundling for " + activeCentroids);
+            console.time("");
+            this.performEBOnNodes();
+            console.timeEnd("EB done in ");
+        }
+        return edgesEB[activeCentroids];
+    };
+
+    this.getEdgesIndeces = function() {
+        return edgeIdx;
     }
 }
 

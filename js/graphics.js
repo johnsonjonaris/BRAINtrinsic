@@ -517,6 +517,9 @@ var setEdgesColor = function (displayedEdges) {
 drawTopNEdgesByNode = function (model, glyphs, scene, displayedEdges, nodeIndex, n) {
 
     var row = model.getTopConnectionsByNode(nodeIndex, n);
+    // var edges = model.getActiveEdges()
+    // var edgeIdx = model.getEdgesIndeces();
+    console.log("drawTopNEdgesByNode row " + row);
     for (var obj in row) {
         if (model.isRegionActive(model.getRegionByNode(obj)) && visibleNodes[obj]) {
             var start = new THREE.Vector3(  glyphs[nodeIndex].position.x,
@@ -534,6 +537,9 @@ drawTopNEdgesByNode = function (model, glyphs, scene, displayedEdges, nodeIndex,
 drawEdgesGivenNode = function(model, glyphs, scene, displayedEdges, indexNode) {
 
     var row = model.getConnectionMatrixRow(indexNode);
+    // var edges = model.getActiveEdges();
+    // var edgeIdx = model.getEdgesIndeces();
+
     for(var i=0; i < row.length ; i++){
         if(row[i] > model.getThreshold()  && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
             var start = new THREE.Vector3(  glyphs[indexNode].position.x,
@@ -541,6 +547,7 @@ drawEdgesGivenNode = function(model, glyphs, scene, displayedEdges, indexNode) {
                                             glyphs[indexNode].position.z );
             var end = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z );
             displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, start, end, row[i]);
+            //displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, edges[edgeIdx[indexNode][i]], row[i]);
         }
     }
     setEdgesColor(displayedEdges);
@@ -563,12 +570,29 @@ createLine = function(start, end, name){
     return line;
 };
 
+/*createLine = function(edge, name){
+    var material = new THREE.LineBasicMaterial();
+    var geometry = new THREE.Geometry();
+    geometry.vertices = edge;
+    // for (var i = 0; i < edge.length; i++)
+    //     geometry.vertices.push(edge[i])
+    var line  = new THREE.Line(geometry, material);
+    line.name = name;
+    return line;
+};*/
+
 // draw an edge from a start to end points in a specific scene and give it a name
 var drawEdgeWithName = function (scene, start, end, name) {
     var line = createLine(start, end, name);
     scene.add(line);
     return line;
 };
+
+/*var drawEdgeWithName = function (scene, edge, name) {
+    var line = createLine(edge, name);
+    scene.add(line);
+    return line;
+};*/
 
 removeEdgesGivenNodeFromScenes = function(nodeIndex) {
     displayedEdgesLeft = removeEdgesGivenNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex);
@@ -663,7 +687,6 @@ drawShortestPathRight = function(nodeIndex) { drawShortestPath(modelRight, glyph
 // draw shortest path for a specific node
 drawShortestPath = function(model, glyphs, nodeIndex) {
     console.log("Draw Shortest Path");
-    var line;
     root = nodeIndex;
 
     var len = model.getConnectionMatrixDimension();
@@ -694,8 +717,7 @@ drawShortestPath = function(model, glyphs, nodeIndex) {
             if(prev) {
                 var start = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z);
                 var end = new THREE.Vector3(prev.position.x, prev.position.y, prev.position.z);
-                line = createLine(start, end, model.getConnectionMatrix()[i][previousMap[i]] );
-                shortestPathEdges[shortestPathEdges.length] = line;
+                shortestPathEdges[shortestPathEdges.length] = createLine(start, end, model.getConnectionMatrix()[i][previousMap[i]] );
             }
         }
     }
