@@ -746,7 +746,7 @@ changeColorGroup = function (n) {
 // change the active geometry
 changeActiveGeometry = function(model, side, type){
     console.log("Change Active Geometry to: ", type);
-    model.setActiveCentroids(type);
+    model.setActiveTopology(type);
     updateNeeded = true;
     switch(side) {
         case 'left':

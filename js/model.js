@@ -16,7 +16,8 @@ function Model () {
     var icColorTable = [];
 
     var centroids = {};                 // nodes centroids according to topological spaces: centroids[node][technique] = (x,y,z)
-    var activeCentroids = "isomap";     // isomap, MDS, anatomy, tsne, PLACE, selection from centroids
+    var topologies = [];                // available topologies
+    var activeTopology;                 // isomap, MDS, anatomy, tsne, PLACE, selection from centroids
 
     var connectionMatrix = [];          // adjacency matrix
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
@@ -120,17 +121,17 @@ function Model () {
     };
 
     // isomap, MDS, anatomy, tsne, selection from centroids
-    this.setActiveCentroids = function(centroids) {
-        activeCentroids = centroids;
+    this.setActiveTopology = function(topology) {
+        activeTopology = topology;
     };
 
     // store nodes centroids according to topological spaces
     // technique can be: Isomap, MDS, tSNE, anatomy ...
-    this.setCentroids = function(d, technique, offset) {
-        centroids[technique] = [];
+    this.setCentroids = function(d, topology, offset) {
+        centroids[topology] = [];
         // data[0] is assumed to contain a string header
         for (var i = 1; i < d.length; i++) {
-            centroids[technique].push({ x: d[i][0 + offset], y: d[i][1 + offset], z: d[i][2 + offset] });
+            centroids[topology].push({ x: d[i][0 + offset], y: d[i][1 + offset], z: d[i][2 + offset] });
         }
     };
 
@@ -198,9 +199,9 @@ function Model () {
             var label = labelKeys[i];
             result[i] = {
                 //getting Centroids
-                x: centroids[activeCentroids][i].x,
-                y: centroids[activeCentroids][i].y,
-                z: centroids[activeCentroids][i].z,
+                x: centroids[activeTopology][i].x,
+                y: centroids[activeTopology][i].y,
+                z: centroids[activeTopology][i].z,
                 name: lookUpTable[label].region_name,
                 group: groups[activeGroup][i],
                 hemisphere: lookUpTable[label].hemisphere,
@@ -507,21 +508,23 @@ function Model () {
                 case ("label"):
                     this.setLabelKeys(data, i);
                     break;
-                case ("anatomy"):
-                case ("isomap"):
-                case ("MDS"):
-                case ("tsne"):
-                    this.setCentroids(data, dataType, i);
-                    break;
                 case ("PLACE"):
                     this.setPlace(data, i);
+                    topologies.push(dataType);
                     break;
                 case (""):
                     break;
-                default:
-                    console.error("Unknown topology type: " + dataType);
+                default: // all other topologies
+                    this.setCentroids(data, dataType, i);
+                    topologies.push(dataType);
+                    break;
             }
         }
+        activeTopology = topologies[0];
+    };
+
+    this.getTopologies = function () {
+        return topologies;
     };
 
     this.performEBOnNodes = function() {
@@ -538,18 +541,18 @@ function Model () {
             }
         }
         // console.log(edges);
-        var fbundling = d3.GPUForceEdgeBundling().nodes(centroids[activeCentroids]).edges(edges).cycles(3).iterations(1);
-        edgesEB[activeCentroids] = fbundling();
+        var fbundling = d3.GPUForceEdgeBundling().nodes(centroids[activeTopology]).edges(edges).cycles(3).iterations(1);
+        edgesEB[activeTopology] = fbundling();
     };
 
     this.getActiveEdges = function() {
-        if (edgesEB[activeCentroids] === undefined ) {
-            console.log("Computing edge bundling for " + activeCentroids);
+        if (edgesEB[activeTopology] === undefined ) {
+            console.log("Computing edge bundling for " + activeTopology);
             console.time("");
             this.performEBOnNodes();
             console.timeEnd("EB done in ");
         }
-        return edgesEB[activeCentroids];
+        return edgesEB[activeTopology];
     };
 
     this.getEdgesIndeces = function() {

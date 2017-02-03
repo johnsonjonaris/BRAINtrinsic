@@ -162,7 +162,7 @@ initGUI = function() {
         .attr("type","file")
         .attr("id","connectionsRight")
         .on("change", function() {
-            f = document.getElementById("connectionsRight");
+            var f = document.getElementById("connectionsRight");
             if (f.files && f.files[0]) {
                 var reader = new FileReader();
 
@@ -812,6 +812,8 @@ addGroupList = function() {
 // add "Topological Spaces" radio button group for left scene containing:
 // Isomap, MDS, tSNE and anatomy spaces
 addGeometryRadioButtonsLeft = function() {
+
+    var topologies = modelLeft.getTopologies();
     var menu = d3.select("#topologyLeft");
 
     menu.append("br");
@@ -821,89 +823,38 @@ addGeometryRadioButtonsLeft = function() {
         .text("Topological Space:");
     menu.append("br");
 
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","geometryLeft")
-        .attr("id","isomapLeft")
-        .attr("value","isomap")
-        .attr("checked","true")
-        .on("change", function () {
-            removePlaceSliderLeft();
-            changeActiveGeometry(modelLeft, 'left', this.value);
-        });
-    menu.append("label")
-        .attr("for","isomap")
-        .text("Isomap");
+    for (var i = 0; i <topologies.length; i++) {
+        var topology = topologies[i];
+        var ip = menu.append("input")
+            .attr("type", "radio")
+            .attr("name","geometryLeft")
+            .attr("id",topology + "Left")
+            .attr("value",topology)
+            .attr("checked", "false");
+        if (topology == "PLACE") {
+            ip.on("change", function () {
+                addPlaceSliderLeft();
+                changeActiveGeometry(modelLeft, 'left', this.value);
+            });
+        } else {
+            ip.on("change", function () {
+                removePlaceSliderLeft();
+                changeActiveGeometry(modelLeft, 'left', this.value);
+            });
+        }
+        menu.append("label")
+            .attr("for",topology)
+            .text(topology);
+        menu.append("br");
+    }
 
-    menu.append("br");
-
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","geometryLeft")
-        .attr("id","mdsLeft")
-        .attr("value","MDS")
-        .on("change", function () {
-            removePlaceSliderLeft();
-            changeActiveGeometry(modelLeft, 'left', this.value);
-        });
-
-    menu.append("label")
-        .attr("for","mds")
-        .text("MDS");
-
-    menu.append("br");
-
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","geometryLeft")
-        .attr("id","tsneLeft")
-        .attr("value","tsne")
-        .on("change", function () {
-            removePlaceSliderLeft();
-            changeActiveGeometry(modelLeft, 'left', this.value);
-        });
-
-    menu.append("label")
-        .attr("for","tsne")
-        .text("tSNE");
-
-    menu.append("br");
-
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","geometryLeft")
-        .attr("id","anatomyLeft")
-        .attr("value","anatomy")
-        .on("change", function () {
-            removePlaceSliderLeft();
-            changeActiveGeometry(modelLeft, 'left', this.value);
-        });
-
-    menu.append("label")
-        .attr("for","anatomy")
-        .text("anatomy");
-
-    menu.append("br");
-
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","geometryLeft")
-        .attr("id","placeLeft")
-        .attr("value","PLACE")
-        .on("change", function () {
-            addPlaceSliderLeft();
-            changeActiveGeometry(modelLeft, 'left', this.value);
-        });
-
-    menu.append("label")
-        .attr("for","place")
-        .text("PLACE");
-
-    menu.append("br");
+    document.getElementById(topologies[0] + "Left").checked = "true";
 };
 
 // add "Topological Spaces" radio button group for right scene containing:
 addGeometryRadioButtonsRight = function() {
+
+    var topologies = modelRight.getTopologies();
     var menu = d3.select("#topologyRight");
 
     menu.append("br");
@@ -913,85 +864,32 @@ addGeometryRadioButtonsRight = function() {
         .text("Topological Space:");
     menu.append("br");
 
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","geometryRight")
-        .attr("id","isomapRight")
-        .attr("value","isomap")
-        .attr("checked","true")
-        .on("change", function () {
-            removePlaceSliderRight();
-            changeActiveGeometry(modelRight, 'right', this.value);
-        });
-    menu.append("label")
-        .attr("for","isomap")
-        .text("Isomap");
+    for (var i = 0; i <topologies.length; i++) {
+        var topology = topologies[i];
+        var ip = menu.append("input")
+            .attr("type", "radio")
+            .attr("name","geometryRight")
+            .attr("id",topology + "Right")
+            .attr("value",topology)
+            .attr("checked","false");
+        if (topology == "PLACE") {
+            ip.on("change", function () {
+                addPlaceSliderRight();
+                changeActiveGeometry(modelRight, 'right', this.value);
+            });
+        } else {
+            ip.on("change", function () {
+                removePlaceSliderRight();
+                changeActiveGeometry(modelRight, 'right', this.value);
+            });
+        }
+        menu.append("label")
+            .attr("for",topology)
+            .text(topology);
+        menu.append("br");
+    }
 
-    menu.append("br");
-
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","geometryRight")
-        .attr("id","mdsRight")
-        .attr("value","MDS")
-        .on("change", function () {
-            removePlaceSliderRight();
-            changeActiveGeometry(modelRight, 'right', this.value);
-        });
-
-    menu.append("label")
-        .attr("for","mds")
-        .text("MDS");
-
-    menu.append("br");
-
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","geometryRight")
-        .attr("id","tsneRight")
-        .attr("value","tsne")
-        .on("change", function () {
-            removePlaceSliderRight();
-            changeActiveGeometry(modelRight, 'right', this.value);
-        });
-
-    menu.append("label")
-        .attr("for","tsne")
-        .text("tSNE");
-
-    menu.append("br");
-
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","geometryRight")
-        .attr("id","anatomyRight")
-        .attr("value","anatomy")
-        .on("change", function () {
-            removePlaceSliderRight();
-            changeActiveGeometry(modelRight, 'right', this.value);
-        });
-
-    menu.append("label")
-        .attr("for","anatomy")
-        .text("anatomy");
-
-    menu.append("br");
-
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","geometryRight")
-        .attr("id","placeRight")
-        .attr("value","PLACE")
-        .on("change", function () {
-            addPlaceSliderRight();
-            changeActiveGeometry(modelRight, 'right', this.value);
-        });
-
-    menu.append("label")
-        .attr("for","place")
-        .text("PLACE");
-
-    menu.append("br");
+    document.getElementById(topologies[0] + "Right").checked = "true";
 };
 
 addPlaceSliderLeft = function() {
