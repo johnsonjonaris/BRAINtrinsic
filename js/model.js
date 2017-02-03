@@ -58,8 +58,12 @@ function Model () {
     };
 
     // store map between each node and its corresponding FSL label
-    this.setLabelKeys = function(labels) {
-        labelKeys = math.squeeze(labels.data);
+    this.setLabelKeys = function(data, loc) {
+        labelKeys = [];
+        // data[0] is assumed to contain a string header
+        for (var j = 1; j < data.length; j++) {
+            labelKeys.push(data[j][loc]);
+        }
     };
 
     // setting activeGroup: 0 = Anatomy, 1 = place, 2 = rich club, 3 = id
@@ -76,6 +80,7 @@ function Model () {
     // technique can be: Isomap, MDS, tSNE, anatomy ...
     this.setCentroids = function(d, technique, offset) {
         centroids[technique] = [];
+        // data[0] is assumed to contain a string header
         for (var i = 1; i < d.length; i++) {
             centroids[technique].push({ x: d[i][0 + offset], y: d[i][1 + offset], z: d[i][2 + offset] });
         }
@@ -110,7 +115,6 @@ function Model () {
     // from loaded data for each FSL node label
     // for each label, d contains: label#, group, place, rich_club, region_name, hemisphere
     this.setLookUpTable = function(d) {
-        console.log(d);
         var el, labelInfo;
         for (var i = 0; i < d.data.length; i++) {
             el = {
@@ -452,9 +456,13 @@ function Model () {
     };
 
     // assume last level = 4 => 16 clusters at most
-    this.setPlace = function(clusters) {
+    this.setPlace = function(data, loc) {
         placeClusters = new Array(4); // 4 levels
-        placeClusters[3] = clusters;
+        placeClusters[3] = [];
+        // data[0] is assumed to contain a string header
+        for (var j = 1; j < data.length; j++) {
+            placeClusters[3].push(data[j][loc]);
+        }
 		// placeClusters[3] = math.squeeze(clusters.data);
         for (var i = 2; i >= 0; i--) {
             placeClusters[i] =  math.ceil(math.divide(placeClusters[i+1],2.0));
@@ -489,23 +497,16 @@ function Model () {
             dataType = data[0][i];
             switch (dataType) {
                 case ("label"):
-                    labelKeys = [];
-                    for (var j = 1; j < data.length; j++) {
-                        labelKeys.push(data[j][i]);
-                    }
+                    this.setLabelKeys(data, i);
                     break;
                 case ("anatomy"):
                 case ("isomap"):
                 case ("MDS"):
-                case ("tSNE"):
+                case ("tsne"):
                     this.setCentroids(data, dataType, i);
                     break;
                 case ("PLACE"):
-                    var clusters = [];
-                    for (var j = 1; j < data.length; j++) {
-                        clusters.push(data[j][i]);
-                    }
-                    this.setPlace(clusters);
+                    this.setPlace(data, i);
                     break;
                 case (""):
                     break;

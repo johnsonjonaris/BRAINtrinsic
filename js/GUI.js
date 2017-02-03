@@ -37,35 +37,6 @@ initGUI = function() {
             }
         });
 
-    uploadMenuLeft.append("button")
-        .text("Upload Left labelKey")
-        .attr("id", "labelKeyUploadBtnLeft")
-        .append("input")
-        .attr("type", "file")
-        .attr("id","labelKeyLeft")
-        .on("change", function () {
-            var f = document.getElementById("labelKeyLeft");
-            if (f.files && f.files[0]) {
-                var reader = new FileReader();
-
-                reader.onload = function (e) {
-                    console.log("On load event");
-                    console.log(e);
-                    var v = e.target.result;
-                    Papa.parse(v, {
-                            download: true,
-                            dynamicTyping: true,
-                            header: false,
-                            complete: function (results) {
-                                console.log("complete Uploading Label Keys ");
-                                modelLeft.setLabelKeys(results);
-                            }
-                        }
-                    );
-                };
-                reader.readAsDataURL(f.files[0]);
-            }
-        });
     /*
      uploadMenu.append("button")
      .text("Upload LookUpTable")
@@ -180,36 +151,6 @@ initGUI = function() {
                             }
                         }
                     )};
-                reader.readAsDataURL(f.files[0]);
-            }
-        });
-
-    uploadMenuRight.append("button")
-        .text("Upload Right labelKey")
-        .attr("id", "labelKeyUploadBtnRight")
-        .append("input")
-        .attr("type", "file")
-        .attr("id","labelKeyRight")
-        .on("change", function () {
-            var f = document.getElementById("labelKeyRight");
-            if (f.files && f.files[0]) {
-                var reader = new FileReader();
-
-                reader.onload = function (e) {
-                    console.log("On load event");
-                    console.log(e);
-                    var v = e.target.result;
-                    Papa.parse(v, {
-                            download: true,
-                            dynamicTyping: true,
-                            header: false,
-                            complete: function (results) {
-                                console.log("complete Uploading Label Keys ");
-                                modelRight.setLabelKeys(results);
-                            }
-                        }
-                    );
-                };
                 reader.readAsDataURL(f.files[0]);
             }
         });
