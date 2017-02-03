@@ -7,7 +7,7 @@ private variables
 
 function Model () {
     var groups = [];                    // contain nodes group affiliation according to Anatomy, place, rich club, id
-    var activeGroup = 0;                // 0 = Anatomy, 1 = place, 2 = rich club, 3 = id
+    var activeGroup = 0;                // 0 = Anatomy, 1 = embeddness, 2 = rich club, 3 = PLACE, 4 = metric
     var regionsActivated = [];          // store the group activation boolean according to activeGroup
     var regionState = {};               // group state: active, transparent or inactive
     var labelKeys;                      // map between each node and its corresponding FSL label
@@ -66,9 +66,57 @@ function Model () {
         }
     };
 
-    // setting activeGroup: 0 = Anatomy, 1 = place, 2 = rich club, 3 = id
+    // setting activeGroup: 0 = Anatomy, 1 = place, 2 = rich club, 3 = PLACE, 4 = id
     this.setActiveGroup = function(group) {
         activeGroup = group;
+    };
+
+    this.getActiveGroup = function () {
+        return activeGroup;
+    };
+
+    // create groups in order: Anatomy, place, rich club, id
+    this.createGroups = function() {
+        console.log("create groups");
+        var len = labelKeys.length;
+        var anatomicalGroup = new Array(len);
+        var richClubGroup = new Array(len);
+        var embeddnessGroup = new Array(len);
+        //var icGroup = [];
+
+        for (var i = 0; i < len; i++) {
+            var labelKey = labelKeys[i];
+            anatomicalGroup[i] = lookUpTable[labelKey].group;
+            embeddnessGroup[i] = lookUpTable[labelKey].place;
+            richClubGroup[i] = lookUpTable[labelKey].rich_club;
+            //icGroup[i] = i;
+        }
+        groups[0] = anatomicalGroup;
+        groups[1] = embeddnessGroup;
+        groups[2] = richClubGroup;
+        //groups[4] = icGroup;
+
+        if (this.hasPlaceData()) {
+            groups[3] = placeClusters[3];
+        }
+    };
+
+    // return the group affiliation of every node according to activeGroup
+    this.getGroup = function() {
+        var l = groups[activeGroup].length;
+        var results = [];
+        for (var i = 0; i < l; i++) {
+            var element = groups[activeGroup][i];
+            if (results.indexOf(element) == -1) {
+                results[results.length] = element;
+            }
+        }
+        return results;
+    };
+
+    // add group data
+    this.setGroup = function(d) {
+        groups[groups.length] = d.data;
     };
 
     // isomap, MDS, anatomy, tsne, selection from centroids
@@ -141,48 +189,25 @@ function Model () {
         this.computeDistanceMatrix();
     };
 
-    // add group data
-    this.setGroup = function(d) {
-        groups[groups.length] = d.data;
-    };
-
     // get the dataset according to activeCentroids
     this.getDataset = function() {
-        var row;
         var arrayLength = labelKeys.length;
-        //var index;
         var result = [];
 
         for (var i = 0; i < arrayLength; i++) {
-            row = {};
-
-            //getting Centroids
-            row.x = centroids[activeCentroids][i].x;
-            row.y = centroids[activeCentroids][i].y;
-            row.z = centroids[activeCentroids][i].z;
-
             var label = labelKeys[i];
-
-            row.name = lookUpTable[label].region_name;
-            row.group = groups[activeGroup][i];
-            row.hemisphere = lookUpTable[label].hemisphere;
-            row.label = labelKeys[i];
-            result[i] = row;
+            result[i] = {
+                //getting Centroids
+                x: centroids[activeCentroids][i].x,
+                y: centroids[activeCentroids][i].y,
+                z: centroids[activeCentroids][i].z,
+                name: lookUpTable[label].region_name,
+                group: groups[activeGroup][i],
+                hemisphere: lookUpTable[label].hemisphere,
+                label: labelKeys[i]
+            };
         }
         return result;
-    };
-
-    // return the group affiliation of every node according to activeGroup
-    this.getActiveGroup = function() {
-        var l = groups[activeGroup].length;
-        var results = [];
-        for (var i = 0; i < l; i++) {
-            var element = groups[activeGroup][i];
-            if (results.indexOf(element) == -1) {
-                results[results.length] = element;
-            }
-        }
-        return results;
     };
 
     // get connection matrix according to activeMatrix
@@ -286,27 +311,6 @@ function Model () {
             document.getElementById("topNThresholdSliderOutput").value = n;
         }
         numberOfEdges = n;
-    };
-
-    // create groups in order: Anatomy, place, rich club, id
-    this.createGroups = function() {
-        console.log("create groups");
-        var anatomicalGroup = [];
-        var richClubGroup = [];
-        var placeGroup = [];
-        var icGroup = [];
-
-        for (var i = 0; i < labelKeys.length; i++) {
-            var labelKey = labelKeys[i];
-            anatomicalGroup[anatomicalGroup.length] = lookUpTable[labelKey].group;
-            placeGroup[placeGroup.length] = lookUpTable[labelKey].place;
-            richClubGroup[richClubGroup.length] = lookUpTable[labelKey].rich_club;
-            icGroup[icGroup.length] = i;
-        }
-        groups[groups.length] = anatomicalGroup;
-        groups[groups.length] = placeGroup;
-        groups[groups.length] = richClubGroup;
-        groups[groups.length] = icGroup;
     };
 
     // get the region name of a specific node (edge)
@@ -488,6 +492,10 @@ function Model () {
 
     this.getPlaceLevel = function() {
         return placeLevel;
+    };
+
+    this.hasPlaceData = function () {
+        return (placeClusters.length > 0);
     };
 
     this.setTopology = function (data) {

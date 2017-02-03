@@ -406,8 +406,8 @@ var createLegend = function(model) {
 
     legendMenu = d3.select("#legend");
 
-    if(model.getActiveGroup() != 3) {
-        var activeGroup = model.getActiveGroup();
+    if(model.getActiveGroup() != 4) {
+        var activeGroup = model.getGroup();
         if(typeof(activeGroup[0]) == "number"){ // group is numerical
             activeGroup.sort(function(a, b){return a-b});
         } else { // group is string
@@ -721,7 +721,6 @@ addGroupList = function() {
     menu.append("label")
         .attr("for","colorGroup")
         .text("Color coding:");
-
     menu.append("br");
 
     menu.append("input")
@@ -736,22 +735,19 @@ addGroupList = function() {
     menu.append("label")
         .attr("for","anatomy")
         .text("Anatomy");
-
     menu.append("br");
 
     menu.append("input")
         .attr("type", "radio")
         .attr("name","colorGroup")
-        .attr("id","place")
+        .attr("id","embeddedness")
         .attr("value","1")
         .on("change", function () {
             changeColorGroup(this.value);
         });
-
     menu.append("label")
-        .attr("for","place")
+        .attr("for","embeddedness")
         .text("Embeddedness");
-
     menu.append("br");
 
     menu.append("input")
@@ -762,12 +758,25 @@ addGroupList = function() {
         .on("change", function () {
             changeColorGroup(this.value);
         });
-
     menu.append("label")
         .attr("for","richClub")
         .text("Rich Club");
-
     menu.append("br");
+
+    if (modelLeft.hasPlaceData() && modelRight.hasPlaceData()) {
+        menu.append("input")
+            .attr("type", "radio")
+            .attr("name","colorGroup")
+            .attr("value","3")
+            .attr("id","PLACE")
+            .on("change", function () {
+                changeColorGroup(this.value);
+            });
+        menu.append("label")
+            .attr("for","PLACE")
+            .text("PLACE");
+        menu.append("br");
+    }
 
     /*
     menu.append("input")
@@ -788,7 +797,7 @@ addGroupList = function() {
         menu.append("input")
             .attr("type", "radio")
             .attr("name","colorGroup")
-            .attr("value","3")
+            .attr("value","4")
             .attr("id","metric")
             .on("change", function () {
                 changeColorGroup(this.value);

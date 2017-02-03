@@ -46,7 +46,7 @@ scaleColorGroup = function(model, group, nodeIndex) {
         color = colorMap[filteredGroup];
     }
 
-    if(model.getActiveGroup() == 3){
+    if(model.getActiveGroup() == 4){
         if(nodeIndex == -1){
             console.log("ERROR!!!!");
             return metricQuantileScale(0);
