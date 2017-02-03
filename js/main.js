@@ -72,18 +72,13 @@ if(isLoaded == 0) {
 
     queue()
         .defer(loadConnections)
-        .defer(loadCentroidsAnatomy)
-        .defer(loadCentroidsIsomap)
-        .defer(loadCentroidsMDS)
-        .defer(loadCentroidstSNE)
-        .defer(loadLabelKeys)
         .defer(loadLookUpTable)
         .defer(loadIcColors)
         // .defer(loadColorMap)
         .awaitAll(function () {
             queue()
                 // PLACE depends on connection matrix
-                .defer(loadPLACE)
+                .defer(loadTopology)
                 .awaitAll( function () {
                     console.log("Loading data done.");
                     init();

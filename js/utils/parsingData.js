@@ -10,55 +10,6 @@ var setFolder = function(folderName, callback){
     callback(null,null);
 };
 
-var loadCentroidsMDS = function (callback) {
-
-    Papa.parse("./data/"+ folder + "/MDSxyzLeft.csv", {
-        download: true,
-        delimiter: ",",
-        dynamicTyping: true,
-        complete: function (results) {
-            modelLeft.setCentroids(results, "MDS");
-            console.log("Left MDS locations loaded ... ");
-        }
-    });
-
-    Papa.parse("./data/"+ folder + "/MDSxyzRight.csv", {
-        download: true,
-        delimiter: ",",
-        dynamicTyping: true,
-        complete: function (results) {
-            modelRight.setCentroids(results, "MDS");
-            console.log("Right MDS locations loaded ... ");
-            callback(null, null);
-        }
-    });
-};
-
-var loadCentroidsAnatomy = function (callback){
-    Papa.parse("./data/"+ folder + "/anatomyxyzLeft.csv", {
-        download: true,
-        delimiter: ",",
-        dynamicTyping: true,
-        error:"continue",
-        complete: function (results) {
-            modelLeft.setCentroids(results, "anatomy");
-            console.log("Left anatomy locations loaded ... ");
-        }
-    });
-
-    Papa.parse("./data/"+ folder + "/anatomyxyzRight.csv", {
-        download: true,
-        delimiter: ",",
-        dynamicTyping: true,
-        error:"continue",
-        complete: function (results) {
-            modelRight.setCentroids(results, "anatomy");
-            console.log("Right anatomy locations loaded ... ");
-            callback(null, null);
-        }
-    });
-};
-
 var loadIcColors = function(callback){
     Papa.parse("./data//WB2s1IC.csv", {
         download: true,
@@ -68,54 +19,6 @@ var loadIcColors = function(callback){
         complete: function (results) {
             modelLeft.setICColor(results);
             modelRight.setICColor(results);
-            callback(null, null);
-        }
-    });
-};
-
-var loadCentroidsIsomap = function (callback) {
-
-    Papa.parse("./data/"+ folder +"/isomapxyzLeft.csv", {
-        download: true,
-        delimiter: ",",
-        dynamicTyping: true,
-        complete: function (results) {
-            modelLeft.setCentroids(results, "isomap");
-            console.log("Left isomap locations loaded ... ");
-        }
-    });
-
-    Papa.parse("./data/"+ folder +"/isomapxyzRight.csv", {
-        download: true,
-        delimiter: ",",
-        dynamicTyping: true,
-        complete: function (results) {
-            modelRight.setCentroids(results, "isomap");
-            console.log("Right isomap locations loaded ... ");
-            callback(null, null);
-        }
-    });
-};
-
-var loadCentroidstSNE = function (callback) {
-
-    Papa.parse("data/"+folder + "/tSNExyzLeft.csv", {
-        download: true,
-        delimiter: ",",
-        dynamicTyping: true,
-        complete: function (results) {
-            modelLeft.setCentroids(results, "tsne");
-            console.log("Left tSNE locations loaded ... ");
-        }
-    });
-
-    Papa.parse("data/"+folder + "/tSNExyzRight.csv", {
-        download: true,
-        delimiter: ",",
-        dynamicTyping: true,
-        complete: function (results) {
-            modelRight.setCentroids(results, "tsne");
-            console.log("Right tSNE locations loaded ... ");
             callback(null, null);
         }
     });
@@ -133,27 +36,6 @@ var loadLookUpTable = function (callback) {
             modelLeft.setLookUpTable(results);
             modelRight.setLookUpTable(results);
             console.log("Look up table loaded ... ");
-            callback(null, null);
-        }
-    });
-};
-
-var loadLabelKeys = function (callback) {
-    Papa.parse("data/"+folder+"/labelKeyLeft.csv", {
-        download: true,
-        dynamicTyping: true,
-        complete: function (results) {
-            modelLeft.setLabelKeys(results);
-            console.log("Left label keys loaded ... ");
-        }
-    });
-
-    Papa.parse("data/"+folder+"/labelKeyRight.csv", {
-        download: true,
-        dynamicTyping: true,
-        complete: function (results) {
-            modelRight.setLabelKeys(results);
-            console.log("Right label keys loaded ... ");
             callback(null, null);
         }
     });
@@ -184,26 +66,26 @@ var loadConnections = function(callback){
     });
 };
 
-var loadPLACE = function(callback){
-    Papa.parse("data/"+folder+"/placeLeft.csv",{
+var loadTopology = function (callback) {
+    Papa.parse("data/"+folder+"/topologyLeft.csv",{
         download: true,
         dynamicTyping: true,
         delimiter: ',',
         header: false,
         complete: function(results){
-            modelLeft.setPlace(results);
-            console.log("Left PLACE loaded ... ");
+            modelLeft.setTopology(results.data);
+            console.log("Left Topology loaded ... ");
         }
     });
 
-    Papa.parse("data/"+folder+"/placeRight.csv",{
+    Papa.parse("data/"+folder+"/topologyRight.csv",{
         download: true,
         dynamicTyping: true,
         delimiter: ',',
         header: false,
         complete: function(results){
-            modelRight.setPlace(results);
-            console.log("Right PALCE loaded ... ");
+            modelRight.setTopology(results.data);
+            console.log("Right Topology loaded ... ");
             callback(null,null);
         }
     });

@@ -3,16 +3,19 @@
  */
 
 // TODO fix all upload buttons 
-var uploadAnatomyCentroids = function (model) {
+var uploadTopology = function (model) {
+    console.log("I am here");
     var f;
-    if (model == modelLeft) {
-        f = document.getElementById("anatomyCentroidsLeft");
-        console.log("I am here left");
-    }
-    else {
-        f = document.getElementById("anatomyCentroidsRight");
-        console.log("I am here right");
-    }
+    switch (model) {
+        case (modelLeft):
+            f = document.getElementById("topologyLeft");
+            console.log("I am here left");
+            break;
+        case (modelRight):
+            f = document.getElementById("topologyRight");
+            console.log("I am here right");
+            break;
+        }
 
     if (f.files && f.files[0]) {
         var reader = new FileReader();
@@ -23,10 +26,11 @@ var uploadAnatomyCentroids = function (model) {
                     download: true,
                     delimiter: ",",
                     dynamicTyping: true,
+                    header: false,
                     complete: function (results) {
-                        model.setCentroids(results, "anatomy");
-                        d3.select('#anatomyBtn').attr('class','load');
-                        dhtmlx.message("Anatomical Centroids Uploaded");
+                        model.setTopology(results.data);
+                        d3.select('#topologyBtn').attr('class','load');
+                        dhtmlx.message("Topology Uploaded");
                     }
                 }
             )
@@ -58,78 +62,6 @@ uploadNormalConnections = function (model) {
     }
 };
 
-
-var uploadIsomapCentroids = function(model){
-    var f = document.getElementById("isomapCentroid");
-    if (f.files && f.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-            var v = e.target.result;
-            Papa.parse(v, {
-                    download: true,
-                    delimiter: ",",
-                    dynamicTyping: true,
-                    complete: function (results) {
-                        model.setCentroids(results, "isomap");
-                        d3.select('#isomapBtn').attr('class','load');
-                        dhtmlx.message("Isomap Centroids Uploaded");
-
-                    }
-                }
-            )
-        };
-        reader.readAsDataURL(f.files[0]);
-    }
-};
-
-
-var uploadMDSCentroids = function(model){
-    var f = document.getElementById("mdsCentroid");
-    if (f.files && f.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-            var v = e.target.result;
-            Papa.parse(v, {
-                    download: true,
-                    delimiter: ",",
-                    dynamicTyping: true,
-                    complete: function (results) {
-                        model.setCentroids(results, "MDS");
-                        d3.select('#mdsBtn').attr('class','load');
-                        dhtmlx.message("MDS Centroids Uploaded");
-
-                    }
-                }
-            )
-        };
-        reader.readAsDataURL(f.files[0]);
-    }
-};
-
-
-var uploadtSNECentroids = function(model){
-    var f = document.getElementById("tsneCentroid");
-    if (f.files && f.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-            var v = e.target.result;
-            Papa.parse(v, {
-                    download: true,
-                    delimiter: ",",
-                    dynamicTyping: true,
-                    complete: function (results) {
-                        model.setCentroids(results, "tsne");
-                        d3.select('#tsneBtn').attr('class','load');
-                        dhtmlx.message("tSNE Centroids Uploaded");
-
-                    }
-                }
-            )
-        };
-        reader.readAsDataURL(f.files[0]);
-    }
-};
-
 var uploadCustomMetric = function (model) {
     var f = document.getElementById("customMetric");
     if (f.files && f.files[0]) {
@@ -152,30 +84,6 @@ var uploadCustomMetric = function (model) {
 
         reader.readAsDataURL(f.files[0]);
     }
-};
-
-var uploadLabelKey = function (model) {
-    var f = document.getElementById("labelkey");
-    if (f.files && f.files[0]) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-            var v = e.target.result;
-            Papa.parse(v, {
-                    download: true,
-                    delimiter: ",",
-                    dynamicTyping: true,
-                    complete: function (results) {
-                        model.setLabelKeys(results);
-                        d3.select('#labelKeyBtn').attr('class','load');
-                        dhtmlx.message("Label Keys Uploaded");
-
-                    }
-                }
-            )
-        };
-        reader.readAsDataURL(f.files[0]);
-    }
-
 };
 
 var start = function () {

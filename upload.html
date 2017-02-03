@@ -20,12 +20,11 @@
 
     <script src="js/external-libraries/OculusControls.js"></script>
     <script src="js/external-libraries/queue.js"></script>
-    <script src="js/external-libraries/d3.js" ></script>
+    <script src="js/external-libraries/d3.min.js" ></script>
     <script type = "text/javascript" src = "js/utils/scale.js"></script>
     <script src="js/external-libraries/jQuery.js"></script>
     <script src="js/utils/parsingData.js"></script>
     <script type = "text/javascript" src="js/external-libraries/colorbrewer.js"></script>
-    <script type = "text/javascript" src ="js/utils/BCT.js"></script>
     <script src="js/graphics.js"></script>
     <script src="js/GUI.js"></script>
     <script src="js/model.js"></script>
@@ -38,37 +37,12 @@
 <h1>Upload Your Data</h1>
 
 <div class = "menu" id  = 'full'>
-    <button type = 'button' id = 'anatomyBtnLeft'>
-        <input id = 'anatomyCentroidsLeft' type = 'file' onchange="uploadAnatomyCentroids(modelLeft)">Upload Left Centroids</input>
+    <button type = 'button' id = 'topologyBtnLeft'>
+        <input id = 'topologyLeft' type = 'file' onchange="uploadTopology(modelLeft)">Upload Left Topology</input>
     </button>
 
-    <button type = 'button' id = 'anatomyBtnRight'>
-        <input id = 'anatomyCentroidsRight' type = 'file' onchange="uploadAnatomyCentroids(modelRight)">Upload Right Centroids</input>
-    </button>
-    <br>
-
-    <button type = 'button' id = 'isomapBtnLeft'>
-        <input id = 'isomapCentroidLeft' type = 'file' onchange="uploadIsomapCentroids(modelLeft)">Upload Left ISO Centroids</input>
-    </button>
-
-    <button type = 'button' id = 'isomapBtnRight'>
-        <input id = 'isomapCentroidRight' type = 'file' onchange="uploadIsomapCentroids(modelRight)">Upload Right ISO Centroids</input>
-    </button>
-    <br>
-
-    <button type = 'button' id = 'mdsBtnLeft'>
-        <input id = 'mdsCentroidLeft' type = 'file' onchange="uploadMDSCentroids(modelLeft)">Upload Left MDS Centroids</input>
-    </button>
-    <button type = 'button' id = 'mdsBtnRight'>
-        <input id = 'mdsCentroidRight' type = 'file' onchange="uploadMDSCentroids(modelRight)">Upload Right MDS Centroids</input>
-    </button>
-    <br>
-
-    <button type = 'button' id = 'tsneBtnLeft'>
-        <input id = 'tsneCentroidLeft' type = 'file' onchange="uploadtSNECentroids(modelLeft)">Upload Left tSNE Centroids</input>
-    </button>
-    <button type = 'button' id = 'tsneBtnRight'>
-        <input id = 'tsneCentroidRight' type = 'file' onchange="uploadtSNECentroids(modelRight)">Upload Right tSNE Centroids</input>
+    <button type = 'button' id = 'topologyBtnRight'>
+        <input id = 'topologyRight' type = 'file' onchange="uploadTopology(modelRight)">Upload Right Topology</input>
     </button>
     <br>
 
@@ -77,14 +51,6 @@
     </button>
     <button type = 'button' id = 'connectionsBtnRight'>
         <input id = 'anatomyConnectionsRight' type = 'file' onchange="uploadNormalConnections(modelRight)">Upload Right Connections</input>
-    </button>
-    <br>
-
-    <button type = 'button' id = 'labelKeyBtnLeft'>
-        <input id = 'labelkeyLeft' type = 'file' onchange="uploadLabelKey(modelLeft)">Upload Left Label Key</input>
-    </button>
-    <button type = 'button' id = 'labelKeyBtnRight'>
-        <input id = 'labelkeyRight' type = 'file' onchange="uploadLabelKey(modelRight)">Upload Right Label Key</input>
     </button>
     <br>
 

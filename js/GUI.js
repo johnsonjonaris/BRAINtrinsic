@@ -11,13 +11,13 @@ initGUI = function() {
     var uploadMenuRight = d3.select("#uploadRight");
 
     uploadMenuLeft.append("button")
-        .text("Upload Left Centroids")
-        .attr("id", "centroidUploadBtnLeft")
+        .text("Upload Left Topology")
+        .attr("id", "topologyUploadBtnLeft")
         .append("input")
         .attr("type", "file")
-        .attr("id", "centroidsLeft")
+        .attr("id", "topologyLeft")
         .on("change", function () {
-            var f = document.getElementById("centroidsLeft");
+            var f = document.getElementById("topologyLeft");
             if (f.files && f.files[0]) {
                 var reader = new FileReader();
 
@@ -28,8 +28,8 @@ initGUI = function() {
                             delimiter: ",",
                             dynamicTyping: true,
                             complete: function (results) {
-                                console.log("complete uploading centroids");
-                                modelLeft.setCentroids(results);
+                                console.log("Complete uploading topology");
+                                modelLeft.setTopology(results.data);
                             }
                         }
                     )};
@@ -158,13 +158,13 @@ initGUI = function() {
         });
 
     uploadMenuRight.append("button")
-        .text("Upload Right Centroids")
-        .attr("id", "centroidUploadBtnRight")
+        .text("Upload Right Topology")
+        .attr("id", "topologyUploadBtnRight")
         .append("input")
         .attr("type", "file")
-        .attr("id", "centroidsRight")
+        .attr("id", "topologyRight")
         .on("change", function () {
-            var f = document.getElementById("centroidsRight");
+            var f = document.getElementById("topologyRight");
             if (f.files && f.files[0]) {
                 var reader = new FileReader();
 
@@ -176,7 +176,7 @@ initGUI = function() {
                             dynamicTyping: true,
                             complete: function (results) {
                                 console.log("complete uploading centroids");
-                                modelRight.setCentroids(results);
+                                modelRight.setTopology(results.data);
                             }
                         }
                     )};

@@ -11,11 +11,11 @@ function Model () {
     var regionsActivated = [];          // store the group activation boolean according to activeGroup
     var regionState = {};               // group state: active, transparent or inactive
     var labelKeys;                      // map between each node and its corresponding FSL label
-    var labelVisibility = [];           // contains FSL label name, visibility and hemisphere
-    var lookUpTable = [];               // contains FSL label group name, rich club, name and hemisphere
+    var labelVisibility = {};           // contains FSL label name, visibility and hemisphere
+    var lookUpTable = {};               // contains FSL label group name, rich club, name and hemisphere
     var icColorTable = [];
 
-    var centroids = [];                 // nodes centroids according to topological spaces: centroids[node][technique] = (x,y,z)
+    var centroids = {};                 // nodes centroids according to topological spaces: centroids[node][technique] = (x,y,z)
     var activeCentroids = "isomap";     // isomap, MDS, anatomy, tsne, PLACE, selection from centroids
 
     var connectionMatrix = [];          // adjacency matrix
@@ -74,16 +74,10 @@ function Model () {
 
     // store nodes centroids according to topological spaces
     // technique can be: Isomap, MDS, tSNE, anatomy ...
-    this.setCentroids = function(d, technique) {
-        var data = d.data;
-        var len = data.length;
+    this.setCentroids = function(d, technique, offset) {
         centroids[technique] = [];
-        for (var i = 0; i < len; i++) {
-            var element = {};
-            element.x = data[i][0];
-            element.y = data[i][1];
-            element.z = data[i][2];
-            centroids[technique][i] = element;
+        for (var i = 1; i < d.length; i++) {
+            centroids[technique].push({ x: d[i][0 + offset], y: d[i][1 + offset], z: d[i][2 + offset] });
         }
     };
 
@@ -116,9 +110,9 @@ function Model () {
     // from loaded data for each FSL node label
     // for each label, d contains: label#, group, place, rich_club, region_name, hemisphere
     this.setLookUpTable = function(d) {
-        var i, el;
-
-        for (i = 0; i < d.data.length; i++) {
+        console.log(d);
+        var el, labelInfo;
+        for (var i = 0; i < d.data.length; i++) {
             el = {
                 "group": d.data[i].group,
                 "place": d.data[i].place,
@@ -128,10 +122,11 @@ function Model () {
             };
 
             lookUpTable[d.data[i].label] = el;
-            var labelInfo = [];
-            labelInfo['name'] = d.data[i].region_name;
-            labelInfo['visibility'] = true;
-            labelInfo['hemisphere'] = d.data[i].hemisphere;
+            labelInfo = {
+                'name': d.data[i].region_name,
+                'visibility': true,
+                'hemisphere': d.data[i].hemisphere
+            };
             labelVisibility[d.data[i].label] = labelInfo;
         }
     };
@@ -429,8 +424,8 @@ function Model () {
         var coneH = placeRadius*Math.cos(coneAngle/2);
         var v1 = [], v2 = [], center = [];
         var totalNNodes = placeClusters[0].length;
-        var centroids = [];
-        centroids.data = new Array(totalNNodes);
+        var centroids = {};
+        centroids.data = new Array(totalNNodes+1);
         var level = placeLevel-1;
         var nClusters = Math.pow(2, placeLevel);
 
@@ -450,16 +445,17 @@ function Model () {
             var points = sunflower(nNodes, coneR, center, v1, v2);
             // normalize and store
             for (var k = 0; k < nNodes; k++) {
-                centroids.data[clusterIdx[k]] = math.multiply(placeRadius, math.divide(points[k], math.norm(points[k])));
+                centroids.data[clusterIdx[k]+1] = math.multiply(placeRadius, math.divide(points[k], math.norm(points[k])));
             }
         }
-        this.setCentroids(centroids, 'PLACE');
+        this.setCentroids(centroids.data, 'PLACE', 0);
     };
 
     // assume last level = 4 => 16 clusters at most
     this.setPlace = function(clusters) {
         placeClusters = new Array(4); // 4 levels
-        placeClusters[3] = math.squeeze(clusters.data);
+        placeClusters[3] = clusters;
+		// placeClusters[3] = math.squeeze(clusters.data);
         for (var i = 2; i >= 0; i--) {
             placeClusters[i] =  math.ceil(math.divide(placeClusters[i+1],2.0));
         }
@@ -484,6 +480,39 @@ function Model () {
 
     this.getPlaceLevel = function() {
         return placeLevel;
+    };
+
+    this.setTopology = function (data) {
+        // the first line is assumed to contain the data indicator type
+        var dataType;
+        for (var i = 0; i < data[0].length; i++) {
+            dataType = data[0][i];
+            switch (dataType) {
+                case ("label"):
+                    labelKeys = [];
+                    for (var j = 1; j < data.length; j++) {
+                        labelKeys.push(data[j][i]);
+                    }
+                    break;
+                case ("anatomy"):
+                case ("isomap"):
+                case ("MDS"):
+                case ("tSNE"):
+                    this.setCentroids(data, dataType, i);
+                    break;
+                case ("PLACE"):
+                    var clusters = [];
+                    for (var j = 1; j < data.length; j++) {
+                        clusters.push(data[j][i]);
+                    }
+                    this.setPlace(clusters);
+                    break;
+                case (""):
+                    break;
+                default:
+                    console.error("Unknown topology type: " + dataType);
+            }
+        }
     };
 
     this.performEBOnNodes = function() {
