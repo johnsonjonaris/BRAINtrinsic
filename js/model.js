@@ -11,8 +11,7 @@ function Model () {
     var regionsActivated = [];          // store the group activation boolean according to activeGroup
     var regionState = {};               // group state: active, transparent or inactive
     var labelKeys;                      // map between each node and its corresponding FSL label
-    var labelVisibility = {};           // contains FSL label name, visibility and hemisphere
-    var lookUpTable = {};               // contains FSL label group name, rich club, name and hemisphere
+    var labelsLUT = {};                 // contains FSL label name, visibility, group name, rich club, name and hemisphere
     var icColorTable = [];
 
     var centroids = {};                 // nodes centroids according to topological spaces: centroids[node][technique] = (x,y,z)
@@ -40,7 +39,7 @@ function Model () {
 
     // data ready in model ready
     this.ready = function() {
-        return (lookUpTable && labelKeys && centroids && connectionMatrix);
+        return (labelsLUT && labelKeys && centroids && connectionMatrix);
     };
 
     // set the iso center color table ???
@@ -87,9 +86,9 @@ function Model () {
 
         for (var i = 0; i < len; i++) {
             var labelKey = labelKeys[i];
-            anatomicalGroup[i] = lookUpTable[labelKey].group;
-            embeddnessGroup[i] = lookUpTable[labelKey].place;
-            richClubGroup[i] = lookUpTable[labelKey].rich_club;
+            anatomicalGroup[i] = labelsLUT[labelKey].group;
+            embeddnessGroup[i] = labelsLUT[labelKey].place;
+            richClubGroup[i] = labelsLUT[labelKey].rich_club;
             //icGroup[i] = i;
         }
         groups[0] = anatomicalGroup;
@@ -160,27 +159,15 @@ function Model () {
         return threshold;
     };
 
-    // set the look up table filling lookUpTable and labelVisibility
+    // set the look up table filling labelsLUT
     // from loaded data for each FSL node label
     // for each label, d contains: label#, group, place, rich_club, region_name, hemisphere
     this.setLookUpTable = function(d) {
-        var el, labelInfo;
+        var el;
         for (var i = 0; i < d.data.length; i++) {
-            el = {
-                "group": d.data[i].group,
-                "place": d.data[i].place,
-                "rich_club": d.data[i].rich_club,
-                "region_name": d.data[i].region_name,
-                "hemisphere": d.data[i].hemisphere
-            };
-
-            lookUpTable[d.data[i].label] = el;
-            labelInfo = {
-                'name': d.data[i].region_name,
-                'visibility': true,
-                'hemisphere': d.data[i].hemisphere
-            };
-            labelVisibility[d.data[i].label] = labelInfo;
+            el = d.data[i];
+            el.visibility = true;
+            labelsLUT[d.data[i].label] = el;
         }
     };
 
@@ -202,9 +189,9 @@ function Model () {
                 x: centroids[activeTopology][i].x,
                 y: centroids[activeTopology][i].y,
                 z: centroids[activeTopology][i].z,
-                name: lookUpTable[label].region_name,
+                name: labelsLUT[label].region_name,
                 group: groups[activeGroup][i],
-                hemisphere: lookUpTable[label].hemisphere,
+                hemisphere: labelsLUT[label].hemisphere,
                 label: labelKeys[i]
             };
         }
@@ -316,7 +303,7 @@ function Model () {
 
     // get the region name of a specific node (edge)
     this.getRegionNameByIndex = function (index) {
-        return lookUpTable[labelKeys[index]].region_name;
+        return labelsLUT[labelKeys[index]].region_name;
     };
 
     this.setNumberOfHops = function(hops) {
@@ -333,13 +320,13 @@ function Model () {
 
     // get the label visibility
     this.getLabelVisibility = function(label) {
-        return labelVisibility[label]['visibility'];
+        return labelsLUT[label]['visibility'];
     };
 
     // set the label visibility: label is an index, visibility is boolean
     this.setLabelVisibility = function(label, visibility) {
-        if (labelVisibility[label] != undefined)
-            labelVisibility[label]['visibility'] = visibility;
+        if (labelsLUT[label] != undefined)
+            labelsLUT[label]['visibility'] = visibility;
         else {
             console.log("It isn't possible to set visibility of the label");
         }
@@ -508,7 +495,8 @@ function Model () {
                 case ("label"):
                     this.setLabelKeys(data, i);
                     break;
-                case ("PLACE"):
+                case ("PLACE"): // structural
+                case ("PACE"): // functional
                     this.setPlace(data, i);
                     topologies.push(dataType);
                     break;
