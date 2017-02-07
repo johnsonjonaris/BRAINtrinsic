@@ -26,7 +26,18 @@ var loadIcColors = function(callback){
 
 // the look up table is common for all datasets
 var loadLookUpTable = function (callback) {
-    Papa.parse("data/LookupTable.csv", {
+    var labelsLUTFilename;
+    switch (labelLUT) {
+        case ("fsl"):
+            labelsLUTFilename = "LookupTable_fsl.csv";
+            break;
+        case ("baltimore"):
+            labelsLUTFilename = "LookupTable_baltimore.csv";
+            break;
+        default:
+            break;
+    }
+    Papa.parse("data/"+labelsLUTFilename, {
         download: true,
         delimiter: ";",
         dynamicTyping: true,
@@ -42,7 +53,7 @@ var loadLookUpTable = function (callback) {
 };
 
 var loadConnections = function(callback){
-    Papa.parse("data/"+folder+"/NWLeft.csv",{
+    Papa.parse("data/"+folder+"/"+dataFiles.leftNW,{
         download: true,
         dynamicTyping: true,
         delimiter: ',',
@@ -53,7 +64,7 @@ var loadConnections = function(callback){
         }
     });
 
-    Papa.parse("data/"+folder+"/NWRight.csv",{
+    Papa.parse("data/"+folder+"/"+dataFiles.rightNW,{
         download: true,
         dynamicTyping: true,
         delimiter: ',',
@@ -67,7 +78,7 @@ var loadConnections = function(callback){
 };
 
 var loadTopology = function (callback) {
-    Papa.parse("data/"+folder+"/topologyLeft.csv",{
+    Papa.parse("data/"+folder+"/"+dataFiles.leftTopology,{
         download: true,
         dynamicTyping: true,
         delimiter: ',',
@@ -78,7 +89,7 @@ var loadTopology = function (callback) {
         }
     });
 
-    Papa.parse("data/"+folder+"/topologyRight.csv",{
+    Papa.parse("data/"+folder+"/"+dataFiles.rightTopology,{
         download: true,
         dynamicTyping: true,
         delimiter: ',',
