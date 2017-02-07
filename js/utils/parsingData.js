@@ -4,13 +4,13 @@
 
 var folder;
 
-var setFolder = function(folderName, callback){
+var setFolder = function (folderName, callback) {
     folder = folderName;
     console.log("Source folder set to: ", folder);
     callback(null,null);
 };
 
-var loadIcColors = function(callback){
+var loadIcColors = function (callback) {
     Papa.parse("./data//WB2s1IC.csv", {
         download: true,
         delimiter: ",",
@@ -52,7 +52,7 @@ var loadLookUpTable = function (callback) {
     });
 };
 
-var loadConnections = function(callback){
+var loadConnections = function (callback) {
     Papa.parse("data/"+folder+"/"+dataFiles.leftNW,{
         download: true,
         dynamicTyping: true,
@@ -102,9 +102,30 @@ var loadTopology = function (callback) {
     });
 };
 
+var loadInfo = function (callback) {
+    Papa.parse("data/"+folder+"/"+dataFiles.infoLeft,{
+        download: true,
+        dynamicTyping: true,
+        delimiter: '\n',
+        header: false,
+        complete: function(results){
+            modelLeft.setInfo(results.data[0][0], results.data[1][0]);
+        }
+    });
 
+    Papa.parse("data/"+folder+"/"+dataFiles.infoRight,{
+        download: true,
+        dynamicTyping: true,
+        delimiter: '\n',
+        header: false,
+        complete: function(results){
+            modelRight.setInfo(results.data[0][0], results.data[1][0]);
+            callback(null,null);
+        }
+    });
+};
 
-var loadColorMap = function(callback){
+var loadColorMap = function (callback) {
     Papa.parse("data/colorMap.csv", {
         download: true,
         delimiter: ',',

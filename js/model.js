@@ -29,6 +29,8 @@ function Model () {
     var edgesEB = [];                   // contains the edges computed using edge-bundling algorithm per type
     var edgeIdx = [];                   // 2D matrix where entries are the corresponding edge index
 
+    var info = { name: '', info: '' };  // information about the subject
+
     var graph;
 
     var metricValues = [];
@@ -290,6 +292,12 @@ function Model () {
         });
     };
 
+    this.getMinimumWeight = function () {
+        return d3.min(connectionMatrix, function (d) {
+            return d3.min(d, function (d) { return d; })
+        });
+    };
+
     this.getNumberOfEdges = function() {
         return numberOfEdges;
     };
@@ -544,6 +552,15 @@ function Model () {
 
     this.getEdgesIndeces = function() {
         return edgeIdx;
+    };
+
+    this.setInfo = function (name, information) {
+        info.name = name;
+        info.info = information;
+    };
+
+    this.getInfo = function () {
+        return info;
     }
 }
 

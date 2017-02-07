@@ -195,6 +195,12 @@ initGUI = function() {
         });
 };
 
+// add subject information
+addSubjectInfo = function (model, side) {
+    document.getElementById("userInfo" + side).innerHTML = model.getInfo().name;
+    document.getElementById("userInfo" + side).title = model.getInfo().info;
+};
+
 // remove the start visualization button to allow only one scene and renderer
 removeStartButton = function() {
     var elem = document.getElementById('startVisualization');
@@ -281,7 +287,8 @@ setNodeInfoPanel = function(model, regionName, index) {
 // add a slider to threshold edges at specific values
 addThresholdSlider = function() {
 
-    var max = modelLeft.getMaximumWeight();
+    var max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
+    var min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
     var menu = d3.select("#edgeInfoPanel");
     menu.append("label")
         .attr("for", "thresholdSlider")
@@ -292,7 +299,7 @@ addThresholdSlider = function() {
         .attr("type", "range")
         .attr("value", max/2)
         .attr("id", "thresholdSlider")
-        .attr("min","0")
+        .attr("min", min)
         .attr("max", max)
         .attr("step",max/1000)
         .on("change", function () {

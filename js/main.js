@@ -17,6 +17,8 @@ init = function () {
     modelRight.createGroups();
 
     initGUI();
+    addSubjectInfo(modelLeft, 'Left');
+    addSubjectInfo(modelRight, 'Right');
     initCanvas();
 };
 
@@ -64,15 +66,21 @@ var dataFiles = {};
 switch (folder) {
     case ("Demo1"):
         dataFiles.leftNW = "NWLeft.csv";
-        dataFiles.rightNW = "NWRight.csv";
         dataFiles.leftTopology = "topologyLeft.csv";
+        dataFiles.infoLeft = "infoleft.txt";
+
+        dataFiles.rightNW = "NWRight.csv";
         dataFiles.rightTopology = "topologyRight.csv";
+        dataFiles.infoRight = "inforight.txt";
         break;
     case ("Demo2"):
         dataFiles.leftNW = "NWfemale.csv";
-        dataFiles.rightNW = "NWmale.csv";
         dataFiles.leftTopology = "topologyfemale.csv";
+        dataFiles.rightNW = "NWmale.csv";
+
+        dataFiles.infoLeft = "infofemale.txt";
         dataFiles.rightTopology = "topologymale.csv";
+        dataFiles.infoRight = "infomale.txt";
         break;
 }
 var labelLUT = getQueryVariable("lut");
@@ -90,6 +98,7 @@ if(isLoaded == 0) {
         .defer(loadConnections)
         .defer(loadLookUpTable)
         .defer(loadIcColors)
+        .defer(loadInfo)
         // .defer(loadColorMap)
         .awaitAll(function () {
             queue()
