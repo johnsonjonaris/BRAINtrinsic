@@ -221,8 +221,9 @@ initCanvas = function () {
     addThresholdSlider();
     addGroupList();
     // addModalityButton();
-    addGeometryRadioButtonsLeft();
-    addGeometryRadioButtonsRight();
+    addGeometryRadioButtons(modelLeft, 'Left');
+    addGeometryRadioButtons(modelRight, 'Right');
+
     // addSkyboxButton();
     addDimensionFactorSlider();
     // addFslRadioButton();
@@ -743,18 +744,17 @@ changeColorGroup = function (n) {
     updateScenes();
 };
 
-// change the active geometry
-changeActiveGeometry = function(model, side, type){
-    console.log("Change Active Geometry to: ", type);
-    model.setActiveTopology(type);
+redrawScene = function (model, side) {
     updateNeeded = true;
     switch(side) {
+        case 'Left':
         case 'left':
             updateLeftScene();
             if(spt) {
                 drawShortestPathLeft(root);
             }
             break;
+        case 'Right':
         case 'right':
             updateRightScene();
             if(spt) {
@@ -762,6 +762,13 @@ changeActiveGeometry = function(model, side, type){
             }
             break;
     }
+};
+
+// change the active geometry
+changeActiveGeometry = function (model, side, type) {
+    console.log("Change Active Geometry to: ", type);
+    model.setActiveTopology(type);
+    redrawScene(model, side);
 };
 
 // draw shortest path from root node up to a number of hops

@@ -763,7 +763,7 @@ addGroupList = function() {
         .text("Rich Club");
     menu.append("br");
 
-    if (modelLeft.hasPlaceData() && modelRight.hasPlaceData()) {
+    if (modelLeft.hasClusteringData() && modelRight.hasClusteringData()) {
         menu.append("input")
             .attr("type", "radio")
             .attr("name","colorGroup")
@@ -809,17 +809,17 @@ addGroupList = function() {
     }
 };
 
-// add "Topological Spaces" radio button group for left scene containing:
+// add "Topological Spaces" radio button group for scene containing:
 // Isomap, MDS, tSNE and anatomy spaces
-addGeometryRadioButtonsLeft = function() {
+addGeometryRadioButtons = function(model, side) {
 
-    var topologies = modelLeft.getTopologies();
-    var menu = d3.select("#topologyLeft");
+    var topologies = model.getTopologies();
+    var menu = d3.select("#topology" + side);
 
     menu.append("br");
 
     menu.append("label")
-        .attr("for","geometryLeft")
+        .attr("for","geometry" + side)
         .text("Topological Space:");
     menu.append("br");
 
@@ -827,20 +827,24 @@ addGeometryRadioButtonsLeft = function() {
         var topology = topologies[i];
         var ip = menu.append("input")
             .attr("type", "radio")
-            .attr("name","geometryLeft")
-            .attr("id",topology + "Left")
+            .attr("name","geometry" + side)
+            .attr("id",topology + side)
             .attr("value",topology)
             .attr("checked", "false");
-        if (topology == "PLACE") {
-            ip.on("change", function () {
-                addPlaceSliderLeft();
-                changeActiveGeometry(modelLeft, 'left', this.value);
-            });
-        } else {
-            ip.on("change", function () {
-                removePlaceSliderLeft();
-                changeActiveGeometry(modelLeft, 'left', this.value);
-            });
+        switch (topology) {
+            case ("PLACE"):
+            case ("PACE"):
+                ip.on("change", function () {
+                    addClusteringSlider(model, side);
+                    changeActiveGeometry(model, side, this.value);
+                });
+                break;
+            default:
+                ip.on("change", function () {
+                    removeClusteringSlider(side);
+                    changeActiveGeometry(model, side, this.value);
+                });
+                break;
         }
         menu.append("label")
             .attr("for",topology)
@@ -848,119 +852,41 @@ addGeometryRadioButtonsLeft = function() {
         menu.append("br");
     }
 
-    document.getElementById(topologies[0] + "Left").checked = "true";
+    document.getElementById(topologies[0] + side).checked = "true";
 };
 
-// add "Topological Spaces" radio button group for right scene containing:
-addGeometryRadioButtonsRight = function() {
-
-    var topologies = modelRight.getTopologies();
-    var menu = d3.select("#topologyRight");
+addClusteringSlider = function(model, side) {
+    var menu = d3.select("#topology" + side);
 
     menu.append("br");
 
     menu.append("label")
-        .attr("for","geometryRight")
-        .text("Topological Space:");
-    menu.append("br");
-
-    for (var i = 0; i <topologies.length; i++) {
-        var topology = topologies[i];
-        var ip = menu.append("input")
-            .attr("type", "radio")
-            .attr("name","geometryRight")
-            .attr("id",topology + "Right")
-            .attr("value",topology)
-            .attr("checked","false");
-        if (topology == "PLACE") {
-            ip.on("change", function () {
-                addPlaceSliderRight();
-                changeActiveGeometry(modelRight, 'right', this.value);
-            });
-        } else {
-            ip.on("change", function () {
-                removePlaceSliderRight();
-                changeActiveGeometry(modelRight, 'right', this.value);
-            });
-        }
-        menu.append("label")
-            .attr("for",topology)
-            .text(topology);
-        menu.append("br");
-    }
-
-    document.getElementById(topologies[0] + "Right").checked = "true";
-};
-
-addPlaceSliderLeft = function() {
-    var menu = d3.select("#topologyLeft");
-
-    menu.append("br");
-
-    menu.append("label")
-        .attr("for", "placeSliderLeft")
-        .attr("id", "placeSliderLeftLabel")
-        .text("Level " + modelLeft.getPlaceLevel());
+        .attr("for", "clusteringSlider" + side)
+        .attr("id", "clusteringSliderLabel" + side)
+        .text("Level " + model.getClusteringLevel());
 
     menu.append("input")
         .attr("type", "range")
-        .attr("value", modelLeft.getPlaceLevel())
-        .attr("id", "placeSliderLeft")
+        .attr("value", model.getClusteringLevel())
+        .attr("id", "clusteringSlider" + side)
         .attr("min", 1)
         .attr("max", 4)
         .attr("step", 1)
         .on("change", function () {
-            modelLeft.setPlaceLevel(parseInt(this.value));
-            changeActiveGeometry(modelLeft, 'left', "PLACE");
-            document.getElementById("placeSliderLeftLabel").innerHTML = "Level " + this.value;
+            model.setClusteringLevel(parseInt(this.value));
+            redrawScene(model, side);
+            document.getElementById("clusteringSliderLabel" + side).innerHTML = "Level " + this.value;
         });
 };
 
-removePlaceSliderLeft = function() {
-    var elem = document.getElementById('placeSliderLeft');
+removeClusteringSlider = function(side) {
+    var elem = document.getElementById('clusteringSlider' + side);
 
     if(elem) {
         elem.parentNode.removeChild(elem);
     }
 
-    elem = document.getElementById('placeSliderLeftLabel');
-    if(elem) {
-        elem.parentNode.removeChild(elem);
-    }
-};
-
-addPlaceSliderRight = function() {
-    var menu = d3.select("#topologyRight");
-
-    menu.append("br");
-
-    menu.append("label")
-        .attr("for", "placeSliderRight")
-        .attr("id", "placeSliderRightLabel")
-        .text("Level " + modelRight.getPlaceLevel());
-
-    menu.append("input")
-        .attr("type", "range")
-        .attr("value", modelRight.getPlaceLevel())
-        .attr("id", "placeSliderRight")
-        .attr("min", 1)
-        .attr("max", 4)
-        .attr("step", 1)
-        .on("change", function () {
-            modelRight.setPlaceLevel(parseInt(this.value));
-            changeActiveGeometry(modelRight, 'right', "PLACE");
-            document.getElementById("placeSliderRightLabel").innerHTML = "Level " + this.value;
-        });
-};
-
-removePlaceSliderRight = function() {
-    var elem = document.getElementById('placeSliderRight');
-
-    if(elem) {
-        elem.parentNode.removeChild(elem);
-    }
-
-    elem = document.getElementById('placeSliderRightLabel');
+    elem = document.getElementById('clusteringSliderLabel' + side);
     if(elem) {
         elem.parentNode.removeChild(elem);
     }

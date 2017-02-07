@@ -33,9 +33,9 @@ function Model () {
 
     var metricValues = [];
 
-    var placeClusters = [];             // PLACE clusters, assumed level 4: clusters from 1 to 16
-    var placeLevel = 4;                 // default place level
-    var placeRadius = 5;                // sphere radius of PLACE visualization
+    var clusters = [];                  // PLACE clusters, assumed level 4: clusters from 1 to 16
+    var clusteringLevel = 4;            // default PLACE/PACE level
+    var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
 
     // data ready in model ready
     this.ready = function() {
@@ -96,8 +96,8 @@ function Model () {
         groups[2] = richClubGroup;
         //groups[4] = icGroup;
 
-        if (this.hasPlaceData()) {
-            groups[3] = placeClusters[3];
+        if (this.hasClusteringData()) {
+            groups[3] = clusters[3];
         }
     };
 
@@ -394,9 +394,9 @@ function Model () {
         return graph.shortestPath(String(rootNode));
     };
 
-    this.computeNodesLocationForPlace = function() {
+    this.computeNodesLocationForClusters = function(topology) {
         var platonic = new Platonics();
-        switch (placeLevel) {
+        switch (clusteringLevel) {
             case 1:
                 platonic.createTetrahedron();
                 break;
@@ -416,19 +416,18 @@ function Model () {
         coneAxis = math.divide(coneAxis, math.norm(coneAxis));
         var theta = Math.abs( Math.acos(math.dot(coneAxis, face[0]) ));
         var coneAngle = theta*0.6;
-        var coneR = placeRadius*Math.sin(coneAngle/2);
-        var coneH = placeRadius*Math.cos(coneAngle/2);
+        var coneR = clusteringRadius*Math.sin(coneAngle/2);
+        var coneH = clusteringRadius*Math.cos(coneAngle/2);
         var v1 = [], v2 = [], center = [];
-        var totalNNodes = placeClusters[0].length;
-        var centroids = {};
-        centroids.data = new Array(totalNNodes+1);
-        var level = placeLevel-1;
-        var nClusters = Math.pow(2, placeLevel);
+        var totalNNodes = clusters[0].length;
+        var centroids = new Array(totalNNodes+1);
+        var level = clusteringLevel-1;
+        var nClusters = Math.pow(2, clusteringLevel);
 
         for (var i = 0; i < nClusters; i++) {
             var clusterIdx = [];
             for (var s = 0; s < totalNNodes; s++) {
-                if (placeClusters[level][s] == (i+1)) clusterIdx.push(s);
+                if (clusters[level][s] == (i+1)) clusterIdx.push(s);
             }
             var nNodes = clusterIdx.length;
             face = platonic.getFace(i);
@@ -441,49 +440,48 @@ function Model () {
             var points = sunflower(nNodes, coneR, center, v1, v2);
             // normalize and store
             for (var k = 0; k < nNodes; k++) {
-                centroids.data[clusterIdx[k]+1] = math.multiply(placeRadius, math.divide(points[k], math.norm(points[k])));
+                centroids[clusterIdx[k]+1] = math.multiply(clusteringRadius, math.divide(points[k], math.norm(points[k])));
             }
         }
-        this.setCentroids(centroids.data, 'PLACE', 0);
+        this.setCentroids(centroids, topology, 0);
     };
 
     // assume last level = 4 => 16 clusters at most
-    this.setPlace = function(data, loc) {
-        placeClusters = new Array(4); // 4 levels
-        placeClusters[3] = [];
+    this.setClusters = function(data, loc) {
+        clusters = new Array(4); // 4 levels
+        clusters[3] = [];
         // data[0] is assumed to contain a string header
         for (var j = 1; j < data.length; j++) {
-            placeClusters[3].push(data[j][loc]);
+            clusters[3].push(data[j][loc]);
         }
 		// placeClusters[3] = math.squeeze(clusters.data);
         for (var i = 2; i >= 0; i--) {
-            placeClusters[i] =  math.ceil(math.divide(placeClusters[i+1],2.0));
+            clusters[i] =  math.ceil(math.divide(clusters[i+1],2.0));
         }
-        this.computeNodesLocationForPlace();
     };
 
-    this.setPlaceLevel = function(level) {
-        if (level == placeLevel){
+    this.setClusteringLevel = function(level) {
+        if (level == clusteringLevel){
             return;
         }
-        placeLevel = level;
-        this.computeNodesLocationForPlace();
+        clusteringLevel = level;
+        this.computeNodesLocationForClusters(activeTopology);
     };
 
-    this.setPlaceSphereRadius = function(r) {
-        if (r == placeRadius) {
+    this.setClusteringSphereRadius = function(r) {
+        if (r == clusteringRadius) {
             return;
         }
-        placeRadius = r;
-        this.computeNodesLocationForPlace();
+        clusteringRadius = r;
+        this.computeNodesLocationForClusters(activeTopology);
     };
 
-    this.getPlaceLevel = function() {
-        return placeLevel;
+    this.getClusteringLevel = function() {
+        return clusteringLevel;
     };
 
-    this.hasPlaceData = function () {
-        return (placeClusters.length > 0);
+    this.hasClusteringData = function () {
+        return (clusters.length > 0);
     };
 
     this.setTopology = function (data) {
@@ -497,7 +495,8 @@ function Model () {
                     break;
                 case ("PLACE"): // structural
                 case ("PACE"): // functional
-                    this.setPlace(data, i);
+                    this.setClusters(data, i);
+                    this.computeNodesLocationForClusters(dataType);
                     topologies.push(dataType);
                     break;
                 case (""):

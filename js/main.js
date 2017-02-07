@@ -60,6 +60,22 @@ var parse = function(callback){
 };
 
 var folder = getQueryVariable("dataset");
+var dataFiles = {};
+switch (folder) {
+    case ("Demo1"):
+        dataFiles.leftNW = "NWLeft.csv";
+        dataFiles.rightNW = "NWRight.csv";
+        dataFiles.leftTopology = "topologyLeft.csv";
+        dataFiles.rightTopology = "topologyRight.csv";
+        break;
+    case ("Demo2"):
+        dataFiles.leftNW = "NWfemale.csv";
+        dataFiles.rightNW = "NWmale.csv";
+        dataFiles.leftTopology = "topologyfemale.csv";
+        dataFiles.rightTopology = "topologymale.csv";
+        break;
+}
+var labelLUT = getQueryVariable("lut");
 var vr = getQueryVariable("vr");
 var isLoaded = parseInt(getQueryVariable("load"));
 metric = stringToBoolean(getQueryVariable("metric"));
