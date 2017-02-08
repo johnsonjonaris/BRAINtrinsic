@@ -25,8 +25,8 @@
             compatibility_threshold = 0.6;
 
         // WebGL stuff
-        var gpgpuUility = null,
-            gl = null, // gl context
+        var gpgpuUility = new vizit.utility.GPGPUtility(1, 1, false, {premultipliedAlpha:false}),
+            gl = gpgpuUility.getGLContext(), // gl context
             programCompatibility = null, // openGL compatibility program
             programSubdivision = null, // opengGL subdivision program
             programUpdate = null, // opengGL update program
@@ -38,7 +38,7 @@
             frameBuffer = null,
             maxNCompatibleEdges = 500,
             nRows, nColumns, // number of rows and columns of the problem
-            maxTextureSize, // max texture size of the GPU used
+            maxTextureSize = gpgpuUility.getMaxTextureSize(), // max texture size of the GPU used
             nTiles = 1; // number of tiles in case nEdges > maxTextureSize
 
             // get uniform locations from the shader program
@@ -113,10 +113,8 @@
 
         function initializeWebGL() {
             // analyze the required memory, if the number of edges surpasses the max texture size, tiling is performed
-            gpgpuUility = new vizit.utility.GPGPUtility(1, 1, false, {premultipliedAlpha:false});
-            maxTextureSize = gpgpuUility.getMaxTextureSize();
             nTiles = Math.ceil(nEdges/maxTextureSize);
-            console.log("Problem requires " + nTiles + " tiles");
+            // console.log("Problem requires " + nTiles + " tiles");
             if (nTiles > 1)
                 console.log("Using " + nTiles + " tiles.");
             nRows = Math.min(nEdges, maxTextureSize);
@@ -126,7 +124,6 @@
             }
 
             gpgpuUility.setProblemSize(nColumns, nRows);
-            gl = gpgpuUility.getGLContext();
             var canvas = gpgpuUility.getCanvas();
             canvas.addEventListener("webglcontextlost", function(event) {
                 event.preventDefault();
@@ -134,7 +131,7 @@
         }
 
         function initTexture() {
-            console.log('Creating textures of size (W X H): ' + nColumns + 'X' + nRows);
+            // console.log('Creating textures of size (W X H): ' + nColumns + 'X' + nRows);
             // prepare nodes
             var pixels = create2DArray(nRows,nColumns,4);
             var offset, rr;
@@ -249,19 +246,19 @@
             nPoints = P_initial*Math.pow(P_rate, C)+2;
             //console.log("Expected output = " + nPoints + " points");
 
-            console.time("GPU Preparation Time taken ");
+            // console.time("GPU Preparation Time taken ");
             initializeWebGL();
             frameBuffer = gpgpuUility.createFramebuffer();
             initTexture();
             createPrograms();
             storeUniformsLocation();
             gl.finish();
-            console.timeEnd("GPU Preparation Time taken ");
+            // console.timeEnd("GPU Preparation Time taken ");
 
-            console.time("GPU Time taken ");
+            // console.time("GPU Time taken ");
             doBundling();
             gl.finish();
-            console.timeEnd("GPU Time taken ");
+            // console.timeEnd("GPU Time taken ");
 
             gpgpuUility.deleteProgram(programCompatibility);
             gpgpuUility.deleteProgram(programSubdivision);
