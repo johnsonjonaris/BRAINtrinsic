@@ -352,28 +352,6 @@ render = function() {
     }
 };
 
-// linearly scale coordinates to a range -500 to +500
-// returns a function that can be used to scale any input
-// according to provided data
-var createCentroidScale = function(d){
-    var l = d.length;
-    var allCoordinates = [];
-
-    for(var i=0; i < l; i++) {
-        allCoordinates[allCoordinates.length] = d[i].x;
-        allCoordinates[allCoordinates.length] = d[i].y;
-        allCoordinates[allCoordinates.length] = d[i].z;
-    }
-    var centroidScale = d3.scale.linear().domain(
-        [
-            d3.min(allCoordinates, function(e){ return e; }),
-            d3.max(allCoordinates, function(e){ return e; })
-        ]
-    ).range([-500,+500]);
-    return centroidScale;
-};
-
-
 // determine if a region should be drawn
 shouldDrawRegion = function(model, region) {
     if(model.isRegionActive(region.group) && model.getLabelVisibility(region.label))
@@ -389,11 +367,6 @@ drawAllRegions = function() {
 drawRegions = function(model, dataset, glyphs, scene) {
 
     var l = dataset.length;
-    var centroidScale = createCentroidScale(dataset);
-    // compute centroids according to scaled data
-    var xCentroid = d3.mean(dataset, function(d){ return centroidScale(d.x); });
-    var yCentroid = d3.mean(dataset, function(d){ return centroidScale(d.y); });
-    var zCentroid = d3.mean(dataset, function(d){ return centroidScale(d.z); });
 
     var material;
     var geometry = new THREE.CircleGeometry( 1.0, 10);
@@ -419,12 +392,7 @@ drawRegions = function(model, dataset, glyphs, scene) {
 
             glyphs[i] = new THREE.Mesh(geometry, material);
             glyphs[i].userData.hemisphere = dataset[i].hemisphere;
-
-            var x = centroidScale(dataset[i].x) - xCentroid;
-            var y = centroidScale(dataset[i].y) - yCentroid;
-            var z = centroidScale(dataset[i].z) - zCentroid;
-
-            glyphs[i].position.set(x, y, z);
+            glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
 
             glyphNodeDictionary[glyphs[i].uuid] = i;
 
@@ -538,62 +506,40 @@ drawTopNEdgesByNode = function (model, glyphs, scene, displayedEdges, nodeIndex,
 drawEdgesGivenNode = function(model, glyphs, scene, displayedEdges, indexNode) {
 
     var row = model.getConnectionMatrixRow(indexNode);
-    // var edges = model.getActiveEdges();
-    // var edgeIdx = model.getEdgesIndeces();
+    var edges = model.getActiveEdges();
+    var edgeIdx = model.getEdgesIndeces();
+    // model.performEBOnNode(indexNode);
 
     for(var i=0; i < row.length ; i++){
         if(row[i] > model.getThreshold()  && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
-            var start = new THREE.Vector3(  glyphs[indexNode].position.x,
-                                            glyphs[indexNode].position.y,
-                                            glyphs[indexNode].position.z );
-            var end = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z );
-            displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, start, end, row[i]);
-            //displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, edges[edgeIdx[indexNode][i]], row[i]);
+            displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, edges[edgeIdx[indexNode][i]], indexNode);
         }
     }
     setEdgesColor(displayedEdges);
 };
 
 // create a line using start and end points and give it a name
-createLine = function(start, end, name){
-    var material = new THREE.LineBasicMaterial();
-    var geometry = new THREE.Geometry();
-    geometry.vertices.push(start,end);
-    // TODO use this to allow different line sizes
-    // https://github.com/spite/THREE.MeshLine#create-a-threemeshline-and-assign-the-geometry
-    // geometry.vertices.push(end);
-    // var line = new THREE.MeshLine();
-    // line.setGeometry( geometry );
-    // material = new THREE.MeshLineMaterial();
-    // var mesh  = new THREE.Mesh(line.geometry, material);
-    var line  = new THREE.Line(geometry, material);
-    line.name = name;
-    return line;
-};
-
-/*createLine = function(edge, name){
+// TODO use this to allow different line sizes
+// https://github.com/spite/THREE.MeshLine#create-a-threemeshline-and-assign-the-geometry
+// geometry.vertices.push(end);
+// var line = new THREE.MeshLine();
+// line.setGeometry( geometry );
+// material = new THREE.MeshLineMaterial();
+// var mesh  = new THREE.Mesh(line.geometry, material);
+createLine = function(edge, ownerNode){
     var material = new THREE.LineBasicMaterial();
     var geometry = new THREE.Geometry();
     geometry.vertices = edge;
-    // for (var i = 0; i < edge.length; i++)
-    //     geometry.vertices.push(edge[i])
     var line  = new THREE.Line(geometry, material);
-    line.name = name;
-    return line;
-};*/
-
-// draw an edge from a start to end points in a specific scene and give it a name
-var drawEdgeWithName = function (scene, start, end, name) {
-    var line = createLine(start, end, name);
-    scene.add(line);
+    line.ownerNode = ownerNode;
     return line;
 };
 
-/*var drawEdgeWithName = function (scene, edge, name) {
-    var line = createLine(edge, name);
+var drawEdgeWithName = function (scene, edge, ownerNode) {
+    var line = createLine(edge, ownerNode);
     scene.add(line);
     return line;
-};*/
+};
 
 removeEdgesGivenNodeFromScenes = function(nodeIndex) {
     displayedEdgesLeft = removeEdgesGivenNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex);
@@ -605,23 +551,14 @@ removeEdgesGivenNodeFromScenes = function(nodeIndex) {
 
 // give a specific node index, remove all edges from a specific node in a specific scene
 removeEdgesGivenNode = function(glyphs, scene, displayedEdges, indexNode) {
-    var x = glyphs[indexNode].position.x;
-    var y = glyphs[indexNode].position.y;
-    var z = glyphs[indexNode].position.z;
-
     var l = displayedEdges.length;
 
     // keep a list of removed edges indexes
     var removedEdges = [];
     for(var i=0; i < l; i++){
         var edge = displayedEdges[i];
-
-        var xStart = edge.geometry.vertices[0].x;
-        var yStart = edge.geometry.vertices[0].y;
-        var zStart = edge.geometry.vertices[0].z;
-
         //removing only the edges that starts from that node
-        if(x == xStart && y == yStart && z == zStart && shortestPathEdges.indexOf(edge) == -1){
+        if(edge.ownerNode == indexNode && shortestPathEdges.indexOf(edge) == -1){
             removedEdges[removedEdges.length] = i;
             scene.remove(edge);
         }

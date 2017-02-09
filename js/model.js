@@ -17,6 +17,7 @@ function Model () {
     var centroids = {};                 // nodes centroids according to topological spaces: centroids[node][technique] = (x,y,z)
     var topologies = [];                // available topologies
     var activeTopology;                 // isomap, MDS, anatomy, tsne, PLACE, selection from centroids
+    var nodesDistances = {};            // Euclidean distance between the centroids of all nodes
 
     var connectionMatrix = [];          // adjacency matrix
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
@@ -26,7 +27,7 @@ function Model () {
     var threshold;                      // threshold for the edge value
     var numberOfEdges = 5;              // threshold the number of edges for shortest paths
     var numberOfHops;
-    var edgesEB = [];                   // contains the edges computed using edge-bundling algorithm per type
+    var edges = [];                     // contains the edges per dataType
     var edgeIdx = [];                   // 2D matrix where entries are the corresponding edge index
 
     var info = { name: '', info: '' };  // information about the subject
@@ -38,6 +39,8 @@ function Model () {
     var clusters = [];                  // PLACE clusters, assumed level 4: clusters from 1 to 16
     var clusteringLevel = 4;            // default PLACE/PACE level
     var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
+
+    var fbundling = d3.GPUForceEdgeBundling().cycles(5).iterations(50);
 
     // data ready in model ready
     this.ready = function() {
@@ -124,16 +127,37 @@ function Model () {
     // isomap, MDS, anatomy, tsne, selection from centroids
     this.setActiveTopology = function(topology) {
         activeTopology = topology;
+        fbundling.nodes(centroids[topology]);
+    };
+
+    this.computeNodesDistances = function (topology) {
+        nodesDistances[topology] = [];
+        var cen = centroids[topology];
+        var nNodes = cen.length;
+        var distances = new Array(nNodes);
+        for (var i = 0; i < nNodes; i++) {
+            distances[i] = new Array(nNodes);
+        }
+        for (var i = 0; i < nNodes; i++) {
+            for (var j = i; j < nNodes; j++) {
+                distances[i][j] = cen[i].distanceTo(cen[j]);
+                distances[j][i] = distances[i][j];
+            }
+        }
+        nodesDistances[topology] = distances;
     };
 
     // store nodes centroids according to topological spaces
     // technique can be: Isomap, MDS, tSNE, anatomy ...
     this.setCentroids = function(d, topology, offset) {
-        centroids[topology] = [];
+        var data = [];
         // data[0] is assumed to contain a string header
         for (var i = 1; i < d.length; i++) {
-            centroids[topology].push({ x: d[i][0 + offset], y: d[i][1 + offset], z: d[i][2 + offset] });
+            data.push(new THREE.Vector3(d[i][0 + offset], d[i][1 + offset], d[i][2 + offset]));
         }
+        centroids[topology] = scaleCentroids(data);
+        this.computeNodesDistances(topology);
+        this.computeEdgesForTopology(topology);
     };
 
     // set shortest path distance threshold and update GUI
@@ -181,20 +205,18 @@ function Model () {
 
     // get the dataset according to activeCentroids
     this.getDataset = function() {
-        var arrayLength = labelKeys.length;
+        var nNodes = labelKeys.length;
         var result = [];
 
-        for (var i = 0; i < arrayLength; i++) {
+        for (var i = 0; i < nNodes; i++) {
             var label = labelKeys[i];
             result[i] = {
                 //getting Centroids
-                x: centroids[activeTopology][i].x,
-                y: centroids[activeTopology][i].y,
-                z: centroids[activeTopology][i].z,
+                position: centroids[activeTopology][i],
                 name: labelsLUT[label].region_name,
                 group: groups[activeGroup][i],
                 hemisphere: labelsLUT[label].hemisphere,
-                label: labelKeys[i]
+                label: label
             };
         }
         return result;
@@ -366,30 +388,32 @@ function Model () {
 
     // compute distance matrix = 1/(adjacency matrix)
     this.computeDistanceMatrix = function() {
-        distanceMatrix = [];
         var adjacencyMatrix = this.getConnectionMatrix();
+        var nNodes = adjacencyMatrix.length;
+        distanceMatrix = new Array(nNodes);
         graph = new Graph();
         var idx = 0;
         // for every node, add the distance to all other nodes
-        for(var i = 0; i < adjacencyMatrix.length; i++){
+        for(var i = 0; i < nNodes; i++){
             var vertexes = {};
-            var row = [];
-            edgeIdx.push([]);
-            for(var j = 0; j < adjacencyMatrix[i].length; j++){
+            var row = new Array(nNodes);
+            edgeIdx.push(new Array(nNodes));
+            edgeIdx[i].fill(-1); // indicates no connection
+            for(var j = 0; j < nNodes; j++){
                 vertexes[j] = 1/adjacencyMatrix[i][j];
-                row[row.length] = 1/adjacencyMatrix[i][j];
-                if (j > i && adjacencyMatrix[i][j] > 0) {
+                row[j] = 1/adjacencyMatrix[i][j];
+                if (j > i && Math.abs(adjacencyMatrix[i][j]) > 0) {
                     edgeIdx[i][j] = idx;
                     idx++;
                 }
             }
-            distanceMatrix[distanceMatrix.length] = row;
+            distanceMatrix[i] = row;
             graph.addVertex(i,vertexes);
         }
 
         // mirror it
-        for(var i = 0; i < adjacencyMatrix.length; i++) {
-            for(var j = i+1; j < adjacencyMatrix[i].length; j++) {
+        for(var i = 0; i < nNodes; i++) {
+            for(var j = i+1; j < nNodes; j++) {
                 edgeIdx[j][i] = edgeIdx[i][j];
             }
         }
@@ -516,38 +540,82 @@ function Model () {
             }
         }
         activeTopology = topologies[0];
+        fbundling.nodes(centroids[activeTopology]);
     };
 
     this.getTopologies = function () {
         return topologies;
     };
 
-    this.performEBOnNodes = function() {
-        var edges = [];
+    /*
+     * Since EB takes time for large networks, we are going to partially computes it
+     * we are going to compute EB for only 1000 edges at a time following:
+     * 1) all edges of selected node
+     * 2) all edges of selected node neighbor
+     * @param nodeIdx selected node index
+     */
+    this.performEBOnNode = function(nodeIdx) {
+        var edges_ = [];
+        var edges2 = [];
+        var edgeIndices = [];
         var nNodes = connectionMatrix.length;
+        // all edges of selected node
         for (var i = 0; i < nNodes; i++) {
-            for (var j = i+1; j < nNodes; j++) {
-                if (connectionMatrix[i][j] > 0) {
-                    edges.push({
-                        'source': i,
-                        'target': j
-                    });
+            if (Math.abs(connectionMatrix[nodeIdx][i]) > 0) {
+                edges_.push({
+                    'source': i,
+                    'target': nodeIdx
+                });
+
+                edges2.push({
+                    'source': centroids[activeTopology][i],
+                    'target': centroids[activeTopology][nodeIdx]
+                });
+
+                edgeIndices.push(edgeIdx[nodeIdx][i]);
+            }
+        }
+        // selected node neighbors
+        var neighbors = nodesDistances[activeTopology][nodeIdx]
+            .map(function(o, i) {return {idx: i, val: o}; }) // create map with value and index
+            .sort(function(a, b) {return a.val - b.val;}); // sort based on value
+        for (var i = 1; i < nNodes; i++) { // first one assumed to be self
+            if (edges_.length >= 1000)
+                break;
+            if (neighbors[i].idx != nodeIdx) {
+                var row = connectionMatrix[neighbors[i].idx];
+                for (var j = 0; j < nNodes; j++) {
+                    if (Math.abs(row[j]) > 0 && j != nodeIdx) {
+                        edges_.push({
+                            'source': neighbors[i].idx,
+                            'target': j
+                        });
+
+                        edges2.push({
+                            'source': centroids[activeTopology][neighbors[i].idx],
+                            'target': centroids[activeTopology][j]
+                        });
+
+                        edgeIndices.push(edgeIdx[neighbors[i].idx][j]);
+                    }
                 }
             }
         }
-        // console.log(edges);
-        var fbundling = d3.GPUForceEdgeBundling().nodes(centroids[activeTopology]).edges(edges).cycles(3).iterations(1);
-        edgesEB[activeTopology] = fbundling();
+
+
+        fbundling.edges(edges_);
+        var results = fbundling();
+        // console.log(edges2);
+        // console.log(results);
+
+
+        for (var i = 0; i <edges_.length; i++) {
+            edges[activeTopology][edgeIndices[i]] = results[i];
+        }
     };
 
     this.getActiveEdges = function() {
-        if (edgesEB[activeTopology] === undefined ) {
-            console.log("Computing edge bundling for " + activeTopology);
-            console.time("");
-            this.performEBOnNodes();
-            console.timeEnd("EB done in ");
-        }
-        return edgesEB[activeTopology];
+        return edges[activeTopology];
     };
 
     this.getEdgesIndeces = function() {
@@ -561,6 +629,62 @@ function Model () {
 
     this.getInfo = function () {
         return info;
+    };
+
+    // linearly scale coordinates to a range -500 to +500
+    // returns a function that can be used to scale any input
+    // according to provided data
+    var createCentroidScale = function(d){
+        var l = d.length;
+        var allCoordinates = [];
+
+        for(var i=0; i < l; i++) {
+            allCoordinates[allCoordinates.length] = d[i].x;
+            allCoordinates[allCoordinates.length] = d[i].y;
+            allCoordinates[allCoordinates.length] = d[i].z;
+        }
+        var centroidScale = d3.scale.linear().domain(
+            [
+                d3.min(allCoordinates, function(e){ return e; }),
+                d3.max(allCoordinates, function(e){ return e; })
+            ]
+        ).range([-500,+500]);
+        return centroidScale;
+    };
+
+    // scales and center centroids
+    var scaleCentroids = function (centroids) {
+        var centroidScale = createCentroidScale(centroids);
+
+        // compute centroids according to scaled data
+        var xCentroid = d3.mean(centroids, function(d){ return centroidScale(d.x); });
+        var yCentroid = d3.mean(centroids, function(d){ return centroidScale(d.y); });
+        var zCentroid = d3.mean(centroids, function(d){ return centroidScale(d.z); });
+
+        var newCentroids = new Array(centroids.length);
+        for (var i = 0; i < centroids.length; i++) {
+            var x = centroidScale(centroids[i].x) - xCentroid;
+            var y = centroidScale(centroids[i].y) - yCentroid;
+            var z = centroidScale(centroids[i].z) - zCentroid;
+            newCentroids[i] = new THREE.Vector3(x,y,z);
+        }
+        return newCentroids;
+    };
+
+    // compute the edges for a specific topology
+    this.computeEdgesForTopology = function (topology) {
+        var nNodes = connectionMatrix.length;
+        edges[topology] = [];
+        for (var i = 0; i < nNodes; i++) {
+            for (var j = i+1; j < nNodes; j++) {
+                if (Math.abs(connectionMatrix[i][j]) > 0) {
+                    var edge = [];
+                    edge.push(centroids[topology][i]);
+                    edge.push(centroids[topology][j]);
+                    edges[topology].push(edge);
+                }
+            }
+        }
     }
 }
 
