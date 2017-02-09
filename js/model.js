@@ -40,7 +40,7 @@ function Model () {
     var clusteringLevel = 4;            // default PLACE/PACE level
     var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
 
-    var fbundling = d3.GPUForceEdgeBundling().cycles(5).iterations(50);
+    var fbundling = d3.GPUForceEdgeBundling().cycles(5).iterations(60);
 
     // data ready in model ready
     this.ready = function() {
@@ -556,7 +556,6 @@ function Model () {
      */
     this.performEBOnNode = function(nodeIdx) {
         var edges_ = [];
-        var edges2 = [];
         var edgeIndices = [];
         var nNodes = connectionMatrix.length;
         // all edges of selected node
@@ -566,12 +565,6 @@ function Model () {
                     'source': i,
                     'target': nodeIdx
                 });
-
-                edges2.push({
-                    'source': centroids[activeTopology][i],
-                    'target': centroids[activeTopology][nodeIdx]
-                });
-
                 edgeIndices.push(edgeIdx[nodeIdx][i]);
             }
         }
@@ -590,24 +583,13 @@ function Model () {
                             'source': neighbors[i].idx,
                             'target': j
                         });
-
-                        edges2.push({
-                            'source': centroids[activeTopology][neighbors[i].idx],
-                            'target': centroids[activeTopology][j]
-                        });
-
                         edgeIndices.push(edgeIdx[neighbors[i].idx][j]);
                     }
                 }
             }
         }
-
-
         fbundling.edges(edges_);
         var results = fbundling();
-        // console.log(edges2);
-        // console.log(results);
-
 
         for (var i = 0; i <edges_.length; i++) {
             edges[activeTopology][edgeIndices[i]] = results[i];

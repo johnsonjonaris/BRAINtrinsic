@@ -39,7 +39,9 @@
             maxNCompatibleEdges = 500,
             nRows, nColumns, // number of rows and columns of the problem
             maxTextureSize = gpgpuUility.getMaxTextureSize(), // max texture size of the GPU used
-            nTiles = 1; // number of tiles in case nEdges > maxTextureSize
+            nTiles = 1,  // number of tiles in case nEdges > maxTextureSize
+            keepPrograms = false, // keep the programs in case the object is to be reused for other edges
+            programsCreated = false;
 
             // get uniform locations from the shader program
         function storeUniformsLocation() {
@@ -148,7 +150,7 @@
                 pixels.setTo(rr,1+offset,1,nodes[edges[e].target].y);
                 pixels.setTo(rr,1+offset,2,nodes[edges[e].target].z);
             }
-
+            // console.log("Input pixels");
             // console.log(pixels);
             textures[writeTex]  = gpgpuUility.makeSizedTexture(nColumns, nRows, gl.RGBA, gl.FLOAT, null); // target
             textures[readTex]   = gpgpuUility.makeSizedTexture(nColumns, nRows, gl.RGBA, gl.FLOAT, pixels); // source
@@ -174,6 +176,10 @@
 
 
         function deleteTexture() {
+            for (var unit = 0; unit < 3; ++unit) {
+                gl.activeTexture(gl.TEXTURE0 + unit);
+                gl.bindTexture(gl.TEXTURE_2D, null);
+            }
             gl.deleteTexture(textures[0]);
             gl.deleteTexture(textures[1]);
             gl.deleteTexture(compatibilityTexture);
@@ -184,13 +190,26 @@
             programSubdivision = gpgpuUility.createProgram(null, gpgpuUility.loadShader('./js/utils/subdivision.glsl'));
             programUpdate = gpgpuUility.createProgram(null, gpgpuUility.loadShader('./js/utils/update.glsl'));
             programCompatibility = gpgpuUility.createProgram(null, gpgpuUility.loadShader('./js/utils/compatibility.glsl'));
+            programsCreated = true;
+        }
+
+        function deletePrograms() {
+            gpgpuUility.deleteProgram(programCompatibility);
+            gpgpuUility.deleteProgram(programSubdivision);
+            gpgpuUility.deleteProgram(programUpdate);
+            programCompatibility = null;
+            programSubdivision = null;
+            programUpdate = null;
         }
 
         function doBundling() {
             S = S_initial;
             I = I_initial;
             P = P_initial;
+            oldP = 0.5;
 
+            gl.clearColor(0.,0.,0.,1.);
+            gl.clear(gl.COLOR_BUFFER_BIT);
             // prepare edge compatibility list
             gpgpuUility.setProblemSize(nTiles*maxNCompatibleEdges, nRows);
             gpgpuUility.useProgram(programCompatibility);
@@ -242,6 +261,17 @@
             }
         }
 
+        // free resources
+        function freeResources() {
+            if (!keepPrograms)
+                deletePrograms();
+            deleteTexture();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            gl.deleteFramebuffer(frameBuffer);
+            frameBuffer = null;
+            gpgpuUility.setProblemSize(1,1);
+        }
+
         var forcebundle = function () {
             nPoints = P_initial*Math.pow(P_rate, C)+2;
             //console.log("Expected output = " + nPoints + " points");
@@ -250,8 +280,10 @@
             initializeWebGL();
             frameBuffer = gpgpuUility.createFramebuffer();
             initTexture();
-            createPrograms();
-            storeUniformsLocation();
+            if (!(keepPrograms && programsCreated)) {
+                createPrograms();
+                storeUniformsLocation();
+            }
             gl.finish();
             // console.timeEnd("GPU Preparation Time taken ");
 
@@ -260,15 +292,13 @@
             gl.finish();
             // console.timeEnd("GPU Time taken ");
 
-            gpgpuUility.deleteProgram(programCompatibility);
-            gpgpuUility.deleteProgram(programSubdivision);
-            gpgpuUility.deleteProgram(programUpdate);
-
             gpgpuUility.attachFrameBuffer(frameBuffer, gl.COLOR_ATTACHMENT0, textures[readTex]);
             var data = gpgpuUility.downloadTexture(textures[readTex], nColumns, nRows, gl.FLOAT, true);
 
+            // console.log("Output pixels");
             // console.log(data);
-            deleteTexture();
+
+            freeResources();
 
             var offset, rr;
 

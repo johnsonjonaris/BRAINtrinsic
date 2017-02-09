@@ -508,7 +508,7 @@ drawEdgesGivenNode = function(model, glyphs, scene, displayedEdges, indexNode) {
     var row = model.getConnectionMatrixRow(indexNode);
     var edges = model.getActiveEdges();
     var edgeIdx = model.getEdgesIndeces();
-    // model.performEBOnNode(indexNode);
+    model.performEBOnNode(indexNode);
 
     for(var i=0; i < row.length ; i++){
         if(row[i] > model.getThreshold()  && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
