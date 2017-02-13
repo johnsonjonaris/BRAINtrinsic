@@ -53,27 +53,12 @@ function onDocumentMouseMove(model, event) {
         setNodeInfoPanel(model, regionName, nodeIdx);
     }
 
-    var nodeIsUnderMouse = pointedNodeIdx > -1;
     if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
         // create a selected node (bigger) from the pointed node
         pointedObject = intersectedObject.object;
         glyphsLeft[nodeIdx].geometry = createSelectedGeometryByObject(pointedObject);
         glyphsRight[nodeIdx].geometry = createSelectedGeometryByObject(pointedObject);
         // console.log("Drawing edges from node ", nodeIdx);
-        // draw edges in one two ways:
-        if (!nodeIsUnderMouse) {
-            if (thresholdModality) {
-                // 1) all edges from a given node
-                drawEdgesGivenNode(modelLeft, glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIdx);
-                drawEdgesGivenNode(modelRight, glyphsRight, sceneRight, displayedEdgesRight, nodeIdx);
-            } else {
-                // 2) strongest n edges from the node
-                var n = model.getNumberOfEdges();
-                console.log("Drawing top " + n + " edges");
-                drawTopNEdgesByNode(modelLeft, glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIdx, n);
-                drawTopNEdgesByNode(modelRight, glyphsRight, sceneRight, displayedEdgesRight, nodeIdx, n);
-            }
-        }
         pointedNodeIdx = nodeIdx;
     } else {
         if(pointedObject){
@@ -87,12 +72,6 @@ function onDocumentMouseMove(model, event) {
             else {
                 glyphsLeft[nodeIdx].geometry = createNormalGeometryByObject(pointedObject);
                 glyphsRight[nodeIdx].geometry = createNormalGeometryByObject(pointedObject);
-            }
-
-            // remove all edges if node is not selected
-            if(nodesSelected.indexOf(nodeIdx) == -1 ) {
-                // console.log("Removing edges from node ", nodeIdx);
-                removeEdgesGivenNodeFromScenes(nodeIdx);
             }
             pointedObject = null;
         }
@@ -124,12 +103,27 @@ function onClick(model, event) {
     if ( objectIntersected ) {
         nodeIndex = glyphNodeDictionary[objectIntersected.object.uuid];
     }
+
     if (objectIntersected && visibleNodes[nodeIndex]) {
         if(!spt) {
             var el = nodesSelected.indexOf(nodeIndex);
             if (el == -1) {
                 //if the node is not already selected -> draw edges and add in the nodesSelected Array
                 drawSelectedNode(nodeIndex, objectIntersected.object);
+
+                // draw edges in one two ways:
+                if (thresholdModality) {
+                    // 1) all edges from a given node
+                    drawEdgesGivenNode(modelLeft, glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex);
+                    drawEdgesGivenNode(modelRight, glyphsRight, sceneRight, displayedEdgesRight, nodeIndex);
+                } else {
+                    // 2) strongest n edges from the node
+                    var n = model.getNumberOfEdges();
+                    console.log("Drawing top " + n + " edges");
+                    drawTopNEdgesByNode(modelLeft, glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex, n);
+                    drawTopNEdgesByNode(modelRight, glyphsRight, sceneRight, displayedEdgesRight, nodeIndex, n);
+                }
+
                 pointedObject = null;
             } else {
                 //if the node is already selected, remove edges and remove from the nodeSelected Array
