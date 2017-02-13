@@ -1,38 +1,73 @@
 /*!
 	Papa Parse
-	v4.1.0
+	v4.1.4
 	https://github.com/mholt/PapaParse
 */
-(function(global)
+(function(root, factory)
 {
-	"use strict";
+	if (typeof define === 'function' && define.amd)
+	{
+		// AMD. Register as an anonymous module.
+		define([], factory);
+	}
+	else if (typeof module === 'object' && module.exports)
+	{
+		// Node. Does not work with strict CommonJS, but
+		// only CommonJS-like environments that support module.exports,
+		// like Node.
+		module.exports = factory();
+	}
+	else
+	{
+		// Browser globals (root is window)
+		root.Papa = factory();
+	}
+}(this, function()
+{
+	'use strict';
 
-	var IS_WORKER = !global.document, LOADED_SYNC = false, AUTO_SCRIPT_PATH;
+	var global = (function () {
+		// alternative method, similar to `Function('return this')()`
+		// but without using `eval` (which is disabled when
+		// using Content Security Policy).
+
+		if (typeof self !== 'undefined') { return self; }
+		if (typeof window !== 'undefined') { return window; }
+		if (typeof global !== 'undefined') { return global; }
+
+        // When running tests none of the above have been defined
+        return {};
+	})();
+
+
+	var IS_WORKER = !global.document && !!global.postMessage,
+		IS_PAPA_WORKER = IS_WORKER && /(\?|&)papaworker(=|&|$)/.test(global.location.search),
+		LOADED_SYNC = false, AUTO_SCRIPT_PATH;
 	var workers = {}, workerIdCounter = 0;
 
-	global.Papa = {};
+	var Papa = {};
 
-	global.Papa.parse = CsvToJson;
-	global.Papa.unparse = JsonToCsv;
+	Papa.parse = CsvToJson;
+	Papa.unparse = JsonToCsv;
 
-	global.Papa.RECORD_SEP = String.fromCharCode(30);
-	global.Papa.UNIT_SEP = String.fromCharCode(31);
-	global.Papa.BYTE_ORDER_MARK = "\ufeff";
-	global.Papa.BAD_DELIMITERS = ["\r", "\n", "\"", global.Papa.BYTE_ORDER_MARK];
-	global.Papa.WORKERS_SUPPORTED = !!global.Worker;
-	global.Papa.SCRIPT_PATH = null;	// Must be set manually if using workers and Papa Parse is loaded asynchronously
+	Papa.RECORD_SEP = String.fromCharCode(30);
+	Papa.UNIT_SEP = String.fromCharCode(31);
+	Papa.BYTE_ORDER_MARK = '\ufeff';
+	Papa.BAD_DELIMITERS = ['\r', '\n', '"', Papa.BYTE_ORDER_MARK];
+	Papa.WORKERS_SUPPORTED = !IS_WORKER && !!global.Worker;
+	Papa.SCRIPT_PATH = null;	// Must be set by your code if you use workers and this lib is loaded asynchronously
 
 	// Configurable chunk sizes for local and remote files, respectively
-	global.Papa.LocalChunkSize = 1024 * 1024 * 10;	// 10 MB
-	global.Papa.RemoteChunkSize = 1024 * 1024 * 5;	// 5 MB
-	global.Papa.DefaultDelimiter = ",";				// Used if not specified and detection fails
+	Papa.LocalChunkSize = 1024 * 1024 * 10;	// 10 MB
+	Papa.RemoteChunkSize = 1024 * 1024 * 5;	// 5 MB
+	Papa.DefaultDelimiter = ',';			// Used if not specified and detection fails
 
 	// Exposed for testing and development only
-	global.Papa.Parser = Parser;
-	global.Papa.ParserHandle = ParserHandle;
-	global.Papa.NetworkStreamer = NetworkStreamer;
-	global.Papa.FileStreamer = FileStreamer;
-	global.Papa.StringStreamer = StringStreamer;
+	Papa.Parser = Parser;
+	Papa.ParserHandle = ParserHandle;
+	Papa.NetworkStreamer = NetworkStreamer;
+	Papa.FileStreamer = FileStreamer;
+	Papa.StringStreamer = StringStreamer;
 
 	if (global.jQuery)
 	{
@@ -44,11 +79,11 @@
 
 			this.each(function(idx)
 			{
-				var supported = $(this).prop('tagName').toUpperCase() == "INPUT"
-								&& $(this).attr('type').toLowerCase() == "file"
+				var supported = $(this).prop('tagName').toUpperCase() === 'INPUT'
+								&& $(this).attr('type').toLowerCase() === 'file'
 								&& global.FileReader;
 
-				if (!supported || !this.files || this.files.length == 0)
+				if (!supported || !this.files || this.files.length === 0)
 					return true;	// continue to next input element
 
 				for (var i = 0; i < this.files.length; i++)
@@ -67,7 +102,7 @@
 
 			function parseNextFile()
 			{
-				if (queue.length == 0)
+				if (queue.length === 0)
 				{
 					if (isFunction(options.complete))
 						options.complete();
@@ -82,12 +117,12 @@
 
 					if (typeof returned === 'object')
 					{
-						if (returned.action == "abort")
+						if (returned.action === 'abort')
 						{
-							error("AbortError", f.file, f.inputElem, returned.reason);
+							error('AbortError', f.file, f.inputElem, returned.reason);
 							return;	// Aborts all queued files immediately
 						}
-						else if (returned.action == "skip")
+						else if (returned.action === 'skip')
 						{
 							fileComplete();	// parse the next file in the queue, if any
 							return;
@@ -95,7 +130,7 @@
 						else if (typeof returned.config === 'object')
 							f.instanceConfig = $.extend(f.instanceConfig, returned.config);
 					}
-					else if (returned == "skip")
+					else if (returned === 'skip')
 					{
 						fileComplete();	// parse the next file in the queue, if any
 						return;
@@ -129,7 +164,7 @@
 	}
 
 
-	if (IS_WORKER)
+	if (IS_PAPA_WORKER)
 	{
 		global.onmessage = workerThreadReceivedMessage;
 	}
@@ -157,6 +192,7 @@
 	function CsvToJson(_input, _config)
 	{
 		_config = _config || {};
+		_config.dynamicTyping = _config.dynamicTyping || false;
 
 		if (_config.worker && Papa.WORKERS_SUPPORTED)
 		{
@@ -203,15 +239,29 @@
 
 	function JsonToCsv(_input, _config)
 	{
-		var _output = "";
+		var _output = '';
 		var _fields = [];
 
 		// Default configuration
-		var _quotes = false;	// whether to surround every datum with quotes
-		var _delimiter = ",";	// delimiting character
-		var _newline = "\r\n";	// newline character(s)
+
+		/** whether to surround every datum with quotes */
+		var _quotes = false;
+
+		/** whether to write headers */
+		var _writeHeader = true;
+
+		/** delimiting character */
+		var _delimiter = ',';
+
+		/** newline character(s) */
+		var _newline = '\r\n';
+
+		/** quote character */
+		var _quoteChar = '"';
 
 		unpackConfig();
+
+		var quoteCharRegex = new RegExp(_quoteChar, 'g');
 
 		if (typeof _input === 'string')
 			_input = JSON.parse(_input);
@@ -231,19 +281,22 @@
 			if (_input.data instanceof Array)
 			{
 				if (!_input.fields)
-					_input.fields = _input.data[0] instanceof Array
+					_input.fields =  _input.meta && _input.meta.fields;
+
+				if (!_input.fields)
+					_input.fields =  _input.data[0] instanceof Array
 									? _input.fields
 									: objectKeys(_input.data[0]);
 
 				if (!(_input.data[0] instanceof Array) && typeof _input.data[0] !== 'object')
-					_input.data = [_input.data];	// handles input like [1,2,3] or ["asdf"]
+					_input.data = [_input.data];	// handles input like [1,2,3] or ['asdf']
 			}
 
 			return serialize(_input.fields || [], _input.data || []);
 		}
 
 		// Default (any valid paths should return before this)
-		throw "exception: Unable to serialize unrecognized input";
+		throw 'exception: Unable to serialize unrecognized input';
 
 
 		function unpackConfig()
@@ -252,8 +305,8 @@
 				return;
 
 			if (typeof _config.delimiter === 'string'
-				&& _config.delimiter.length == 1
-				&& global.Papa.BAD_DELIMITERS.indexOf(_config.delimiter) == -1)
+				&& _config.delimiter.length === 1
+				&& Papa.BAD_DELIMITERS.indexOf(_config.delimiter) === -1)
 			{
 				_delimiter = _config.delimiter;
 			}
@@ -264,10 +317,16 @@
 
 			if (typeof _config.newline === 'string')
 				_newline = _config.newline;
+
+			if (typeof _config.quoteChar === 'string')
+				_quoteChar = _config.quoteChar;
+
+			if (typeof _config.header === 'boolean')
+				_writeHeader = _config.header;
 		}
 
 
-		// Turns an object's keys into an array
+		/** Turns an object's keys into an array */
 		function objectKeys(obj)
 		{
 			if (typeof obj !== 'object')
@@ -278,10 +337,10 @@
 			return keys;
 		}
 
-		// The double for loop that iterates the data and writes out a CSV string including header row
+		/** The double for loop that iterates the data and writes out a CSV string including header row */
 		function serialize(fields, data)
 		{
-			var csv = "";
+			var csv = '';
 
 			if (typeof fields === 'string')
 				fields = JSON.parse(fields);
@@ -292,7 +351,7 @@
 			var dataKeyedByField = !(data[0] instanceof Array);
 
 			// If there a header row, write it first
-			if (hasHeader)
+			if (hasHeader && _writeHeader)
 			{
 				for (var i = 0; i < fields.length; i++)
 				{
@@ -324,22 +383,22 @@
 			return csv;
 		}
 
-		// Encloses a value around quotes if needed (makes a value safe for CSV insertion)
+		/** Encloses a value around quotes if needed (makes a value safe for CSV insertion) */
 		function safe(str, col)
 		{
-			if (typeof str === "undefined" || str === null)
-				return "";
+			if (typeof str === 'undefined' || str === null)
+				return '';
 
-			str = str.toString().replace(/"/g, '""');
+			str = str.toString().replace(quoteCharRegex, _quoteChar+_quoteChar);
 
 			var needsQuotes = (typeof _quotes === 'boolean' && _quotes)
 							|| (_quotes instanceof Array && _quotes[col])
-							|| hasAny(str, global.Papa.BAD_DELIMITERS)
+							|| hasAny(str, Papa.BAD_DELIMITERS)
 							|| str.indexOf(_delimiter) > -1
-							|| str.charAt(0) == ' '
-							|| str.charAt(str.length - 1) == ' ';
+							|| str.charAt(0) === ' '
+							|| str.charAt(str.length - 1) === ' ';
 
-			return needsQuotes ? '"' + str + '"' : str;
+			return needsQuotes ? _quoteChar + str + _quoteChar : str;
 		}
 
 		function hasAny(str, substrings)
@@ -351,7 +410,7 @@
 		}
 	}
 
-	// ChunkStreamer is the base prototype for various streamer implementations.
+	/** ChunkStreamer is the base prototype for various streamer implementations. */
 	function ChunkStreamer(config)
 	{
 		this._handle = null;
@@ -359,25 +418,40 @@
 		this._finished = false;
 		this._input = null;
 		this._baseIndex = 0;
-		this._partialLine = "";
+		this._partialLine = '';
 		this._rowCount = 0;
 		this._start = 0;
 		this._nextChunk = null;
+		this.isFirstChunk = true;
+		this._completeResults = {
+			data: [],
+			errors: [],
+			meta: {}
+		};
 		replaceConfig.call(this, config);
 
 		this.parseChunk = function(chunk)
 		{
+			// First chunk pre-processing
+			if (this.isFirstChunk && isFunction(this._config.beforeFirstChunk))
+			{
+				var modifiedChunk = this._config.beforeFirstChunk(chunk);
+				if (modifiedChunk !== undefined)
+					chunk = modifiedChunk;
+			}
+			this.isFirstChunk = false;
+
 			// Rejoin the line we likely just split in two by chunking the file
 			var aggregate = this._partialLine + chunk;
-			this._partialLine = "";
+			this._partialLine = '';
 
 			var results = this._handle.parse(aggregate, this._baseIndex, !this._finished);
-			
-			if (this._handle.paused())
+
+			if (this._handle.paused() || this._handle.aborted())
 				return;
-			
+
 			var lastIndex = results.meta.cursor;
-			
+
 			if (!this._finished)
 			{
 				this._partialLine = aggregate.substring(lastIndex - this._baseIndex);
@@ -389,7 +463,7 @@
 
 			var finishedIncludingPreview = this._finished || (this._config.preview && this._rowCount >= this._config.preview);
 
-			if (IS_WORKER)
+			if (IS_PAPA_WORKER)
 			{
 				global.postMessage({
 					results: results,
@@ -403,11 +477,18 @@
 				if (this._paused)
 					return;
 				results = undefined;
+				this._completeResults = undefined;
+			}
+
+			if (!this._config.step && !this._config.chunk) {
+				this._completeResults.data = this._completeResults.data.concat(results.data);
+				this._completeResults.errors = this._completeResults.errors.concat(results.errors);
+				this._completeResults.meta = results.meta;
 			}
 
 			if (finishedIncludingPreview && isFunction(this._config.complete) && (!results || !results.meta.aborted))
-				this._config.complete(results);
-			
+				this._config.complete(this._completeResults, this._input);
+
 			if (!finishedIncludingPreview && (!results || !results.meta.paused))
 				this._nextChunk();
 
@@ -418,7 +499,7 @@
 		{
 			if (isFunction(this._config.error))
 				this._config.error(error);
-			else if (IS_WORKER && this._config.error)
+			else if (IS_PAPA_WORKER && this._config.error)
 			{
 				global.postMessage({
 					workerId: Papa.WORKER_ID,
@@ -432,7 +513,9 @@
 		{
 			// Deep-copy the config so we can edit it
 			var configCopy = copy(config);
-			configCopy.chunkSize = parseInt(configCopy.chunkSize);	// VERY important so we don't concatenate strings!
+			configCopy.chunkSize = parseInt(configCopy.chunkSize);	// parseInt VERY important so we don't concatenate strings!
+			if (!config.step && !config.chunk)
+				configCopy.chunkSize = null;  // disable Range header if not streaming; bad values break IIS - see issue #196
 			this._handle = new ParserHandle(configCopy);
 			this._handle.streamer = this;
 			this._config = configCopy;	// persist the copy to the caller
@@ -480,20 +563,25 @@
 			}
 
 			xhr = new XMLHttpRequest();
-			
+
+			if (this._config.withCredentials)
+			{
+				xhr.withCredentials = this._config.withCredentials;
+			}
+
 			if (!IS_WORKER)
 			{
 				xhr.onload = bindFunction(this._chunkLoaded, this);
 				xhr.onerror = bindFunction(this._chunkError, this);
 			}
 
-			xhr.open("GET", this._input, !IS_WORKER);
-			
-			if (this._config.step || this._config.chunk)
+			xhr.open('GET', this._input, !IS_WORKER);
+
+			if (this._config.chunkSize)
 			{
 				var end = this._start + this._config.chunkSize - 1;	// minus one because byte range is inclusive
-				xhr.setRequestHeader("Range", "bytes="+this._start+"-"+end);
-				xhr.setRequestHeader("If-None-Match", "webkit-no-cache"); // https://bugs.webkit.org/show_bug.cgi?id=82672
+				xhr.setRequestHeader('Range', 'bytes='+this._start+'-'+end);
+				xhr.setRequestHeader('If-None-Match', 'webkit-no-cache'); // https://bugs.webkit.org/show_bug.cgi?id=82672
 			}
 
 			try {
@@ -503,7 +591,7 @@
 				this._chunkError(err.message);
 			}
 
-			if (IS_WORKER && xhr.status == 0)
+			if (IS_WORKER && xhr.status === 0)
 				this._chunkError();
 			else
 				this._start += this._config.chunkSize;
@@ -520,7 +608,7 @@
 				return;
 			}
 
-			this._finished = (!this._config.step && !this._config.chunk) || this._start > getFileSize(xhr);
+			this._finished = !this._config.chunkSize || this._start > getFileSize(xhr);
 			this.parseChunk(xhr.responseText);
 		}
 
@@ -532,8 +620,11 @@
 
 		function getFileSize(xhr)
 		{
-			var contentRange = xhr.getResponseHeader("Content-Range");
-			return parseInt(contentRange.substr(contentRange.lastIndexOf("/") + 1));
+			var contentRange = xhr.getResponseHeader('Content-Range');
+			if (contentRange === null) { // no content range, then finish!
+        			return -1;
+            		}
+			return parseInt(contentRange.substr(contentRange.lastIndexOf('/') + 1));
 		}
 	}
 	NetworkStreamer.prototype = Object.create(ChunkStreamer.prototype);
@@ -578,8 +669,13 @@
 
 		this._readChunk = function()
 		{
-			var end = Math.min(this._start + this._config.chunkSize, this._input.size);
-			var txt = reader.readAsText(slice.call(this._input, this._start, end), this._config.encoding);
+			var input = this._input;
+			if (this._config.chunkSize)
+			{
+				var end = Math.min(this._start + this._config.chunkSize, this._input.size);
+				input = slice.call(input, this._start, end);
+			}
+			var txt = reader.readAsText(input, this._config.encoding);
 			if (!usingAsyncReader)
 				this._chunkLoaded({ target: { result: txt } });	// mimic the async signature
 		}
@@ -588,7 +684,7 @@
 		{
 			// Very important to increment start each time before handling results
 			this._start += this._config.chunkSize;
-			this._finished = this._start >= this._input.size;
+			this._finished = !this._config.chunkSize || this._start >= this._input.size;
 			this.parseChunk(event.target.result);
 		}
 
@@ -641,6 +737,7 @@
 		var _input;				// The input being parsed
 		var _parser;			// The core parser being used
 		var _paused = false;	// Whether we are paused or not
+		var _aborted = false;   // Whether the parser has aborted or not
 		var _delimiterError;	// Temporary state between delimiter detection and processing results
 		var _fields = [];		// Fields are from the header row of the input, if there is one
 		var _results = {		// The last results returned from the parser
@@ -663,7 +760,7 @@
 					processResults();
 
 					// It's possbile that this line was empty and there's no row here after all
-					if (_results.data.length == 0)
+					if (_results.data.length === 0)
 						return;
 
 					_stepCounter += results.data.length;
@@ -675,9 +772,11 @@
 			};
 		}
 
-		// Parses input. Most users won't need, and shouldn't mess with, the baseIndex
-		// and ignoreLastRow parameters. They are used by streamers (wrapper functions)
-		// when an input comes in multiple chunks, like from a file.
+		/**
+		 * Parses input. Most users won't need, and shouldn't mess with, the baseIndex
+		 * and ignoreLastRow parameters. They are used by streamers (wrapper functions)
+		 * when an input comes in multiple chunks, like from a file.
+		 */
 		this.parse = function(input, baseIndex, ignoreLastRow)
 		{
 			if (!_config.newline)
@@ -686,7 +785,7 @@
 			_delimiterError = false;
 			if (!_config.delimiter)
 			{
-				var delimGuess = guessDelimiter(input);
+				var delimGuess = guessDelimiter(input, _config.newline);
 				if (delimGuess.successful)
 					_config.delimiter = delimGuess.bestDelimiter;
 				else
@@ -694,6 +793,11 @@
 					_delimiterError = true;	// add error after parsing (otherwise it would be overwritten)
 					_config.delimiter = Papa.DefaultDelimiter;
 				}
+				_results.meta.delimiter = _config.delimiter;
+			}
+			else if(typeof _config.delimiter === 'function')
+			{
+				_config.delimiter = _config.delimiter(input);
 				_results.meta.delimiter = _config.delimiter;
 			}
 
@@ -726,26 +830,33 @@
 			self.streamer.parseChunk(_input);
 		};
 
+		this.aborted = function ()
+		{
+			return _aborted;
+		};
+
 		this.abort = function()
 		{
+			_aborted = true;
 			_parser.abort();
+			_results.meta.aborted = true;
 			if (isFunction(_config.complete))
 				_config.complete(_results);
-			_input = "";
+			_input = '';
 		};
 
 		function processResults()
 		{
 			if (_results && _delimiterError)
 			{
-				addError("Delimiter", "UndetectableDelimiter", "Unable to auto-detect delimiting character; defaulted to '"+Papa.DefaultDelimiter+"'");
+				addError('Delimiter', 'UndetectableDelimiter', 'Unable to auto-detect delimiting character; defaulted to \''+Papa.DefaultDelimiter+'\'');
 				_delimiterError = false;
 			}
 
 			if (_config.skipEmptyLines)
 			{
 				for (var i = 0; i < _results.data.length; i++)
-					if (_results.data[i].length == 1 && _results.data[i][0] == "")
+					if (_results.data[i].length === 1 && _results.data[i][0] === '')
 						_results.data.splice(i--, 1);
 			}
 
@@ -757,7 +868,7 @@
 
 		function needsHeaderRow()
 		{
-			return _config.header && _fields.length == 0;
+			return _config.header && _fields.length === 0;
 		}
 
 		function fillHeaderFields()
@@ -770,6 +881,20 @@
 			_results.data.splice(0, 1);
 		}
 
+		function parseDynamic(field, value)
+		{
+			if ((_config.dynamicTyping[field] || _config.dynamicTyping) === true)
+			{
+				if (value === 'true' || value === 'TRUE')
+					return true;
+				else if (value === 'false' || value === 'FALSE')
+					return false;
+				else
+					return tryParseFloat(value);
+			}
+			return value;
+		}
+
 		function applyHeaderAndDynamicTyping()
 		{
 			if (!_results || (!_config.header && !_config.dynamicTyping))
@@ -777,41 +902,35 @@
 
 			for (var i = 0; i < _results.data.length; i++)
 			{
-				var row = {};
+				var row = _config.header ? {} : [];
 
 				for (var j = 0; j < _results.data[i].length; j++)
 				{
-					if (_config.dynamicTyping)
-					{
-						var value = _results.data[i][j];
-						if (value == "true")
-							_results.data[i][j] = true;
-						else if (value == "false")
-							_results.data[i][j] = false;
-						else
-							_results.data[i][j] = tryParseFloat(value);
-					}
+					var field = j;
+					var value = _results.data[i][j];
 
 					if (_config.header)
+						field = j >= _fields.length ? '__parsed_extra' : _fields[j];
+
+					value = parseDynamic(field, value);
+
+					if (field === '__parsed_extra')
 					{
-						if (j >= _fields.length)
-						{
-							if (!row["__parsed_extra"])
-								row["__parsed_extra"] = [];
-							row["__parsed_extra"].push(_results.data[i][j]);
-						}
-						else
-							row[_fields[j]] = _results.data[i][j];
+						row[field] = row[field] || [];
+						row[field].push(value);
 					}
+					else
+						row[field] = value;
 				}
+
+				_results.data[i] = row;
 
 				if (_config.header)
 				{
-					_results.data[i] = row;
 					if (j > _fields.length)
-						addError("FieldMismatch", "TooManyFields", "Too many fields: expected " + _fields.length + " fields but parsed " + j, i);
+						addError('FieldMismatch', 'TooManyFields', 'Too many fields: expected ' + _fields.length + ' fields but parsed ' + j, i);
 					else if (j < _fields.length)
-						addError("FieldMismatch", "TooFewFields", "Too few fields: expected " + _fields.length + " fields but parsed " + j, i);
+						addError('FieldMismatch', 'TooFewFields', 'Too few fields: expected ' + _fields.length + ' fields but parsed ' + j, i);
 				}
 			}
 
@@ -820,9 +939,9 @@
 			return _results;
 		}
 
-		function guessDelimiter(input)
+		function guessDelimiter(input, newline)
 		{
-			var delimChoices = [",", "\t", "|", ";", Papa.RECORD_SEP, Papa.UNIT_SEP];
+			var delimChoices = [',', '\t', '|', ';', Papa.RECORD_SEP, Papa.UNIT_SEP];
 			var bestDelim, bestDelta, fieldCountPrevRow;
 
 			for (var i = 0; i < delimChoices.length; i++)
@@ -833,6 +952,7 @@
 
 				var preview = new Parser({
 					delimiter: delim,
+					newline: newline,
 					preview: 10
 				}).parse(input);
 
@@ -853,7 +973,8 @@
 					}
 				}
 
-				avgFieldCount /= preview.data.length;
+				if (preview.data.length > 0)
+					avgFieldCount /= preview.data.length;
 
 				if ((typeof bestDelta === 'undefined' || delta < bestDelta)
 					&& avgFieldCount > 1.99)
@@ -877,13 +998,17 @@
 
 			var r = input.split('\r');
 
-			if (r.length == 1)
+			var n = input.split('\n');
+
+			var nAppearsFirst = (n.length > 1 && n[0].length < r[0].length);
+
+			if (r.length === 1 || nAppearsFirst)
 				return '\n';
 
 			var numWithN = 0;
 			for (var i = 0; i < r.length; i++)
 			{
-				if (r[i][0] == '\n')
+				if (r[i][0] === '\n')
 					numWithN++;
 			}
 
@@ -911,7 +1036,7 @@
 
 
 
-	// The core parser implements speedy and correct CSV parsing
+	/** The core parser implements speedy and correct CSV parsing */
 	function Parser(config)
 	{
 		// Unpack the config object
@@ -922,18 +1047,18 @@
 		var step = config.step;
 		var preview = config.preview;
 		var fastMode = config.fastMode;
+		var quoteChar = config.quoteChar || '"';
 
 		// Delimiter must be valid
 		if (typeof delim !== 'string'
-			|| delim.length != 1
 			|| Papa.BAD_DELIMITERS.indexOf(delim) > -1)
-			delim = ",";
+			delim = ',';
 
 		// Comment character must be valid
 		if (comments === delim)
-			throw "Comment character same as delimiter";
+			throw 'Comment character same as delimiter';
 		else if (comments === true)
-			comments = "#";
+			comments = '#';
 		else if (typeof comments !== 'string'
 			|| Papa.BAD_DELIMITERS.indexOf(comments) > -1)
 			comments = false;
@@ -950,7 +1075,7 @@
 		{
 			// For some reason, in Chrome, this speeds things up (!?)
 			if (typeof input !== 'string')
-				throw "Input must be a string";
+				throw 'Input must be a string';
 
 			// We don't need to compute some of these every time parse() is called,
 			// but having them in a more local scope seems to perform better
@@ -967,7 +1092,7 @@
 			if (!input)
 				return returnable();
 
-			if (fastMode || (fastMode !== false && input.indexOf('"') === -1))
+			if (fastMode || (fastMode !== false && input.indexOf(quoteChar) === -1))
 			{
 				var rows = input.split(newline);
 				for (var i = 0; i < rows.length; i++)
@@ -978,7 +1103,7 @@
 						cursor += newline.length;
 					else if (ignoreLastRow)
 						return returnable();
-					if (comments && row.substr(0, commentsLen) == comments)
+					if (comments && row.substr(0, commentsLen) === comments)
 						continue;
 					if (stepIsFunction)
 					{
@@ -1001,12 +1126,13 @@
 
 			var nextDelim = input.indexOf(delim, cursor);
 			var nextNewline = input.indexOf(newline, cursor);
+			var quoteCharRegex = new RegExp(quoteChar+quoteChar, 'g');
 
 			// Parser loop
 			for (;;)
 			{
 				// Field has opening quote
-				if (input[cursor] == '"')
+				if (input[cursor] === quoteChar)
 				{
 					// Start our search for the closing quote where the cursor is
 					var quoteSearch = cursor;
@@ -1017,16 +1143,16 @@
 					for (;;)
 					{
 						// Find closing quote
-						var quoteSearch = input.indexOf('"', quoteSearch+1);
+						var quoteSearch = input.indexOf(quoteChar, quoteSearch+1);
 
 						if (quoteSearch === -1)
 						{
 							if (!ignoreLastRow) {
 								// No closing quote... what a pity
 								errors.push({
-									type: "Quotes",
-									code: "MissingQuotes",
-									message: "Quoted field unterminated",
+									type: 'Quotes',
+									code: 'MissingQuotes',
+									message: 'Quoted field unterminated',
 									row: data.length,	// row has yet to be inserted
 									index: cursor
 								});
@@ -1037,21 +1163,21 @@
 						if (quoteSearch === inputLen-1)
 						{
 							// Closing quote at EOF
-							var value = input.substring(cursor, quoteSearch).replace(/""/g, '"');
+							var value = input.substring(cursor, quoteSearch).replace(quoteCharRegex, quoteChar);
 							return finish(value);
 						}
 
 						// If this quote is escaped, it's part of the data; skip it
-						if (input[quoteSearch+1] == '"')
+						if (input[quoteSearch+1] === quoteChar)
 						{
 							quoteSearch++;
 							continue;
 						}
 
-						if (input[quoteSearch+1] == delim)
+						if (input[quoteSearch+1] === delim)
 						{
 							// Closing quote followed by delimiter
-							row.push(input.substring(cursor, quoteSearch).replace(/""/g, '"'));
+							row.push(input.substring(cursor, quoteSearch).replace(quoteCharRegex, quoteChar));
 							cursor = quoteSearch + 1 + delimLen;
 							nextDelim = input.indexOf(delim, cursor);
 							nextNewline = input.indexOf(newline, cursor);
@@ -1061,7 +1187,7 @@
 						if (input.substr(quoteSearch+1, newlineLen) === newline)
 						{
 							// Closing quote followed by newline
-							row.push(input.substring(cursor, quoteSearch).replace(/""/g, '"'));
+							row.push(input.substring(cursor, quoteSearch).replace(quoteCharRegex, quoteChar));
 							saveRow(quoteSearch + 1 + newlineLen);
 							nextDelim = input.indexOf(delim, cursor);	// because we may have skipped the nextDelim in the quoted field
 
@@ -1071,7 +1197,7 @@
 								if (aborted)
 									return returnable();
 							}
-							
+
 							if (preview && data.length >= preview)
 								return returnable(true);
 
@@ -1085,7 +1211,7 @@
 				// Comment found at start of new line
 				if (comments && row.length === 0 && input.substr(cursor, commentsLen) === comments)
 				{
-					if (nextNewline == -1)	// Comment ends at EOF
+					if (nextNewline === -1)	// Comment ends at EOF
 						return returnable();
 					cursor = nextNewline + newlineLen;
 					nextNewline = input.indexOf(newline, cursor);
@@ -1134,13 +1260,15 @@
 				lastCursor = cursor;
 			}
 
-			// Appends the remaining input from cursor to the end into
-			// row, saves the row, calls step, and returns the results.
+			/**
+			 * Appends the remaining input from cursor to the end into
+			 * row, saves the row, calls step, and returns the results.
+			 */
 			function finish(value)
 			{
 				if (ignoreLastRow)
 					return returnable();
-				if (!value)
+				if (typeof value === 'undefined')
 					value = input.substr(cursor);
 				row.push(value);
 				cursor = inputLen;	// important in case parsing is paused
@@ -1150,10 +1278,12 @@
 				return returnable();
 			}
 
-			// Appends the current row to the results. It sets the cursor
-			// to newCursor and finds the nextNewline. The caller should
-			// take care to execute user's step function and check for
-			// preview and end parsing if necessary.
+			/**
+			 * Appends the current row to the results. It sets the cursor
+			 * to newCursor and finds the nextNewline. The caller should
+			 * take care to execute user's step function and check for
+			 * preview and end parsing if necessary.
+			 */
 			function saveRow(newCursor)
 			{
 				cursor = newCursor;
@@ -1162,7 +1292,7 @@
 				nextNewline = input.indexOf(newline, cursor);
 			}
 
-			// Returns an object with the results, errors, and meta.
+			/** Returns an object with the results, errors, and meta. */
 			function returnable(stopped)
 			{
 				return {
@@ -1178,7 +1308,7 @@
 				};
 			}
 
-			// Executes the user's step function and resets data & errors.
+			/** Executes the user's step function and resets data & errors. */
 			function doStep()
 			{
 				step(returnable());
@@ -1186,13 +1316,13 @@
 			}
 		};
 
-		// Sets the abort flag
+		/** Sets the abort flag */
 		this.abort = function()
 		{
 			aborted = true;
 		};
 
-		// Gets the cursor position
+		/** Gets the cursor position */
 		this.getCharIndex = function()
 		{
 			return cursor;
@@ -1217,14 +1347,17 @@
 				'Script path cannot be determined automatically when Papa Parse is loaded asynchronously. ' +
 				'You need to set Papa.SCRIPT_PATH manually.'
 			);
-		var w = new global.Worker(Papa.SCRIPT_PATH || AUTO_SCRIPT_PATH);
+		var workerUrl = Papa.SCRIPT_PATH || AUTO_SCRIPT_PATH;
+		// Append 'papaworker' to the search string to tell papaparse that this is our worker.
+		workerUrl += (workerUrl.indexOf('?') !== -1 ? '&' : '?') + 'papaworker';
+		var w = new global.Worker(workerUrl);
 		w.onmessage = mainThreadReceivedMessage;
 		w.id = workerIdCounter++;
 		workers[w.id] = w;
 		return w;
 	}
 
-	// Callback when main thread receives a message
+	/** Callback when main thread receives a message */
 	function mainThreadReceivedMessage(e)
 	{
 		var msg = e.data;
@@ -1280,10 +1413,10 @@
 	}
 
 	function notImplemented() {
-		throw "Not implemented.";
+		throw 'Not implemented.';
 	}
 
-	// Callback when worker thread receives a message
+	/** Callback when worker thread receives a message */
 	function workerThreadReceivedMessage(e)
 	{
 		var msg = e.data;
@@ -1311,7 +1444,7 @@
 		}
 	}
 
-	// Makes a deep copy of an array or object (mostly)
+	/** Makes a deep copy of an array or object (mostly) */
 	function copy(obj)
 	{
 		if (typeof obj !== 'object')
@@ -1324,13 +1457,13 @@
 
 	function bindFunction(f, self)
 	{
-		return function() {
-			f.apply(self, arguments);
-		}
+		return function() { f.apply(self, arguments); };
 	}
 
 	function isFunction(func)
 	{
 		return typeof func === 'function';
 	}
-})(this);
+
+	return Papa;
+}));
