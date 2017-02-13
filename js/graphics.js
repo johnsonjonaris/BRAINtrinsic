@@ -21,6 +21,7 @@ var visibleNodes =[];               // boolean array storing nodes visibility
 var displayedEdgesLeft = [],
     displayedEdgesRight = [];       // store displayed edges for left and right scenes
 var shortestPathEdges = [];
+var edgeOpacity = 1.0;              // edge opacity
 
 var pointedNodeIdx = -1;            // index of node under the mouse
 var pointedObject;                  // node object under mouse
@@ -430,56 +431,29 @@ drawConnections = function(model, glyphs, scene, displayedEdges) {
         scene.add(shortestPathEdges[i]);
     }
 
-    setEdgesColor(displayedEdges);
+    // setEdgesColor(displayedEdges);
 };
 
 // set the color and thickness of displayed edges
 var setEdgesColor = function (displayedEdges) {
-    var allDisplayedWeights =[];
+
     for(var i = 0; i < displayedEdges.length; i++){
-        allDisplayedWeights[allDisplayedWeights.length] = displayedEdges[i].name;
-    }
-
-    // var edgeColorScale =  d3.scale.linear().domain(
-    //     [
-    //         d3.min(allDisplayedWeights, function(e) { return e; }),
-    //         d3.max(allDisplayedWeights, function(e) { return e; })
-    //     ]
-    // ).range(["#edf8fb", "#005824"]);
-
-    var edgeOpacityScale = d3.scale.linear().domain(
-        [
-            d3.min(allDisplayedWeights, function(e) { return e; }),
-            d3.max(allDisplayedWeights, function(e) { return e; })
-        ]
-    ).range([0.5,1]);
-
-    // var edgeDimensionScale = d3.scale.linear().domain(
-    //     [
-    //         d3.min(allDisplayedWeights, function(e) { return e; }),
-    //         d3.max(allDisplayedWeights, function(e) { return e; })
-    //     ]
-    // ).range([1,15]);
-
-
-    for(i = 0; i < displayedEdges.length; i++){
-        //var edgeColor = new THREE.Color(edgeColorScale(displayedEdges[i].name));
-        //var edgeWidth = edgeDimensionScale(displayedEdges[i].name);
-
-        var material = new THREE.LineBasicMaterial(
-            {
-                opacity: edgeOpacityScale(displayedEdges[i].name),
-                transparent: true,
-                //color: edgeColor,
-                // Due to limitations in the ANGLE layer, with the WebGL renderer on Windows platforms linewidth
-                // will always be 1 regardless of the set value.!!!
-                linewidth: 1
-            });
-
-        displayedEdges[i].material = material;
+        // displayedEdges[i].material.color = 0xff0000;
     }
 
     // updateEdgeLegend();
+};
+
+var updateOpacity = function (opacity) {
+    edgeOpacity = opacity;
+    updateEdgeOpacity(displayedEdgesLeft, opacity);
+    updateEdgeOpacity(displayedEdgesRight, opacity);
+};
+
+var updateEdgeOpacity = function (displayedEdges, opacity) {
+    for(var i = 0; i < displayedEdges.length; i++){
+        displayedEdges[i].material.opacity = opacity;
+    }
 };
 
 // draw the top n edges connected to a specific node
@@ -499,7 +473,7 @@ drawTopNEdgesByNode = function (model, glyphs, scene, displayedEdges, nodeIndex,
         }
     }
 
-    setEdgesColor(displayedEdges);
+    // setEdgesColor(displayedEdges);
 };
 
 // draw edges given a node following edge threshold
@@ -515,7 +489,7 @@ drawEdgesGivenNode = function(model, glyphs, scene, displayedEdges, indexNode) {
             displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, edges[edgeIdx[indexNode][i]], indexNode);
         }
     }
-    setEdgesColor(displayedEdges);
+    // setEdgesColor(displayedEdges);
 };
 
 // create a line using start and end points and give it a name
@@ -527,11 +501,18 @@ drawEdgesGivenNode = function(model, glyphs, scene, displayedEdges, indexNode) {
 // material = new THREE.MeshLineMaterial();
 // var mesh  = new THREE.Mesh(line.geometry, material);
 createLine = function(edge, ownerNode){
-    var material = new THREE.LineBasicMaterial();
+    var material = new THREE.LineBasicMaterial({
+        transparent: true,
+        opacity: edgeOpacity,
+        color: 0xff0000
+        // lights: true
+        // Due to limitations in the ANGLE layer, with the WebGL renderer on Windows platforms linewidth
+        // will always be 1 regardless of the set value.!!!
+    });
     var geometry = new THREE.Geometry();
     geometry.vertices = edge;
     var line  = new THREE.Line(geometry, material);
-    line.ownerNode = ownerNode;
+    line.name = ownerNode;
     return line;
 };
 
@@ -545,8 +526,8 @@ removeEdgesGivenNodeFromScenes = function(nodeIndex) {
     displayedEdgesLeft = removeEdgesGivenNode(glyphsLeft, sceneLeft, displayedEdgesLeft, nodeIndex);
     displayedEdgesRight = removeEdgesGivenNode(glyphsRight, sceneRight, displayedEdgesRight, nodeIndex);
 
-    setEdgesColor(displayedEdgesLeft);
-    setEdgesColor(displayedEdgesRight);
+    // setEdgesColor(displayedEdgesLeft);
+    // setEdgesColor(displayedEdgesRight);
 };
 
 // give a specific node index, remove all edges from a specific node in a specific scene
@@ -558,7 +539,7 @@ removeEdgesGivenNode = function(glyphs, scene, displayedEdges, indexNode) {
     for(var i=0; i < l; i++){
         var edge = displayedEdges[i];
         //removing only the edges that starts from that node
-        if(edge.ownerNode == indexNode && shortestPathEdges.indexOf(edge) == -1){
+        if(edge.name == indexNode && shortestPathEdges.indexOf(edge) == -1){
             removedEdges[removedEdges.length] = i;
             scene.remove(edge);
         }

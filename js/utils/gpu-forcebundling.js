@@ -140,15 +140,25 @@
             for (var e = 0; e < nEdges; e++) {
                 rr = e % nRows;
                 offset = Math.floor(e/nRows)*nPoints;
+                // // first column: 0 + offset
+                // pixels.setTo(rr,offset,0,nodes[edges[e].source].x);
+                // pixels.setTo(rr,offset,1,nodes[edges[e].source].y);
+                // pixels.setTo(rr,offset,2,nodes[edges[e].source].z);
+                //
+                // // second column: 1 + offset
+                // pixels.setTo(rr,1+offset,0,nodes[edges[e].target].x);
+                // pixels.setTo(rr,1+offset,1,nodes[edges[e].target].y);
+                // pixels.setTo(rr,1+offset,2,nodes[edges[e].target].z);
+
                 // first column: 0 + offset
-                pixels.setTo(rr,offset,0,nodes[edges[e].source].x);
-                pixels.setTo(rr,offset,1,nodes[edges[e].source].y);
-                pixels.setTo(rr,offset,2,nodes[edges[e].source].z);
+                pixels.setTo(rr,offset,0,edges[e].source.x);
+                pixels.setTo(rr,offset,1,edges[e].source.y);
+                pixels.setTo(rr,offset,2,edges[e].source.z);
 
                 // second column: 1 + offset
-                pixels.setTo(rr,1+offset,0,nodes[edges[e].target].x);
-                pixels.setTo(rr,1+offset,1,nodes[edges[e].target].y);
-                pixels.setTo(rr,1+offset,2,nodes[edges[e].target].z);
+                pixels.setTo(rr,1+offset,0,edges[e].target.x);
+                pixels.setTo(rr,1+offset,1,edges[e].target.y);
+                pixels.setTo(rr,1+offset,2,edges[e].target.z);
             }
             // console.log("Input pixels");
             // console.log(pixels);
@@ -200,6 +210,7 @@
             programCompatibility = null;
             programSubdivision = null;
             programUpdate = null;
+            programsCreated = false;
         }
 
         function doBundling() {
@@ -419,6 +430,11 @@
                 compatibility_threshold = t;
             }
 
+            return forcebundle;
+        };
+
+        forcebundle.enable_keep_programs = function (enable) {
+            keepPrograms = enable;
             return forcebundle;
         };
 

@@ -311,6 +311,23 @@ addThresholdSlider = function() {
 
     modelLeft.setThreshold(Math.floor(max*100/2)/100);
     modelRight.setThreshold(Math.floor(max*100/2)/100);
+
+    menu.append("label")
+        .attr("for", "opacitySlider")
+        .attr("id", "opacitySliderLabel")
+        .text("Opacity @ " + 1.);
+
+    menu.append("input")
+        .attr("type", "range")
+        .attr("value", 100)
+        .attr("id", "opacitySlider")
+        .attr("min", 0)
+        .attr("max", 100)
+        .attr("step",1)
+        .on("change", function () {
+            updateOpacity(Math.floor(this.value)/100);
+            document.getElementById("opacitySliderLabel").innerHTML = "Opacity @ " + this.value/100.;
+        });
 };
 
 // remove threshold slider and its labels

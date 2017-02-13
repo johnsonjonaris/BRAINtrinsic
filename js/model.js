@@ -40,7 +40,7 @@ function Model () {
     var clusteringLevel = 4;            // default PLACE/PACE level
     var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
 
-    var fbundling = d3.GPUForceEdgeBundling().cycles(5).iterations(60);
+    var fbundling = d3.GPUForceEdgeBundling().cycles(6).iterations(60).enable_keep_programs(true);
 
     // data ready in model ready
     this.ready = function() {
@@ -127,7 +127,6 @@ function Model () {
     // isomap, MDS, anatomy, tsne, selection from centroids
     this.setActiveTopology = function(topology) {
         activeTopology = topology;
-        fbundling.nodes(centroids[topology]);
     };
 
     this.computeNodesDistances = function (topology) {
@@ -540,7 +539,6 @@ function Model () {
             }
         }
         activeTopology = topologies[0];
-        fbundling.nodes(centroids[activeTopology]);
     };
 
     this.getTopologies = function () {
@@ -558,12 +556,13 @@ function Model () {
         var edges_ = [];
         var edgeIndices = [];
         var nNodes = connectionMatrix.length;
+        var cen = centroids[activeTopology];
         // all edges of selected node
         for (var i = 0; i < nNodes; i++) {
             if (Math.abs(connectionMatrix[nodeIdx][i]) > 0) {
                 edges_.push({
-                    'source': i,
-                    'target': nodeIdx
+                    'source': cen[i],
+                    'target': cen[nodeIdx]
                 });
                 edgeIndices.push(edgeIdx[nodeIdx][i]);
             }
@@ -573,15 +572,15 @@ function Model () {
             .map(function(o, i) {return {idx: i, val: o}; }) // create map with value and index
             .sort(function(a, b) {return a.val - b.val;}); // sort based on value
         for (var i = 1; i < nNodes; i++) { // first one assumed to be self
-            if (edges_.length >= 1000)
+            if (edges_.length >= 500)
                 break;
             if (neighbors[i].idx != nodeIdx) {
                 var row = connectionMatrix[neighbors[i].idx];
                 for (var j = 0; j < nNodes; j++) {
                     if (Math.abs(row[j]) > 0 && j != nodeIdx) {
                         edges_.push({
-                            'source': neighbors[i].idx,
-                            'target': j
+                            'source': cen[neighbors[i].idx],
+                            'target': cen[j]
                         });
                         edgeIndices.push(edgeIdx[neighbors[i].idx][j]);
                     }
@@ -672,4 +671,3 @@ function Model () {
 
 var modelLeft = new Model();
 var modelRight = new Model();
-
