@@ -29,6 +29,7 @@ var root;                           // the index of the root node = start point 
 var distanceArray;                  // contain the shortest path for current selected node (root)
 
 var thresholdModality = true;
+var enableEB = true;
 
 var spt = false;                    // enabling shortest path
 var click = true;
@@ -296,6 +297,25 @@ setThreshold = function(value) {
     modelRight.setThreshold(value);
 };
 
+// enable edge bundling
+enableEdgeBundling = function (enable) {
+    if (enableEB == enable)
+        return;
+
+    enableEB = enable;
+
+    modelLeft.computeEdgesForTopology(modelLeft.getActiveTopology());
+    modelRight.computeEdgesForTopology(modelRight.getActiveTopology());
+
+    removeEdgesFromScene(sceneLeft, displayedEdgesLeft);
+    removeEdgesFromScene(sceneRight, displayedEdgesRight);
+    displayedEdgesLeft = [];
+    displayedEdgesRight = [];
+
+    drawConnections(modelLeft, glyphsLeft, sceneLeft, displayedEdgesLeft);
+    drawConnections(modelRight, glyphsRight, sceneRight, displayedEdgesRight);
+};
+
 // updating scenes: redrawing glyphs and displayed edges
 updateScenes = function() {
     console.log("Scene update");
@@ -311,17 +331,8 @@ updateRightScene = function () {
     displayedEdgesRight = updateScene(modelRight,glyphsRight, sceneRight, displayedEdgesRight);
 };
 updateScene = function(model, glyphs, scene, displayedEdges){
-    var l = glyphs.length;
-
-    for (var i=0; i < l; i++){
-        scene.remove(glyphs[i]);
-        delete glyphNodeDictionary[glyphs[i].uuid];
-    }
-
-    for(i=0; i < displayedEdges.length; i++){
-        scene.remove(displayedEdges[i]);
-    }
-
+    removeNodesFromScene(scene, glyphs);
+    removeEdgesFromScene(scene, displayedEdges);
     displayedEdges = [];
 
     drawRegions(model, model.getDataset(), glyphs, scene);
@@ -329,6 +340,21 @@ updateScene = function(model, glyphs, scene, displayedEdges){
     createLegend(model);
 
     return displayedEdges;
+};
+
+removeNodesFromScene = function (scene, glyphs) {
+    var l = glyphs.length;
+
+    for (var i=0; i < l; i++){
+        scene.remove(glyphs[i]);
+        delete glyphNodeDictionary[glyphs[i].uuid];
+    }
+};
+
+removeEdgesFromScene = function (scene, displayedEdges) {
+    for(i=0; i < displayedEdges.length; i++){
+        scene.remove(displayedEdges[i]);
+    }
 };
 
 // animate scenes and capture control inputs
@@ -482,7 +508,9 @@ drawEdgesGivenNode = function(model, glyphs, scene, displayedEdges, indexNode) {
     var row = model.getConnectionMatrixRow(indexNode);
     var edges = model.getActiveEdges();
     var edgeIdx = model.getEdgesIndeces();
-    model.performEBOnNode(indexNode);
+    if (enableEB) {
+        model.performEBOnNode(indexNode);
+    }
 
     for(var i=0; i < row.length ; i++){
         if(row[i] > model.getThreshold()  && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {

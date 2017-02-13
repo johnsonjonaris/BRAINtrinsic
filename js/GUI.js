@@ -294,7 +294,6 @@ addThresholdSlider = function() {
         .attr("for", "thresholdSlider")
         .attr("id", "thresholdSliderLabel")
         .text("Threshold @ " + max/2);
-
     menu.append("input")
         .attr("type", "range")
         .attr("value", max/2)
@@ -316,7 +315,6 @@ addThresholdSlider = function() {
         .attr("for", "opacitySlider")
         .attr("id", "opacitySliderLabel")
         .text("Opacity @ " + 1.);
-
     menu.append("input")
         .attr("type", "range")
         .attr("value", 100)
@@ -327,6 +325,18 @@ addThresholdSlider = function() {
         .on("change", function () {
             updateOpacity(Math.floor(this.value)/100);
             document.getElementById("opacitySliderLabel").innerHTML = "Opacity @ " + this.value/100.;
+        });
+
+    menu.append("label")
+        .attr("for", "enableEBCheck")
+        .attr("id", "enableEBCheckLabel")
+        .text("Enable EB:");
+    menu.append("input")
+        .attr("type", "checkbox")
+        .attr("checked", true)
+        .attr("id", "enableEBCheck")
+        .on("change", function () {
+            enableEdgeBundling(this.checked);
         });
 };
 

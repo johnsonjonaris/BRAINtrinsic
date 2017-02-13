@@ -129,6 +129,10 @@ function Model () {
         activeTopology = topology;
     };
 
+    this.getActiveTopology = function () {
+        return activeTopology;
+    };
+
     this.computeNodesDistances = function (topology) {
         nodesDistances[topology] = [];
         var cen = centroids[topology];
