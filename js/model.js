@@ -625,7 +625,7 @@ function Model () {
         for (var i = 0; i <edges_.length; i++) {
             edges[activeTopology][edgeIndices[i]] = results[i];
         }
-        console.log(results)
+        // console.log(results)
     };
 
     this.getActiveEdges = function() {

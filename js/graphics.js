@@ -11,10 +11,12 @@ var glyphsLeft, glyphsRight;        // left and right glyphs (spheres and cubes)
 
 var glyphNodeDictionary ={};        /// Object that stores uuid of glyphsLeft and glyphsRight
 
-var oculusControl;
-
+var oculusControlLeft, oculusControlRight;
+var effectLeft, effectRight;
+var activeVR = 'left';
+var controllerLeft, controllerRight;
 var dimensionScale;
-var effect;
+
 
 var nodesSelected = [];
 var visibleNodes =[];               // boolean array storing nodes visibility
@@ -161,6 +163,78 @@ function onMouseUp(event) {
     }
 }
 
+function onKeyPress(event) {
+    if (event.key === 's' || event.keyCode === 115) {
+        activeVR = 'left';
+        effectLeft.exitPresent();
+        effectRight.exitPresent();
+        setTimeout(function() { effectLeft.requestPresent(); }, 500);
+    }
+    if (event.key === 'd' || event.keyCode === 100) {
+        activeVR = 'right';
+        effectLeft.exitPresent();
+        effectRight.exitPresent();
+        setTimeout(function() { effectRight.requestPresent(); }, 500);
+    }
+    if (event.key === 'e' || event.keyCode === 101) {
+        activeVR = 'none';
+        effectLeft.exitPresent();
+        effectRight.exitPresent();
+    }
+}
+/*
+setPreviewArea = function (status) {
+    if (activeVR == status)
+        return;
+    switch (status) {
+        case ('left'):
+            activeVR = 'left';
+            effectLeft.exitPresent();
+            effectRight.exitPresent();
+            setTimeout(function() { effectLeft.requestPresent(); }, 500);
+            // controllerLeft.standingMatrix = oculusControlLeft.getStandingMatrix();
+            // controllerRight.standingMatrix = oculusControlLeft.getStandingMatrix();
+            // sceneLeft.add(controllerLeft);
+            // sceneLeft.add(controllerRight);
+            break;
+        case ('right'):
+            activeVR = 'right';
+            effectLeft.exitPresent();
+            effectRight.exitPresent();
+            setTimeout(function() { effectRight.requestPresent(); }, 500);
+            // controllerLeft.standingMatrix = oculusControlRight.getStandingMatrix();
+            // controllerRight.standingMatrix = oculusControlRight.getStandingMatrix();
+            // sceneRight.add(controllerLeft);
+            // sceneRight.add(controllerRight);
+            break;
+        default:
+            activeVR = 'none';
+            effectLeft.exitPresent();
+            effectRight.exitPresent();
+            break;
+    }
+};
+*/
+initOculusTouch = function () {
+    controllerLeft = new THREE.ViveController( 0 );
+    controllerRight = new THREE.ViveController( 1 );
+
+    var loader = new THREE.OBJLoader();
+    loader.setPath( 'js/external-libraries/vr/models/obj/vive-controller/' );
+    loader.load( 'vr_controller_vive_1_5.obj', function ( object ) {
+
+        var loader = new THREE.TextureLoader();
+        loader.setPath( 'js/external-libraries/vr/models/obj/vive-controller/' );
+
+        var controller = object.children[ 0 ];
+        controller.material.map = loader.load( 'onepointfive_texture.png' );
+        controller.material.specularMap = loader.load( 'onepointfive_spec.png' );
+
+        controllerLeft.add( object.clone() );
+        controllerRight.add( object.clone() );
+    } );
+};
+
 // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
 initScene = function (model, scene, canvas, renderer, camera) {
 
@@ -238,47 +312,43 @@ initCanvas = function () {
     // create left and right canvas
     createCanvas();
     // prepare Occulus rift
-    /* reactivate with Occlus rift
-    effect = new THREE.OculusRiftEffect( rendererLeft, { worldScale: 1 } );
-    effect.setSize( window.innerWidth/2.0, window.innerHeight );
-
-    var HDM;
-    vr = parseInt(vr);
-    switch (vr) {
-        case 1:
-            HDM = {
-                hResolution: 1280,
-                vResolution: 800,
-                hScreenSize: 0.14976,
-                vScreenSize: 0.0936,
-                interpupillaryDistance: 0.064,
-                lensSeparationDistance: 0.064,
-                eyeToScreenDistance: 0.041,
-                distortionK: [1.0, 0.22, 0.24, 0.0],
-                chromaAbParameter: [0.996, -0.004, 1.014, 0.0]
-            };
-            break;
-        case 2:
-            HDM = {
-                hResolution: 1920,
-                vResolution: 1080,
-                hScreenSize: 0.12576,
-                vScreenSize: 0.07074,
-                interpupillaryDistance: 0.0635,
-                lensSeparationDistance: 0.0635,
-                eyeToScreenDistance: 0.041,
-                distortionK: [1.0, 0.22, 0.24, 0.0],
-                chromaAbParameter: [0.996, -0.004, 1.014, 0.0]
-            };
-            break;
-    }
     if (vr > 0) {
-        oculuscontrol = new THREE.OculusControls(cameraLeft);
-        oculuscontrol.connect();
-        effect.setHMD(HDM);
-        effect.setSize(window.innerWidth, window.innerHeight);
+        oculusControlLeft = new THREE.VRControls(cameraLeft, function (message) {
+            console.log("VRControlsL: ", message);
+        });
+        effectLeft = new THREE.VREffect(rendererLeft, function (message) {
+            console.log("VREffectL ", message);
+        });
+        // effectLeft.setSize(window.innerWidth, window.innerHeight);
+
+        oculusControlRight = new THREE.VRControls(cameraRight, function (message) {
+            console.log("VRControlsR: ", message);
+        });
+        effectRight = new THREE.VREffect(rendererRight, function (message) {
+            console.log("VREffectR ", message);
+        });
+        // effectRight.setSize(window.innerWidth, window.innerHeight);
+
+        var navigator = window.navigator;
+        if (navigator.getVRDisplays) {
+            navigator.getVRDisplays()
+                .then(function (displays) {
+                    effectLeft.setVRDisplay(displays[0]);
+                    oculusControlLeft.setVRDisplay(displays[0]);
+
+                    effectRight.setVRDisplay(displays[0]);
+                    oculusControlRight.setVRDisplay(displays[0]);
+                })
+                .catch(function () {
+
+                });
+        }
+
+        // initOculusTouch();
+        window.addEventListener("keypress", onKeyPress, true);
     }
-    */
+
+
     visibleNodes = Array(modelLeft.getConnectionMatrixDimension()).fill(true);
     // draw connectomes and start animation
     drawAllRegions();
@@ -351,15 +421,36 @@ removeEdgesFromScene = function (scene, displayedEdges) {
         scene.remove(displayedEdges[i]);
     }
 };
+/*
+scanOculusTouch = function () {
+    if (controllerLeft.getButtonState('trigger'))
+        setPreviewArea('left');
+    if(controllerRight.getButtonState('trigger'))
+        setPreviewArea('right');
+
+    // setTimeout(function() { scanOculusTouch(); }, 100);
+};*/
 
 // animate scenes and capture control inputs
 animate = function () {
-    requestAnimationFrame(animate);
-    controlsLeft.update();
-    controlsRight.update();
+    if (vr > 0) {
+        if (activeVR == 'left')
+            effectLeft.requestAnimationFrame(animate);
+        else if (activeVR == 'right')
+            effectRight.requestAnimationFrame(animate);
 
+        // controllerLeft.update();
+        // controllerRight.update();
+    } else {
+        requestAnimationFrame(animate);
+        controlsLeft.update();
+        controlsRight.update();
+    }
     if(vr > 0 ) {
-        oculuscontrol.update();
+        if (activeVR == 'left')
+            oculusControlLeft.update();
+        else if (activeVR == 'right')
+            oculusControlRight.update();
     }
     render();
 };
@@ -369,8 +460,12 @@ render = function() {
     if(vr == 0){
         rendererLeft.render(sceneLeft, cameraLeft);
         rendererRight.render(sceneRight, cameraRight);
-    }else{ // occulus rift
-        effect.render( sceneLeft, cameraLeft );
+    } else { // occulus rift
+        if (activeVR == 'left') {
+            effectLeft.render(sceneLeft, cameraLeft);
+        } else if (activeVR == 'right') {
+            effectRight.render(sceneRight, cameraRight);
+        }
     }
 };
 
