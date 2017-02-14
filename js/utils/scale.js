@@ -25,12 +25,18 @@ var colorMap = {
     'Caudate':'#ad494a'
 };
 
+var cluster2 = [];
+var cluster4 = [];
+var cluster8 = [];
+var cluster16 = [];
+
 scaleColorGroup = function(model, group, nodeIndex) {
     nodeIndex = (typeof nodeIndex === 'undefined') ? -1 : nodeIndex;
 
     var color;
+    var filteredGroup;
     if(group.replace) {
-        var filteredGroup = group.replace("left", "");
+        filteredGroup = group.replace("left", "");
         filteredGroup = filteredGroup.replace("right", "");
     }else{
         filteredGroup = group;
@@ -58,7 +64,7 @@ scaleColorGroup = function(model, group, nodeIndex) {
 
 // set group color according to the activeGroup number of elements
 setColorGroupScale = function() {
-    groupColor = (modelLeft.getActiveGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20c();
+    groupColor = (modelLeft.getGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20();
 };
 
 // return a power scale function for the adjacency matrix

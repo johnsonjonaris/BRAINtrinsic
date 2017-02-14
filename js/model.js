@@ -38,6 +38,7 @@ function Model () {
 
     var clusters = [];                  // PLACE clusters, assumed level 4: clusters from 1 to 16
     var clusteringLevel = 4;            // default PLACE/PACE level
+    var clusteringGroupLevel = 4;       // clustering group level used for color coding, 1 to 4
     var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
 
     var fbundling = d3.GPUForceEdgeBundling().cycles(6).iterations(60).enable_keep_programs(true);
@@ -121,7 +122,15 @@ function Model () {
         //groups[4] = icGroup;
 
         if (this.hasClusteringData()) {
-            groups[3] = clusters[3];
+            groups[3] = clusters[clusteringGroupLevel-1];
+        }
+    };
+
+    // update the clustering group level, level can be 1 to 4
+    this.updateClusteringGroupLevel = function (level) {
+        if (this.hasClusteringData()) {
+            groups[3] = clusters[level-1];
+            clusteringGroupLevel = level;
         }
     };
 
@@ -616,6 +625,7 @@ function Model () {
         for (var i = 0; i <edges_.length; i++) {
             edges[activeTopology][edgeIndices[i]] = results[i];
         }
+        console.log(results)
     };
 
     this.getActiveEdges = function() {

@@ -782,6 +782,7 @@ addGroupList = function() {
         .attr("value","0")
         .attr("checked","true")
         .on("change", function () {
+            setColorClusteringSliderVisibility("hidden");
             changeColorGroup(this.value);
         });
     menu.append("label")
@@ -795,6 +796,7 @@ addGroupList = function() {
         .attr("id","embeddedness")
         .attr("value","1")
         .on("change", function () {
+            setColorClusteringSliderVisibility("hidden");
             changeColorGroup(this.value);
         });
     menu.append("label")
@@ -808,6 +810,7 @@ addGroupList = function() {
         .attr("value","2")
         .attr("id","richClub")
         .on("change", function () {
+            setColorClusteringSliderVisibility("hidden");
             changeColorGroup(this.value);
         });
     menu.append("label")
@@ -822,12 +825,14 @@ addGroupList = function() {
             .attr("value","3")
             .attr("id","PLACE")
             .on("change", function () {
+                setColorClusteringSliderVisibility("visible");
                 changeColorGroup(this.value);
             });
         menu.append("label")
             .attr("for","PLACE")
             .text("PLACE");
         menu.append("br");
+        addColorClusteringSlider();
     }
 
     /*
@@ -859,6 +864,39 @@ addGroupList = function() {
             .text("Custom Group");
         menu.append("br");
     }
+
+    setColorClusteringSliderVisibility("hidden");
+};
+
+addColorClusteringSlider = function() {
+    var menu = d3.select("#upload");
+    menu.append("br");
+    menu.append("label")
+        .attr("for", "colorClusteringSlider")
+        .attr("id", "colorClusteringSliderLabel")
+        .text("Level 4");
+    menu.append("input")
+        .attr("type", "range")
+        .attr("value", 4)
+        .attr("id", "colorClusteringSlider")
+        .attr("min", 1)
+        .attr("max", 4)
+        .attr("step", 1)
+        .on("change", function () {
+            document.getElementById("colorClusteringSliderLabel").innerHTML = "Level " + this.value;
+            modelLeft.updateClusteringGroupLevel(this.value);
+            modelRight.updateClusteringGroupLevel(this.value);
+            changeColorGroup(3);
+        });
+};
+
+setColorClusteringSliderVisibility = function(value) {
+    var elem = document.getElementById('colorClusteringSlider');
+    if (elem)
+        elem.style.visibility = value;
+    elem = document.getElementById('colorClusteringSliderLabel');
+    if (elem)
+        elem.style.visibility = value;
 };
 
 // add "Topological Spaces" radio button group for scene containing:
@@ -887,13 +925,13 @@ addGeometryRadioButtons = function(model, side) {
             case ("PLACE"):
             case ("PACE"):
                 ip.on("change", function () {
-                    addClusteringSlider(model, side);
+                    setClusteringSliderVisibility(side, "visible");
                     changeActiveGeometry(model, side, this.value);
                 });
                 break;
             default:
                 ip.on("change", function () {
-                    removeClusteringSlider(side);
+                    setClusteringSliderVisibility(side, "hidden");
                     changeActiveGeometry(model, side, this.value);
                 });
                 break;
@@ -902,8 +940,16 @@ addGeometryRadioButtons = function(model, side) {
             .attr("for",topology)
             .text(topology);
         menu.append("br");
+
+        switch (topology) {
+            case ("PLACE"):
+            case ("PACE"):
+                addClusteringSlider(model, side);
+                break;
+        }
     }
 
+    setClusteringSliderVisibility(side, "hidden");
     document.getElementById(topologies[0] + side).checked = "true";
 };
 
@@ -918,12 +964,10 @@ addClusteringSlider = function(model, side) {
     var menu = d3.select("#topology" + side);
 
     menu.append("br");
-
     menu.append("label")
         .attr("for", "clusteringSlider" + side)
         .attr("id", "clusteringSliderLabel" + side)
         .text("Level " + model.getClusteringLevel());
-
     menu.append("input")
         .attr("type", "range")
         .attr("value", model.getClusteringLevel())
@@ -938,17 +982,13 @@ addClusteringSlider = function(model, side) {
         });
 };
 
-removeClusteringSlider = function(side) {
+setClusteringSliderVisibility = function(side, value) {
     var elem = document.getElementById('clusteringSlider' + side);
-
-    if(elem) {
-        elem.parentNode.removeChild(elem);
-    }
-
+    if (elem)
+        elem.style.visibility = value;
     elem = document.getElementById('clusteringSliderLabel' + side);
-    if(elem) {
-        elem.parentNode.removeChild(elem);
-    }
+    if (elem)
+        elem.style.visibility = value;
 };
 
 // add labels check boxes, appear/disappear on right click
