@@ -10,6 +10,34 @@ var setFolder = function (folderName, callback) {
     callback(null,null);
 };
 
+// it is assumed all data folder should have an index.txt file describing its contents
+var scanFolder = function (callback) {
+    var indexFile = "./data/" + folder + "/index.txt";
+    $.ajax({
+        url: indexFile,
+        type:'HEAD',
+        error: function() {
+            alert("Index file don't exist, can not continue");
+            return false;
+        },
+        success: function() {
+            Papa.parse(indexFile, {
+                download: true,
+                delimiter: ",",
+                dynamicTyping: true,
+                header: true,
+                error: "continue",
+                complete: function (results) {
+                    dataFiles = results.data;
+                    console.log("Subjects loaded");
+                    callback(null,null);
+                }
+            });
+            return true;
+        }
+    });
+};
+
 var loadIcColors = function (callback) {
     Papa.parse("./data//WB2s1IC.csv", {
         download: true,
@@ -52,74 +80,29 @@ var loadLookUpTable = function (callback) {
     });
 };
 
-var loadConnections = function (callback) {
-    Papa.parse("data/"+folder+"/"+dataFiles.leftNW,{
+var loadSubjectNetwork = function (fileNames, model, callback) {
+    Papa.parse("data/"+folder + "/" + fileNames.network,{
         download: true,
         dynamicTyping: true,
         delimiter: ',',
         header: false,
         complete: function(results){
-            modelLeft.setConnectionMatrix(results);
-            console.log("Left NW loaded ... ");
-        }
-    });
-
-    Papa.parse("data/"+folder+"/"+dataFiles.rightNW,{
-        download: true,
-        dynamicTyping: true,
-        delimiter: ',',
-        header: false,
-        complete: function(results){
-            modelRight.setConnectionMatrix(results);
-            console.log("Right NW loaded ... ");
+            model.setConnectionMatrix(results);
+            console.log("NW loaded ... ");
             callback(null,null);
         }
     });
 };
 
-var loadTopology = function (callback) {
-    Papa.parse("data/"+folder+"/"+dataFiles.leftTopology,{
+var loadSubjectTopology = function (fileNames, model, callback) {
+    Papa.parse("data/"+folder + "/" + fileNames.topology,{
         download: true,
         dynamicTyping: true,
         delimiter: ',',
         header: false,
         complete: function(results){
-            modelLeft.setTopology(results.data);
-            console.log("Left Topology loaded ... ");
-        }
-    });
-
-    Papa.parse("data/"+folder+"/"+dataFiles.rightTopology,{
-        download: true,
-        dynamicTyping: true,
-        delimiter: ',',
-        header: false,
-        complete: function(results){
-            modelRight.setTopology(results.data);
-            console.log("Right Topology loaded ... ");
-            callback(null,null);
-        }
-    });
-};
-
-var loadInfo = function (callback) {
-    Papa.parse("data/"+folder+"/"+dataFiles.infoLeft,{
-        download: true,
-        dynamicTyping: true,
-        delimiter: '\n',
-        header: false,
-        complete: function(results){
-            modelLeft.setInfo(results.data[0][0], results.data[1][0]);
-        }
-    });
-
-    Papa.parse("data/"+folder+"/"+dataFiles.infoRight,{
-        download: true,
-        dynamicTyping: true,
-        delimiter: '\n',
-        header: false,
-        complete: function(results){
-            modelRight.setInfo(results.data[0][0], results.data[1][0]);
+            model.setTopology(results.data);
+            console.log("Topology loaded ... ");
             callback(null,null);
         }
     });

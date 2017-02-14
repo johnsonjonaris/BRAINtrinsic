@@ -339,14 +339,15 @@ updateScene = function(model, glyphs, scene, displayedEdges){
 removeNodesFromScene = function (scene, glyphs) {
     var l = glyphs.length;
 
-    for (var i=0; i < l; i++){
+    for (var i=0; i < l; ++i){
         scene.remove(glyphs[i]);
         delete glyphNodeDictionary[glyphs[i].uuid];
     }
+    glyphs = [];
 };
 
 removeEdgesFromScene = function (scene, displayedEdges) {
-    for(i=0; i < displayedEdges.length; i++){
+    for(var i=0; i < displayedEdges.length; ++i){
         scene.remove(displayedEdges[i]);
     }
 };
@@ -618,8 +619,8 @@ getIntersectedObject = function(event) {
 drawAllShortestPath = function(nodeIndex) {
     drawShortestPathLeft(nodeIndex);
     drawShortestPathRight(nodeIndex);
-    setEdgesColor(displayedEdgesLeft);
-    setEdgesColor(displayedEdgesRight);
+    // setEdgesColor(displayedEdgesLeft);
+    // setEdgesColor(displayedEdgesRight);
     updateScenes();
 };
 drawShortestPathLeft = function(nodeIndex) { drawShortestPath(modelLeft, glyphsLeft,  nodeIndex);};
@@ -796,4 +797,28 @@ drawSelectedNode = function (nodeIndex, mesh) {
     glyphsRight[nodeIndex].geometry = createSelectedGeometry(mesh.userData['hemisphere'])
 };
 
+// change the subject in a specific scene
+changeSceneToSubject = function (subjectId, model, scene, glyphs, displayedEdges, side) {
+    var fileNames = dataFiles[subjectId];
+    removeGeometryButtons(side);
+    model.clearModel();
 
+    removeNodesFromScene(scene, glyphs);
+    removeEdgesFromScene(scene, displayedEdges);
+
+    queue()
+        .defer(loadSubjectNetwork, fileNames, model)
+        .awaitAll(function () {
+            queue()
+            // PLACE depends on connection matrix
+                .defer(loadSubjectTopology, fileNames, model)
+                .awaitAll( function () {
+                    console.log("Loading data done.");
+                    model.createGroups();
+                    addGeometryRadioButtons(model, side);
+                    model.setRegionsActivated();
+                    redrawScene(model, side);
+                })
+            ;
+        });
+};

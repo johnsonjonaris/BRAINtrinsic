@@ -42,6 +42,25 @@ function Model () {
 
     var fbundling = d3.GPUForceEdgeBundling().cycles(6).iterations(60).enable_keep_programs(true);
 
+    this.clearModel = function () {
+        groups = [];
+        activeGroup = 0;
+        regionsActivated = [];
+        regionState = {};
+        icColorTable = [];
+
+        centroids = {};
+        topologies = [];
+        nodesDistances = {};
+
+        connectionMatrix = [];
+        distanceMatrix = [];
+
+        edges = [];
+        edgeIdx = [];
+    };
+
+
     // data ready in model ready
     this.ready = function() {
         return (labelsLUT && labelKeys && centroids && connectionMatrix);
@@ -120,12 +139,12 @@ function Model () {
     };
 
     // add group data
-    this.setGroup = function(d) {
+    this.setGroup = function (d) {
         groups[groups.length] = d.data;
     };
 
     // isomap, MDS, anatomy, tsne, selection from centroids
-    this.setActiveTopology = function(topology) {
+    this.setActiveTopology = function (topology) {
         activeTopology = topology;
     };
 
@@ -605,15 +624,6 @@ function Model () {
 
     this.getEdgesIndeces = function() {
         return edgeIdx;
-    };
-
-    this.setInfo = function (name, information) {
-        info.name = name;
-        info.info = information;
-    };
-
-    this.getInfo = function () {
-        return info;
     };
 
     // linearly scale coordinates to a range -500 to +500

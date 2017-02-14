@@ -195,10 +195,28 @@ initGUI = function() {
         });
 };
 
-// add subject information
-addSubjectInfo = function (model, side) {
-    document.getElementById("userInfo" + side).innerHTML = model.getInfo().name;
-    document.getElementById("userInfo" + side).title = model.getInfo().info;
+initSubjectMenu = function (side) {
+
+    var select = document.getElementById("subjectMenu" + side);
+    for (var i = 0; i < dataFiles.length; ++i) {
+        var el = document.createElement("option");
+        el.textContent = dataFiles[i].subjectID;
+        el.value = dataFiles[i].subjectID;
+        el.selected = (i==0);
+        select.appendChild(el);
+    }
+    switch (side) {
+        case 'Left':
+            select.onchange = function () {
+                changeSceneToSubject(this.selectedIndex, modelLeft, sceneLeft, glyphsLeft, displayedEdgesLeft, side);
+                };
+            break;
+        case 'Right':
+            select.onchange = function () {
+                changeSceneToSubject(this.selectedIndex, modelRight, sceneRight, glyphsRight, displayedEdgesRight, side);
+            };
+            break;
+    }
 };
 
 // remove the start visualization button to allow only one scene and renderer
@@ -887,6 +905,13 @@ addGeometryRadioButtons = function(model, side) {
     }
 
     document.getElementById(topologies[0] + side).checked = "true";
+};
+
+removeGeometryButtons = function (side) {
+    var menu = document.getElementById("topology" + side);
+    while (menu.firstChild) {
+        menu.removeChild(menu.firstChild);
+    }
 };
 
 addClusteringSlider = function(model, side) {

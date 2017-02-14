@@ -124,22 +124,22 @@ button > input[type="checkbox"]{
     left: 20px
 }
 
-#userInfoLeft {
+#subjectMenuLeft {
     position: absolute;
     width: 180px;
     height: 25px;
     top: 5px;
     left: 400px;
-    color: antiquewhite;
+    color: black;
 }
 
-#userInfoRight {
+#subjectMenuRight {
     position: absolute;
     width: 180px;
     height: 25px;
     top: 5px;
     right: 400px;
-    color: antiquewhite;
+    color: black;
 }
 
 #topologyLeft{

@@ -13,13 +13,32 @@ init = function () {
         resizeScene(cameraRight, rendererRight);
     });
 
-    modelLeft.createGroups();
-    modelRight.createGroups();
+    initSubjectMenu('Left');
+    initSubjectMenu('Right');
 
-    initGUI();
-    addSubjectInfo(modelLeft, 'Left');
-    addSubjectInfo(modelRight, 'Right');
-    initCanvas();
+    var idLeft = document.getElementById("subjectMenuLeft").selectedIndex;
+    var idRight = document.getElementById("subjectMenuRight").selectedIndex;
+
+    queue()
+        .defer(loadSubjectNetwork, dataFiles[idLeft], modelLeft)
+        .defer(loadSubjectNetwork, dataFiles[idRight], modelRight)
+        .awaitAll(function () {
+            queue()
+            // PLACE depends on connection matrix
+                .defer(loadSubjectTopology, dataFiles[idLeft], modelLeft)
+                .defer(loadSubjectTopology, dataFiles[idRight], modelRight)
+                .awaitAll( function () {
+                    console.log("Loading data done.");
+
+                    modelLeft.createGroups();
+                    modelRight.createGroups();
+
+                    initGUI();
+                    initCanvas();
+                })
+            ;
+        });
+
 };
 
 function getQueryVariable(variable) {
@@ -63,26 +82,7 @@ var parse = function(callback){
 
 var folder = getQueryVariable("dataset");
 var dataFiles = {};
-switch (folder) {
-    case ("Demo1"):
-        dataFiles.leftNW = "NWLeft.csv";
-        dataFiles.leftTopology = "topologyLeft.csv";
-        dataFiles.infoLeft = "infoleft.txt";
 
-        dataFiles.rightNW = "NWRight.csv";
-        dataFiles.rightTopology = "topologyRight.csv";
-        dataFiles.infoRight = "inforight.txt";
-        break;
-    case ("Demo2"):
-        dataFiles.leftNW = "NWfemale.csv";
-        dataFiles.leftTopology = "topologyfemale.csv";
-        dataFiles.rightNW = "NWmale.csv";
-
-        dataFiles.infoLeft = "infofemale.txt";
-        dataFiles.rightTopology = "topologymale.csv";
-        dataFiles.infoRight = "infomale.txt";
-        break;
-}
 var labelLUT = getQueryVariable("lut");
 var vr = getQueryVariable("vr");
 var isLoaded = parseInt(getQueryVariable("load"));
@@ -95,20 +95,13 @@ if(isLoaded == 0) {
     console.log("Loading data ... ");
 
     queue()
-        .defer(loadConnections)
+        .defer(scanFolder)
         .defer(loadLookUpTable)
         .defer(loadIcColors)
-        .defer(loadInfo)
         // .defer(loadColorMap)
         .awaitAll(function () {
-            queue()
-                // PLACE depends on connection matrix
-                .defer(loadTopology)
-                .awaitAll( function () {
-                    console.log("Loading data done.");
-                    init();
-                })
-            ;
+            console.log("Loading data done.");
+            init();
         });
 } else{
     console.log("loaded from different files");
