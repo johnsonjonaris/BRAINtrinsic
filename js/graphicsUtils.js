@@ -59,7 +59,7 @@ setDimensionFactor = function(value){
     dimensionFactor = value;
 };
 
-// return the material for an edge according to its state: active or transparent
+// return the material for a node (vertex) according to its state: active or transparent
 getNormalMaterial = function(model, group, nodeIndex) {
     var material;
     switch (model.getRegionState(group)){
