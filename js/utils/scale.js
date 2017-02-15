@@ -25,17 +25,12 @@ var colorMap = {
     'Caudate':'#ad494a'
 };
 
-var cluster2 = [];
-var cluster4 = [];
-var cluster8 = [];
-var cluster16 = [];
-
 scaleColorGroup = function(model, group, nodeIndex) {
     nodeIndex = (typeof nodeIndex === 'undefined') ? -1 : nodeIndex;
 
     var color;
     var filteredGroup;
-    if(group.replace) {
+    if(group.replace) { // anatomy, rich-club, embeddeness
         filteredGroup = group.replace("left", "");
         filteredGroup = filteredGroup.replace("right", "");
     }else{
@@ -44,6 +39,7 @@ scaleColorGroup = function(model, group, nodeIndex) {
 
     color = groupColor(filteredGroup);
 
+    // for rich-club, color non-RichClub similarly
     if(typeof (filteredGroup) != 'number' && filteredGroup.indexOf("RichClub") > -1){
         color = "#6C7A89";
     }
@@ -52,6 +48,7 @@ scaleColorGroup = function(model, group, nodeIndex) {
         color = colorMap[filteredGroup];
     }
 
+    // metric based
     if(model.getActiveGroup() == 4){
         if(nodeIndex == -1){
             console.log("ERROR!!!!");
