@@ -286,18 +286,17 @@ addSkyboxButton = function() {
 };
 
 // adds a text label showing: node index - region name - nodal strength
-// TODO add one left and one right
-setNodeInfoPanel = function(model, regionName, index) {
+setNodeInfoPanel = function(regionName, index) {
 
     var panel = d3.select('#nodeInfoPanel');
 
     panel.selectAll("p").remove();
 
-    var connectionRow = modelLeft.getConnectionMatrixRow(index);
-    var nodalStrength = Math.floor(model.computeNodalStrength(connectionRow)*100)/100;
+    var nodalStrengthLeft = Math.floor(d3.sum(modelLeft.getConnectionMatrixRow(index))*100)/100;
+    var nodalStrengthRight = Math.floor(d3.sum(modelRight.getConnectionMatrixRow(index))*100)/100;
 
     var para = document.createElement("p");
-    var node = document.createTextNode(index + " " + regionName + " " + nodalStrength);
+    var node = document.createTextNode(index + " " + regionName + " " + nodalStrengthLeft + " / " + nodalStrengthRight);
 
     panel.node().appendChild(para).appendChild(node);
 };
@@ -328,6 +327,11 @@ addThresholdSlider = function() {
 
     modelLeft.setThreshold(Math.floor(max*100/2)/100);
     modelRight.setThreshold(Math.floor(max*100/2)/100);
+};
+
+// add opacity slider 0 to 1
+addOpacitySlider = function () {
+    var menu = d3.select("#edgeInfoPanel");
 
     menu.append("label")
         .attr("for", "opacitySlider")
@@ -356,6 +360,7 @@ addThresholdSlider = function() {
         .on("change", function () {
             enableEdgeBundling(this.checked);
         });
+    menu.append("br");
 };
 
 // remove threshold slider and its labels

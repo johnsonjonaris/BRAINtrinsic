@@ -260,11 +260,7 @@ function Model () {
 
     // get a row (one node) from connection matrix
     this.getConnectionMatrixRow = function (index) {
-        var row = [];
-        for (var i = 0; i < connectionMatrix.length; i++) {
-            row[row.length] = connectionMatrix[index][i];
-        }
-        return row;
+        return connectionMatrix[index].slice(0);
     };
 
     // get the group of a specific node according to activeGroup

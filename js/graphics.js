@@ -52,7 +52,7 @@ function onDocumentMouseMove(model, event) {
     var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
     // update node information label
     if ( nodeExistAndVisible ) {
-        setNodeInfoPanel(model, regionName, nodeIdx);
+        setNodeInfoPanel(regionName, nodeIdx);
     }
 
     if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
@@ -288,6 +288,7 @@ initCanvas = function () {
     removeStartButton();
     removeUploadButtons();
     // add controls
+    addOpacitySlider();
     addThresholdSlider();
     addGroupList();
     // addModalityButton();
@@ -471,9 +472,7 @@ render = function() {
 
 // determine if a region should be drawn
 shouldDrawRegion = function(model, region) {
-    if(model.isRegionActive(region.group) && model.getLabelVisibility(region.label))
-        return true;
-    return false;
+    return (model.isRegionActive(region.group) && model.getLabelVisibility(region.label));
 };
 
 // draw the brain regions as glyphs (the edges)
