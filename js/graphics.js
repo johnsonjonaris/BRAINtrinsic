@@ -602,7 +602,7 @@ drawEdgesGivenNode = function(model, glyphs, scene, displayedEdges, indexNode) {
     }
 
     for(var i=0; i < row.length ; i++){
-        if(row[i] > model.getThreshold()  && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
+        if((i != indexNode) && row[i] > model.getThreshold()  && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
             displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, edges[edgeIdx[indexNode][i]], indexNode);
         }
     }
