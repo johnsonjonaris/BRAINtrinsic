@@ -4,10 +4,9 @@
 
 var previewAreaLeft, previewAreaRight;
 
-var glyphNodeDictionary ={};        /// Object that stores uuid of glyphsLeft and glyphsRight
+var glyphNodeDictionary ={};        /// Object that stores uuid of left and right glyphs
 
 var activeVR = 'left';
-
 
 var nodesSelected = [];
 var visibleNodes =[];               // boolean array storing nodes visibility
@@ -98,8 +97,9 @@ function onClick(model, event) {
             var el = nodesSelected.indexOf(nodeIndex);
             if (el == -1) {
                 //if the node is not already selected -> draw edges and add in the nodesSelected Array
-                previewAreaLeft.drawSelectedNode(nodeIndex, objectIntersected.object);
-                previewAreaRight.drawSelectedNode(nodeIndex, objectIntersected.object);
+                var hemisphere = objectIntersected.object.userData['hemisphere'];
+                previewAreaLeft.drawSelectedNode(nodeIndex, hemisphere);
+                previewAreaRight.drawSelectedNode(nodeIndex, hemisphere);
 
                 // draw edges in one two ways:
                 if (thresholdModality) {
@@ -214,6 +214,12 @@ initCanvas = function () {
     visibleNodes = Array(modelLeft.getConnectionMatrixDimension()).fill(true);
     // draw connectomes and start animation
     drawAllRegions();
+    $(window).resize(function(e){
+        e.preventDefault();
+        console.log("on resize event");
+        previewAreaLeft.resizeScene();
+        previewAreaRight.resizeScene();
+    });
     animate();
 };
 
@@ -243,21 +249,34 @@ enableEdgeBundling = function (enable) {
 // updating scenes: redrawing glyphs and displayed edges
 updateScenes = function() {
     console.log("Scene update");
-    previewAreaLeft.updateScene(glyphNodeDictionary);
-    previewAreaRight.updateScene(glyphNodeDictionary);
+    previewAreaLeft.updateScene();
+    previewAreaRight.updateScene();
     createLegend(modelLeft);
 };
 
 // animate scenes and capture control inputs
 animate = function () {
-    previewAreaLeft.animate();
-    previewAreaRight.animate();
+    if (vr == 0) {
+        requestAnimationFrame(animate);
+        previewAreaLeft.animate();
+        previewAreaRight.animate();
+    } else { // VR
+        if (activeVR == 'left') {
+            previewAreaLeft.requestAnimate(animate);
+            previewAreaLeft.animateVR();
+        } else if (activeVR == 'right') {
+            previewAreaRight.requestAnimate(animate);
+            previewAreaRight.animateVR();
+        } else { // need to be recalled continuously in case user reactivate VR
+            requestAnimationFrame(animate);
+        }
+    }
 };
 
 // draw the brain regions as glyphs (the edges)
 drawAllRegions = function() {
-    previewAreaLeft.drawRegions(glyphNodeDictionary);
-    previewAreaRight.drawRegions(glyphNodeDictionary);
+    previewAreaLeft.drawRegions();
+    previewAreaRight.drawRegions();
 };
 
 var updateOpacity = function (opacity) {
@@ -377,14 +396,14 @@ redrawScene = function (side) {
     switch(side) {
         case 'Left':
         case 'left':
-            previewAreaLeft.updateScene(glyphNodeDictionary);
+            previewAreaLeft.updateScene();
             if(spt) {
                 drawShortestPathLeft(root);
             }
             break;
         case 'Right':
         case 'right':
-            previewAreaRight.updateScene(glyphNodeDictionary);
+            previewAreaRight.updateScene();
             if(spt) {
                 drawShortestPathRight(root);
             }
@@ -436,8 +455,7 @@ changeSceneToSubject = function (subjectId, model, previewArea, side) {
     removeGeometryButtons(side);
     model.clearModel();
 
-    previewArea.removeNodesFromScene(glyphNodeDictionary);
-    previewArea.removeEdgesFromScene();
+    previewArea.clearScene();
 
     queue()
         .defer(loadSubjectNetwork, fileNames, model)
@@ -450,7 +468,7 @@ changeSceneToSubject = function (subjectId, model, previewArea, side) {
                     model.createGroups();
                     addGeometryRadioButtons(model, side);
                     model.setRegionsActivated();
-                    redrawScene(model, side);
+                    redrawScene(side);
                 })
             ;
         });

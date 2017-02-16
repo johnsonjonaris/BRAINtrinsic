@@ -6,13 +6,6 @@ init = function () {
 
     console.log("Init ... ");
 
-    $(window).resize(function(e){
-        e.preventDefault();
-        console.log("on resize event");
-        resizeScene(cameraLeft, rendererLeft);
-        resizeScene(cameraRight, rendererRight);
-    });
-
     initSubjectMenu('Left');
     initSubjectMenu('Right');
 

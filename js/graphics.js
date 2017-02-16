@@ -435,38 +435,23 @@ scanOculusTouch = function () {
 // animate scenes and capture control inputs
 animate = function () {
     if (vr > 0) {
-        if (activeVR == 'left')
+        if (activeVR == 'left') {
             effectLeft.requestAnimationFrame(animate);
-        else if (activeVR == 'right')
+            oculusControlLeft.update();
+            effectLeft.render(sceneLeft, cameraLeft);
+        } else if (activeVR == 'right') {
             effectRight.requestAnimationFrame(animate);
-
+            oculusControlRight.update();
+            effectRight.render(sceneRight, cameraRight);
+        }
         // controllerLeft.update();
         // controllerRight.update();
     } else {
         requestAnimationFrame(animate);
         controlsLeft.update();
         controlsRight.update();
-    }
-    if(vr > 0 ) {
-        if (activeVR == 'left')
-            oculusControlLeft.update();
-        else if (activeVR == 'right')
-            oculusControlRight.update();
-    }
-    render();
-};
-
-// perform rendering for left and right scenes
-render = function() {
-    if(vr == 0){
         rendererLeft.render(sceneLeft, cameraLeft);
         rendererRight.render(sceneRight, cameraRight);
-    } else { // occulus rift
-        if (activeVR == 'left') {
-            effectLeft.render(sceneLeft, cameraLeft);
-        } else if (activeVR == 'right') {
-            effectRight.render(sceneRight, cameraRight);
-        }
     }
 };
 

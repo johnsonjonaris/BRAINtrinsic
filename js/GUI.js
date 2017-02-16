@@ -208,12 +208,14 @@ initSubjectMenu = function (side) {
     switch (side) {
         case 'Left':
             select.onchange = function () {
-                changeSceneToSubject(this.selectedIndex, modelLeft, sceneLeft, glyphsLeft, displayedEdgesLeft, side);
+                // changeSceneToSubject(this.selectedIndex, modelLeft, sceneLeft, glyphsLeft, displayedEdgesLeft, side);
+                changeSceneToSubject(this.selectedIndex, modelLeft, previewAreaLeft, side);
                 };
             break;
         case 'Right':
             select.onchange = function () {
-                changeSceneToSubject(this.selectedIndex, modelRight, sceneRight, glyphsRight, displayedEdgesRight, side);
+                // changeSceneToSubject(this.selectedIndex, modelRight, sceneRight, glyphsRight, displayedEdgesRight, side);
+                changeSceneToSubject(this.selectedIndex, modelRight, previewAreaRight, side);
             };
             break;
     }

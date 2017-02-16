@@ -3,20 +3,17 @@
  */
 
 function PreviewArea(canvas_, model_) {
-    var camera = null;
-    var canvas = canvas_;
-    var renderer = null;
-    var controls = null;
-    var scene = null;
-    var glyphs = [];
     var model = model_;
+    var canvas = canvas_;
+    var camera = null, renderer = null, controls = null, scene = null;
 
-    var oculusControl = null;
-    var effect = null;
+    // VR stuff
+    var oculusControl = null, effect = null;
     var controllerLeft = null, controllerRight = null;
     var enableVR = false;
     var activeVR = false;
-
+    // nodes and edges
+    var glyphs = [];
     var displayedEdges = [];
     var shortestPathEdges = [];
     var edgeOpacity = 1.0;
@@ -24,9 +21,12 @@ function PreviewArea(canvas_, model_) {
     var thresholdModality = true;
 
     this.activateVR = function (activate) {
+        if (activate == activeVR)
+            return;
         activeVR = activate;
-        if (activeVR)
+        if (activeVR) {
             effect.requestPresent();
+        }
         else
             effect.exitPresent();
     };
@@ -99,7 +99,6 @@ function PreviewArea(canvas_, model_) {
     // create 3js elements: scene, canvas, camera and controls; and init them and add skybox to the scene
     this.createCanvas = function() {
         scene = new THREE.Scene();
-        canvas = document.getElementById('canvasLeft');
         renderer = new THREE.WebGLRenderer({antialias: true});
         camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / window.innerHeight, 0.1, 3000);
         initScene();
@@ -110,7 +109,6 @@ function PreviewArea(canvas_, model_) {
 
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
     this.setEventListeners = function (onDblClick, onMouseDown, onMouseUp, onDocumentMouseMove) {
-
         canvas.addEventListener('dblclick', onDblClick, true);
         canvas.addEventListener('mousedown', function (e) {
             onMouseDown(model, e);
@@ -131,7 +129,7 @@ function PreviewArea(canvas_, model_) {
         glyphs[nodeIndex].material.color = color;
     };
 
-    this.removeNodesFromScene = function (glyphNodeDictionary) {
+    var removeNodesFromScene = function () {
         for (var i=0; i < glyphs.length; ++i){
             scene.remove(glyphs[i]);
             delete glyphNodeDictionary[glyphs[i].uuid];
@@ -147,41 +145,48 @@ function PreviewArea(canvas_, model_) {
     };
 
     this.animate = function () {
-        if (enableVR && activeVR) {
-            effect.requestAnimationFrame(animate);
-        } else {
-            requestAnimationFrame(animate);
-            controls.update();
-        }
-        if (enableVR && activeVR) {
-            oculusControl.update();
-        }
-        render();
+        controls.update();
+        renderer.render(scene, camera);
     };
 
-    var render = function () {
-        if (enableVR)
+    this.requestAnimate = function (animate) {
+        effect.requestAnimationFrame(animate);
+    };
+
+    this.animateVR = function () {
+        if (enableVR && activeVR) {
+            oculusControl.update();
             effect.render(scene, camera);
-        else
-            renderer.render(scene, camera);
+
+            // controllerLeft.update();
+            // controllerRight.update();
+        }
+    };
+
+    // clear scene
+    this.clearScene = function () {
+        removeNodesFromScene();
+        this.removeEdgesFromScene();
+    };
+
+    this.redrawScene = function () {
+        this.drawRegions();
+        this.drawConnections();
     };
 
     // determine if a region should be drawn
-    var shouldDrawRegion = function(region) {
+    var shouldDrawRegion = function (region) {
         return (model.isRegionActive(region.group) && model.getLabelVisibility(region.label));
     };
 
     // updating scenes: redrawing glyphs and displayed edges
-    this.updateScene = function(glyphNodeDictionary){
-        removeNodesFromScene();
-        removeEdgesFromScene();
-
-        drawRegions(glyphNodeDictionary);
-        drawConnections();
+    this.updateScene = function (){
+        this.clearScene();
+        this.redrawScene();
     };
 
     // draw the brain regions as glyphs (the edges)
-    this.drawRegions = function(glyphNodeDictionary) {
+    this.drawRegions = function () {
         var dataset = model.getDataset();
         var l = dataset.length;
 
@@ -190,7 +195,7 @@ function PreviewArea(canvas_, model_) {
 
         for(var i=0; i < l; i++){
             glyphs[i] = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
-            if(shouldDrawRegion(model, dataset[i])) {
+            if(shouldDrawRegion(dataset[i])) {
                 material = getNormalMaterial(model, dataset[i].group,i);
 
                 if(nodesSelected.indexOf(i) == -1) {
@@ -409,12 +414,12 @@ function PreviewArea(canvas_, model_) {
     };
 
     // draw a selected node in both scenes
-    this.drawSelectedNode = function (nodeIndex, mesh) {
+    this.drawSelectedNode = function (nodeIndex, hemisphere) {
         // if node not selected, draw the edges connected to it and add it to selected nodes
         if(nodesSelected.indexOf(nodeIndex) == -1) {
             nodesSelected[nodesSelected.length] = nodeIndex;
         }
-        glyphs[nodeIndex].geometry = createSelectedGeometry(mesh.userData['hemisphere']);
+        glyphs[nodeIndex].geometry = createSelectedGeometry(hemisphere);
     };
 
     // get intersected object beneath the mouse pointer
