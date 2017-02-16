@@ -109,7 +109,6 @@ function onClick(model, event) {
                 } else {
                     // 2) strongest n edges from the node
                     var n = model.getNumberOfEdges();
-                    console.log("Drawing top " + n + " edges");
                     previewAreaLeft.drawTopNEdgesByNode(nodeIndex, n);
                     previewAreaRight.drawTopNEdgesByNode(nodeIndex, n);
                 }
@@ -179,9 +178,10 @@ initCanvas = function () {
     removeUploadButtons();
     // add controls
     addOpacitySlider();
+    addEdgeBundlingCheck();
+    addModalityButton();
     addThresholdSlider();
     addGroupList();
-    // addModalityButton();
     addGeometryRadioButtons(modelLeft, 'Left');
     addGeometryRadioButtons(modelRight, 'Right');
 
@@ -192,8 +192,6 @@ initCanvas = function () {
 
     modelLeft.setRegionsActivated();
     modelRight.setRegionsActivated();
-
-    //setThreshold(30);
 
     createLegend(modelLeft);
     // create visualization
@@ -284,32 +282,12 @@ var updateOpacity = function (opacity) {
     previewAreaRight.updateEdgeOpacity(opacity);
 };
 
-// draw the top n edges connected to a specific node
-drawTopNEdgesByNode = function (model, glyphs, scene, displayedEdges, nodeIndex, n) {
-
-    var row = model.getTopConnectionsByNode(nodeIndex, n);
-    // var edges = model.getActiveEdges()
-    // var edgeIdx = model.getEdgesIndeces();
-    console.log("drawTopNEdgesByNode row " + row);
-    for (var obj in row) {
-        if (model.isRegionActive(model.getRegionByNode(obj)) && visibleNodes[obj]) {
-            var start = new THREE.Vector3(  glyphs[nodeIndex].position.x,
-                glyphs[nodeIndex].position.y,
-                glyphs[nodeIndex].position.z );
-            var end = new THREE.Vector3(glyphs[obj].position.x, glyphs[obj].position.y, glyphs[obj].position.z);
-            displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, start, end, row[obj]);
-        }
-    }
-
-    // setEdgesColor(displayedEdges);
-};
-
 removeEdgesGivenNodeFromScenes = function(nodeIndex) {
     previewAreaLeft.removeEdgesGivenNode(nodeIndex);
     previewAreaRight.removeEdgesGivenNode(nodeIndex);
 
-    // setEdgesColor(displayedEdgesLeft);
-    // setEdgesColor(displayedEdgesRight);
+    // setEdgesColor();
+    // setEdgesColor();
 };
 
 // get intersected object beneath the mouse pointer

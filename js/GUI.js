@@ -334,7 +334,6 @@ addThresholdSlider = function() {
 // add opacity slider 0 to 1
 addOpacitySlider = function () {
     var menu = d3.select("#edgeInfoPanel");
-
     menu.append("label")
         .attr("for", "opacitySlider")
         .attr("id", "opacitySliderLabel")
@@ -350,7 +349,10 @@ addOpacitySlider = function () {
             updateOpacity(Math.floor(this.value)/100);
             document.getElementById("opacitySliderLabel").innerHTML = "Opacity @ " + this.value/100.;
         });
+};
 
+addEdgeBundlingCheck = function () {
+    var menu = d3.select("#edgeInfoPanel");
     menu.append("label")
         .attr("for", "enableEBCheck")
         .attr("id", "enableEBCheckLabel")
@@ -386,7 +388,7 @@ addTopNSlider = function() {
     menu.append("label")
         .attr("for", "topNThresholdSlider")
         .attr("id", "topNThresholdSliderLabel")
-        .text("Number of Edges");
+        .text("Number of Edges: " + modelLeft.getNumberOfEdges());
 
     menu.append("input")
         .attr("type", "range")
@@ -399,24 +401,14 @@ addTopNSlider = function() {
             modelLeft.setNumberOfEdges(this.value);
             modelRight.setNumberOfEdges(this.value);
             updateScenes();
+            document.getElementById("topNThresholdSliderLabel").innerHTML = "Number of Edges: " + modelLeft.getNumberOfEdges();
         });
-
-    menu.append("output")
-        .attr("for","topNThresholdSlider")
-        .attr("id", "topNThresholdSliderOutput")
-        .text(modelLeft.getNumberOfEdges());
 };
 
 // remove top N edges slider and its labels
 removeTopNSlider= function() {
 
     var elem = document.getElementById('topNThresholdSlider');
-    if(elem) {
-        elem.parentNode.removeChild(elem);
-    }
-
-    elem = document.getElementById('topNThresholdSliderOutput');
-
     if(elem) {
         elem.parentNode.removeChild(elem);
     }
@@ -740,20 +732,22 @@ removeNumberOfHopsSlider = function() {
 // add "Change Modality" button to toggle between:
 // edge threshold and top N edges
 addModalityButton = function() {
-
-    var menu = d3.select("#upload");
+    var menu = d3.select("#edgeInfoPanel");
 
     menu.append("button")
         .text("Change Modality")
         .attr("id", "changeModalityBtn")
+        .on("click", function () {
+            var input = d3.select("input#changeModalityInput").node();
+            input.checked = !input.checked;
+            changeModality(input.checked);
+            updateScenes();
+        })
         .append("input")
         .attr("type","checkbox")
         .attr("id","changeModalityInput")
-        .attr("checked", "true")
-        .on("change", function () {
-            changeModality(this.checked);
-            updateScene();
-        });
+        .attr("checked", true);
+    menu.append("br");
 };
 
 // change modality callback

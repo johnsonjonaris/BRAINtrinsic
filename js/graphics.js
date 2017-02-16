@@ -84,9 +84,11 @@ function onDocumentMouseMove(model, event) {
 // selected nodes are drawn bigger
 function onDblClick(event) {
     event.preventDefault();
+    console.log("Dbl click")
 
     var intersectedObject = getIntersectedObject(event);
     if(intersectedObject) {
+        console.log("found intersected node")
         removeElementsFromEdgePanel();
         var nodeIndex = glyphNodeDictionary[intersectedObject.object.uuid];
         spt = true;
@@ -289,9 +291,10 @@ initCanvas = function () {
     removeUploadButtons();
     // add controls
     addOpacitySlider();
+    addEdgeBundlingCheck();
+    addModalityButton();
     addThresholdSlider();
     addGroupList();
-    // addModalityButton();
     addGeometryRadioButtons(modelLeft, 'Left');
     addGeometryRadioButtons(modelRight, 'Right');
 
@@ -520,7 +523,7 @@ drawConnections = function(model, glyphs, scene, displayedEdges) {
                 drawEdgesGivenNode(model, glyphs, scene, displayedEdges, nodeIdx);
             } else {
                 // 2) draw top n edges connected to the selected node
-                drawTopNEdgesByNode(model, glyphs, scene, nodeIdx, model.getNumberOfEdges());
+                drawTopNEdgesByNode(model, glyphs, scene, displayedEdges, nodeIdx, model.getNumberOfEdges());
             }
         }
     }
@@ -560,16 +563,14 @@ var updateEdgeOpacity = function (displayedEdges, opacity) {
 drawTopNEdgesByNode = function (model, glyphs, scene, displayedEdges, nodeIndex, n) {
 
     var row = model.getTopConnectionsByNode(nodeIndex, n);
-    // var edges = model.getActiveEdges()
-    // var edgeIdx = model.getEdgesIndeces();
-    console.log("drawTopNEdgesByNode row " + row);
-    for (var obj in row) {
-        if (model.isRegionActive(model.getRegionByNode(obj)) && visibleNodes[obj]) {
-            var start = new THREE.Vector3(  glyphs[nodeIndex].position.x,
-                                            glyphs[nodeIndex].position.y,
-                                            glyphs[nodeIndex].position.z );
-            var end = new THREE.Vector3(glyphs[obj].position.x, glyphs[obj].position.y, glyphs[obj].position.z);
-            displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, start, end, row[obj]);
+    var edges = model.getActiveEdges();
+    var edgeIdx = model.getEdgesIndeces();
+    if (enableEB) {
+        model.performEBOnNode(nodeIndex);
+    }
+    for (var i in row) {
+        if ((nodeIndex != row[i]) && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
+            displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, edges[edgeIdx[nodeIndex][row[i]]], nodeIndex);
         }
     }
 
