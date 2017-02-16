@@ -323,16 +323,14 @@ function Model () {
     // get top n edges connected to a specific node
     this.getTopConnectionsByNode = function(indexNode, n) {
         var row = this.getConnectionMatrixRow(indexNode);
-        var sortedRow = row.sort(function (a, b) {
+        var sortedRow = this.getConnectionMatrixRow(indexNode).sort(function (a, b) {
             return b - a
         }); //sort in a descending flavor
-        var res = {};
-        var val;
+        var indexes = new Array(n);
         for (var i = 0; i < n; i++) {
-            val = sortedRow[i];
-            res[row.indexOf(val)] = val;
+            indexes[i] = row.indexOf(sortedRow[i]);
         }
-        return res;
+        return indexes;
     };
 
     this.getMaximumWeight = function () {
