@@ -127,10 +127,7 @@ getHierarchy = function(model, nodeIndex){
 };
 
 getMaximumNumberOfHops = function(){
-    if(hierarchy)
-        return hierarchy.length;
-
-    return 0;
+    return (hierarchy) ? hierarchy.length : 0;
 };
 
 getShortestPathBetweenNodes = function(model, glyphs, a, b){
