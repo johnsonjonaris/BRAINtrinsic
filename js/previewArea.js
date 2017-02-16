@@ -18,8 +18,6 @@ function PreviewArea(canvas_, model_) {
     var shortestPathEdges = [];
     var edgeOpacity = 1.0;
 
-    var thresholdModality = true;
-
     this.activateVR = function (activate) {
         if (activate == activeVR)
             return;
@@ -251,7 +249,7 @@ function PreviewArea(canvas_, model_) {
             scene.add(shortestPathEdges[i]);
         }
 
-        // setEdgesColor(displayedEdges);
+        // setEdgesColor();
     };
 
     // set the color and thickness of displayed edges
@@ -305,20 +303,18 @@ function PreviewArea(canvas_, model_) {
     this.drawTopNEdgesByNode = function (nodeIndex, n) {
 
         var row = model.getTopConnectionsByNode(nodeIndex, n);
-        // var edges = model.getActiveEdges()
-        // var edgeIdx = model.getEdgesIndeces();
-        console.log("drawTopNEdgesByNode row " + row);
-        for (var obj in row) {
-            if (model.isRegionActive(model.getRegionByNode(obj)) && visibleNodes[obj]) {
-                var start = new THREE.Vector3(  glyphs[nodeIndex].position.x,
-                    glyphs[nodeIndex].position.y,
-                    glyphs[nodeIndex].position.z );
-                var end = new THREE.Vector3(glyphs[obj].position.x, glyphs[obj].position.y, glyphs[obj].position.z);
-                displayedEdges[displayedEdges.length] = drawEdgeWithName(scene, start, end, row[obj]);
+        var edges = model.getActiveEdges();
+        var edgeIdx = model.getEdgesIndeces();
+        if (enableEB) {
+            model.performEBOnNode(nodeIndex);
+        }
+        for (var i in row) {
+            if ((nodeIndex != row[i]) && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
+                displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[nodeIndex][row[i]]], nodeIndex);
             }
         }
 
-        // setEdgesColor(displayedEdges);
+        // setEdgesColor();
     };
 
     // draw edges given a node following edge threshold
@@ -336,7 +332,7 @@ function PreviewArea(canvas_, model_) {
                 displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode);
             }
         }
-        // setEdgesColor(displayedEdges);
+        // setEdgesColor();
     };
 
     // give a specific node index, remove all edges from a specific node in a specific scene
