@@ -978,7 +978,8 @@ addClusteringSlider = function(model, side) {
         .attr("step", 1)
         .on("change", function () {
             model.setClusteringLevel(parseInt(this.value));
-            redrawScene(model, side);
+            // redrawScene(model, side);
+            redrawScene(side);
             document.getElementById("clusteringSliderLabel" + side).innerHTML = "Level " + this.value;
         });
 };
