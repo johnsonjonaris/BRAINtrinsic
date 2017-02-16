@@ -1,10 +1,9 @@
-function saveForBRAINtrinsic(folder, subjectid, labels, network, anatomy, topologies, clusters)
+function saveForBRAINtrinsic(folder, subjectid, labels, network, topologies, clusters)
 %%
 % folder            output foler
 % subjectid         subject identification
 % labels            labels keymap, should be a column
 % network           connectome
-% anatomy           anatomical centroids = number of labels X 3
 % topologies        structure of different topologies: isomap, tsne, mds
 %                   should be a 3 columns array [x y z] (optional)
 % clusters          structure containing clustering data like PLACE or PACE
@@ -20,9 +19,6 @@ if ~isempty(topologies) && ~isstruct(topologies)
 end
 labels = labels(:);
 nLabels = length(labels);
-if size(anatomy,2) ~= 3
-    error('Anatomy should contain anatomical centroids in 3D, it must be a 3 columns array');
-end
 %% write network data
 filename = [folder, '\NW', subjectid, '.csv'];
 fprintf('Writing %s\n', filename)
@@ -30,17 +26,13 @@ csvwrite(filename, network);
 
 %% write topology data
 filename = [folder, '\topology', subjectid, '.csv'];
-header = 'label,anatomy,,';
-try
-    data = [labels, anatomy];
-catch
-    error('Labels and Anatomy should have the same number of rows');
-end
+header = 'label';
+data = labels;
 if ~isempty(topologies)
     topologiesNames = fieldnames(topologies);
     for i = 1:length(topologiesNames)
         topology = topologiesNames{i};
-        header = [header, topology, ',,'];
+        header = [header, ',', topology, ',,'];
         if size(topologies.(topology),2) ~= 3
             error('A topology should contain labels centroids in 3D, it must be a 3 columns array');
         end
