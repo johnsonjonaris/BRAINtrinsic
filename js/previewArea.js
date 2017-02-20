@@ -52,7 +52,7 @@ function PreviewArea(canvas_, model_) {
         }
         enableVR = true;
 
-        // initOculusTouch();
+        initOculusTouch();
     };
 
     // init Oculus Touch controllers
@@ -73,7 +73,11 @@ function PreviewArea(canvas_, model_) {
 
             controllerLeft.add( object.clone() );
             controllerRight.add( object.clone() );
+
+            scene.add(controllerLeft);
+            scene.add(controllerRight);
         } );
+        console.log("Init Oculus Touch done")
     };
 
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
@@ -156,8 +160,8 @@ function PreviewArea(canvas_, model_) {
             oculusControl.update();
             effect.render(scene, camera);
 
-            // controllerLeft.update();
-            // controllerRight.update();
+            controllerLeft.update();
+            controllerRight.update();
         }
     };
 
