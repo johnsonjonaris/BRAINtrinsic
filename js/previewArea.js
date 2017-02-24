@@ -17,7 +17,6 @@ function PreviewArea(canvas_, model_) {
     var displayedEdges = [];
     // shortest path
     var shortestPathEdges = [];
-    var distanceArray;                  // contain the shortest path for current selected node (root)
 
     var edgeOpacity = 1.0;
 
