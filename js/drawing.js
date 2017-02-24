@@ -35,8 +35,6 @@ function onDocumentMouseMove(model, event) {
         regionName = model.getRegionNameByIndex(nodeIdx);
         nodeRegion = model.getRegionByNode(nodeIdx);
     }
-    if ( nodeIdx === undefined)
-        return;
 
     var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
     // update node information label
@@ -54,7 +52,7 @@ function onDocumentMouseMove(model, event) {
     } else {
         if(pointedObject){
             nodeIdx = glyphNodeDictionary[pointedObject.uuid];
-            if ( nodeIdx === undefined)
+            if (nodeIdx === undefined)
                 return;
             pointedNodeIdx = -1;
             if(nodeIdx == root) {
