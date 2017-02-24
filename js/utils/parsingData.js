@@ -54,17 +54,7 @@ var loadIcColors = function (callback) {
 
 // the look up table is common for all datasets
 var loadLookUpTable = function (callback) {
-    var labelsLUTFilename;
-    switch (labelLUT) {
-        case ("fsl"):
-            labelsLUTFilename = "LookupTable_fsl.csv";
-            break;
-        case ("baltimore"):
-            labelsLUTFilename = "LookupTable_baltimore.csv";
-            break;
-        default:
-            break;
-    }
+    var labelsLUTFilename = "LookupTable_" + labelLUT + ".csv";
     Papa.parse("data/"+labelsLUTFilename, {
         download: true,
         delimiter: ";",
