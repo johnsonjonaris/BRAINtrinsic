@@ -3,9 +3,9 @@ body {
     font-family: 'Fjord', sans-serif;
 }
 
-button{
+button {
     background-color: #3498db; /*rgb(197, 239, 247) ;*/
-    border-width: 0px;
+    border-width: 1px;
     text-align: center;
     -webkit-border-radius: 2px;
     font-family: 'Open Sans', sans-serif;
@@ -14,10 +14,21 @@ button{
     font-weight: 400;
 }
 
-button:hover{
+button:hover {
     background: #BDC3C7; /*rgb(82, 179, 217);*/
 }
 
+button:disabled {
+    opacity : .6;
+    background-color: grey;
+}
+input:disabled {
+    opacity : .3;
+}
+
+input:disabled+label {
+    color: #4c4c4c;
+}
 
 input[type="file"] {
     position: absolute;
@@ -33,11 +44,10 @@ input[type="file"] {
     border-radius: 5px;
     font-family: 'Open Sans', sans-serif;
     opacity: 0;
-
 }
 
 
-button > input[type="checkbox"]{
+button > input[type="checkbox"] {
     position: absolute;
     top: 0;
     left: 0;
@@ -53,17 +63,17 @@ button > input[type="checkbox"]{
     opacity: 0;
 }
 
-.dhtmlx_button{
+.dhtmlx_button {
     margin-top:10px;
 }
 
-.menu{
+.menu {
     background-color:  rgba(46,36,33, 0.0);
     font-family: 'Open Sans', sans-serif;
     color: floralwhite;
 }
 
-.menu > button{
+.menu > button {
     position: relative;
     width : 95px;
     height: 40px;
@@ -104,13 +114,13 @@ button > input[type="checkbox"]{
     z-index: 2
 }
 
-#uploadLeft{
+#uploadLeft {
     width: 150px;
     height: 200px;
     float: left;
 }
 
-#uploadRight{
+#uploadRight {
     width: 150px;
     height: 200px;
     float: right;
@@ -142,23 +152,31 @@ button > input[type="checkbox"]{
     color: black;
 }
 
-#topologyLeft{
+#shortestPath {
     position: absolute;
     width: 175px;
-    height: 150px;
-    top: 200px;
-    left: 20px
-}
-
-#topologyRight{
-    position: absolute;
-    width: 175px;
-    height: 150px;
+    height: 100px;
     top: 200px;
     right: 30px
 }
 
-#nodeInfoPanel{
+#topologyLeft {
+    position: absolute;
+    width: 175px;
+    height: 150px;
+    top: 400px;
+    left: 20px
+}
+
+#topologyRight {
+    position: absolute;
+    width: 175px;
+    height: 150px;
+    top: 400px;
+    right: 30px
+}
+
+#nodeInfoPanel {
     position: absolute;
     width: 300px;
     height: 130px;
@@ -168,7 +186,7 @@ button > input[type="checkbox"]{
     color: antiquewhite;
 }
 
-#nodeInfoPanel > p{
+#nodeInfoPanel > p {
     text-align:center;
     vertical-align: middle;
 }
@@ -176,7 +194,7 @@ button > input[type="checkbox"]{
 #edgeInfoPanel {
     position: absolute;
     width: 200px;
-    height: 100px;
+    height: 200px;
     top: 10px;
     right: 10px;
     z-index: 2
@@ -193,7 +211,7 @@ button > input[type="checkbox"]{
     display: none;
 }
 
-#leftFslLabels{
+#leftFslLabels {
     overflow:auto;
     position: absolute;
     width: 200px;
@@ -204,7 +222,7 @@ button > input[type="checkbox"]{
     display: none;
 }
 
-#search{
+#search {
     position: absolute;
     width: 200px;
     height: 100px;
@@ -214,7 +232,7 @@ button > input[type="checkbox"]{
     display: none;
 }
 
-#full{
+#full {
     height: 100%;
     min-height: 100%;
     top:0; right:0;
@@ -222,6 +240,6 @@ button > input[type="checkbox"]{
     background-color: white;
 }
 
-.label{
-    color: black;
-}
+/*.label{*/
+    /*color: black;*/
+/*}*/

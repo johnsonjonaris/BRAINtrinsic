@@ -15,7 +15,6 @@ var shortestPathEdges = [];
 var pointedNodeIdx = -1;            // index of node under the mouse
 var pointedObject;                  // node object under mouse
 var root;                           // the index of the root node = start point of shortest path computation
-var distanceArray;                  // contain the shortest path for current selected node (root)
 
 var thresholdModality = true;
 var enableEB = true;
@@ -36,6 +35,9 @@ function onDocumentMouseMove(model, event) {
         regionName = model.getRegionNameByIndex(nodeIdx);
         nodeRegion = model.getRegionByNode(nodeIdx);
     }
+    if ( nodeIdx === undefined)
+        return;
+
     var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
     // update node information label
     if ( nodeExistAndVisible ) {
@@ -52,6 +54,8 @@ function onDocumentMouseMove(model, event) {
     } else {
         if(pointedObject){
             nodeIdx = glyphNodeDictionary[pointedObject.uuid];
+            if ( nodeIdx === undefined)
+                return;
             pointedNodeIdx = -1;
             if(nodeIdx == root) {
                 console.log("Root creation");
@@ -69,20 +73,31 @@ function onDocumentMouseMove(model, event) {
 
 // callback to interact with objects in scene with double click
 // selected nodes are drawn bigger
-function onDblClick(event) {
+function onMiddleClick(event) {
     event.preventDefault();
 
     var intersectedObject = getIntersectedObject(event);
     if(intersectedObject) {
-        removeElementsFromEdgePanel();
         var nodeIndex = glyphNodeDictionary[intersectedObject.object.uuid];
-        spt = true;
-        drawAllShortestPath(nodeIndex);
+        if (nodeIndex == undefined || nodeIndex < 0)
+            return;
+        if (root == nodeIndex) { // disable spt and reset nodes visibility
+            spt = false;
+            root = undefined;
+            visibleNodes.fill(true);
+        } else { // enable spt
+            spt = true;
+            // compute the shortest path for the two models
+            previewAreaLeft.computeShortestPathForNode(nodeIndex);
+            previewAreaRight.computeShortestPathForNode(nodeIndex);
+        }
+        updateScenes();
+        enableShortestPathFilterButton(spt);
     }
 }
 
 // callback to select a node on mouse click
-function onClick(model, event) {
+function onLeftClick(model, event) {
 
     event.preventDefault();
     var objectIntersected = getIntersectedObject(event);
@@ -124,7 +139,7 @@ function onClick(model, event) {
                 removeEdgesGivenNodeFromScenes(nodeIndex);
             }
         } else {
-            var glyphs = isLeft ? glyphsLeft:glyphsRight;
+            // var glyphs = isLeft ? glyphsLeft:glyphsRight;
             // getShortestPathBetweenNodes(model, glyphs, root, nodeIndex);
         }
     }
@@ -132,12 +147,9 @@ function onClick(model, event) {
 }
 
 // callback on mouse press
-function onMouseDown(model, event) {
+function onMouseDown(event) {
     click = true;
     switch (event.button) {
-        case 0: // left click
-            onClick(model, event);
-            break;
         case 2: // right click -> should be < 200 msec
             setTimeout(function () {click = false;}, 200);
             break;
@@ -145,9 +157,18 @@ function onMouseDown(model, event) {
 }
 
 // callback on mouse release
-function onMouseUp(event) {
-    if(event.button == 2 && click){
-        toggleFslMenu();
+function onMouseUp(model, event) {
+
+    switch (event.button) {
+        case 0:
+            onLeftClick(model, event);
+            break;
+        case 1:
+            onMiddleClick(event);
+            break;
+        case 2:
+            toggleFslMenu();
+            break;
     }
 }
 
@@ -185,6 +206,11 @@ initCanvas = function () {
     addGeometryRadioButtons(modelLeft, 'Left');
     addGeometryRadioButtons(modelRight, 'Right');
 
+    addShortestPathFilterButton();
+    addDistanceSlider();
+    addShortestPathHopsSlider();
+    enableShortestPathFilterButton(false);
+
     // addSkyboxButton();
     addDimensionFactorSlider();
     // addFslRadioButton();
@@ -200,9 +226,9 @@ initCanvas = function () {
     glyphNodeDictionary = {};
     // create left and right canvas
     previewAreaLeft.createCanvas();
-    previewAreaLeft.setEventListeners(onDblClick, onMouseDown, onMouseUp, onDocumentMouseMove);
+    previewAreaLeft.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
     previewAreaRight.createCanvas();
-    previewAreaRight.setEventListeners(onDblClick, onMouseDown, onMouseUp, onDocumentMouseMove);
+    previewAreaRight.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
     // prepare Occulus rift
     if (vr > 0) {
         previewAreaLeft.initOculusRift();
@@ -245,11 +271,21 @@ enableEdgeBundling = function (enable) {
 };
 
 // updating scenes: redrawing glyphs and displayed edges
-updateScenes = function() {
+updateScenes = function () {
     console.log("Scene update");
     previewAreaLeft.updateScene();
     previewAreaRight.updateScene();
     createLegend(modelLeft);
+};
+
+redrawNodes = function () {
+    previewAreaLeft.redrawNodes();
+    previewAreaRight.redrawNodes();
+};
+
+redrawEdges = function () {
+    previewAreaLeft.redrawEdges();
+    previewAreaRight.redrawEdges();
 };
 
 // animate scenes and capture control inputs
@@ -277,7 +313,7 @@ drawAllRegions = function() {
     previewAreaRight.drawRegions();
 };
 
-var updateOpacity = function (opacity) {
+updateOpacity = function (opacity) {
     previewAreaLeft.updateEdgeOpacity(opacity);
     previewAreaRight.updateEdgeOpacity(opacity);
 };
@@ -308,56 +344,6 @@ getIntersectedObject = function(event) {
     return isLeft ? previewAreaLeft.getIntersectedObject(vector) : previewAreaRight.getIntersectedObject(vector);
 };
 
-// draw shortest path for the left and right scenes
-drawAllShortestPath = function(nodeIndex) {
-    drawShortestPathLeft(nodeIndex);
-    drawShortestPathRight(nodeIndex);
-    // setEdgesColor(displayedEdgesLeft);
-    // setEdgesColor(displayedEdgesRight);
-    updateScenes();
-};
-drawShortestPathLeft = function(nodeIndex) { drawShortestPath(modelLeft, glyphsLeft,  nodeIndex);};
-drawShortestPathRight = function(nodeIndex) { drawShortestPath(modelRight, glyphsRight, nodeIndex);};
-
-// draw shortest path for a specific node
-drawShortestPath = function(model, glyphs, nodeIndex) {
-    console.log("Draw Shortest Path");
-    root = nodeIndex;
-
-    var len = model.getConnectionMatrixDimension();
-    var dist = getShortestPathDistances(model, nodeIndex);
-    distanceArray = [];
-    for(var i=0; i < model.getConnectionMatrixDimension(); i++){
-        distanceArray[i] = dist[i];
-    }
-    model.setDistanceArray(distanceArray);
-
-    if(!document.getElementById("distanceThresholdSlider")){
-        addDistanceSlider(distanceArray);
-    }
-
-    shortestPathDistanceUI();
-
-    nodesSelected = [];
-    shortestPathEdges = [];
-
-    // show only nodes with shortest paths distance less than a threshold
-    for(i=0; i < len; i++){
-        visibleNodes[i] = (dist[i] < model.getDistanceThreshold());
-    }
-
-    for(i=0; i < visibleNodes.length; i++){
-        if(visibleNodes[i]){
-            var prev = glyphs[previousMap[i]];
-            if(prev) {
-                var start = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z);
-                var end = new THREE.Vector3(prev.position.x, prev.position.y, prev.position.z);
-                shortestPathEdges[shortestPathEdges.length] = createLine(start, end, model.getConnectionMatrix()[i][previousMap[i]] );
-            }
-        }
-    }
-};
-
 changeColorGroup = function (n) {
     modelLeft.setActiveGroup(parseInt(n));
     modelRight.setActiveGroup(parseInt(n));
@@ -375,16 +361,10 @@ redrawScene = function (side) {
         case 'Left':
         case 'left':
             previewAreaLeft.updateScene();
-            if(spt) {
-                drawShortestPathLeft(root);
-            }
             break;
         case 'Right':
         case 'right':
             previewAreaRight.updateScene();
-            if(spt) {
-                drawShortestPathRight(root);
-            }
             break;
     }
 };
@@ -396,35 +376,22 @@ changeActiveGeometry = function (model, side, type) {
     redrawScene(side);
 };
 
-// draw shortest path from root node up to a number of hops
-drawShortestPathHops = function(model, glyphs, rootNode, hops){
-    var hierarchy = getHierarchy(model, rootNode);
-
-    shortestPathEdges = [];
-    for(var i = 0; i < hierarchy.length; i++){
-        if( i < hops + 1 ) {
-            //Visible node branch
-            for(var j=0; j < hierarchy[i].length; j++){
-                visibleNodes[hierarchy[i][j]] = true;
-                var prev = glyphs[previousMap[hierarchy[i][j]]];
-                if(prev){
-                    var start = new THREE.Vector3(  glyphs[hierarchy[i][j]].position.x,
-                        glyphs[hierarchy[i][j]].position.y,
-                        glyphs[hierarchy[i][j]].position.z);
-                    var end = new THREE.Vector3(prev.position.x, prev.position.y, prev.position.z);
-                    shortestPathEdges[shortestPathEdges.length] = createLine(start, end,
-                        model.getConnectionMatrix()[hierarchy[i][j]][previousMap[hierarchy[i][j]]]);
-                }
-            }
-        } else {
-            for(var j=0; j < hierarchy[i].length; j++){
-                visibleNodes[hierarchy[i][j]] = false;
-            }
-        }
+// draw shortest path for the left and right scenes = prepare the edges and plot them
+updateShortestPathEdges = function (side) {
+    if (!spt)
+        return;
+    switch (side) {
+        case ('left'):
+            previewAreaLeft.updateShortestPathEdges();
+            break;
+        case ('right'):
+            previewAreaRight.updateShortestPathEdges();
+            break;
+        case ('both'):
+            previewAreaLeft.updateShortestPathEdges();
+            previewAreaRight.updateShortestPathEdges();
+            break;
     }
-
-    shortestPathSliderHops();
-    updateScenes();
 };
 
 // change the subject in a specific scene

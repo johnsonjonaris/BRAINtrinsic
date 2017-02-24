@@ -22,16 +22,16 @@ function Model () {
     var connectionMatrix = [];          // adjacency matrix
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
 
-    var distanceArray;                  // contain the shortest path for current selected node
-    var distanceThreshold;              // threshold for the distanceArray
     var threshold;                      // threshold for the edge value
     var numberOfEdges = 5;              // threshold the number of edges for shortest paths
-    var numberOfHops;
+
     var edges = [];                     // contains the edges per dataType
     var edgeIdx = [];                   // 2D matrix where entries are the corresponding edge index
 
-    var info = { name: '', info: '' };  // information about the subject
-
+    var distanceArray;                  // contain the shortest path for current selected node
+    var maxDistance = null;             // max value of distanceArray
+    var distanceThreshold = 50;         // threshold for the distanceArray in percentage of the max value: 0 to 100
+    var numberOfHops = 0;               // max number of hops for shortest path
     var graph;
 
     var metricValues = [];
@@ -68,22 +68,21 @@ function Model () {
     };
 
     // set the iso center color table ???
-    this.setICColor = function(icData) {
+    this.setICColor = function (icData) {
         icColorTable = icData.data;
     };
 
-    // set distanceArray containing the shortest path for current selected node
-    this.setDistanceArray = function(array) {
-        distanceArray = array;
+    this.getDistanceArray = function () {
+        return distanceArray;
     };
 
     // get the longest shortest path of the current selected node = the farthest node
-    this.getMaximumDistance = function() {
-        return d3.max(distanceArray);
+    this.getMaximumDistance = function () {
+        return maxDistance;
     };
 
     // store map between each node and its corresponding FSL label
-    this.setLabelKeys = function(data, loc) {
+    this.setLabelKeys = function (data, loc) {
         labelKeys = [];
         // data[0] is assumed to contain a string header
         for (var j = 1; j < data.length; j++) {
@@ -92,7 +91,7 @@ function Model () {
     };
 
     // setting activeGroup: 0 = Anatomy, 1 = place, 2 = rich club, 3 = PLACE, 4 = id
-    this.setActiveGroup = function(group) {
+    this.setActiveGroup = function (group) {
         activeGroup = group;
     };
 
@@ -101,7 +100,7 @@ function Model () {
     };
 
     // create groups in order: Anatomy, place, rich club, id
-    this.createGroups = function() {
+    this.createGroups = function () {
         console.log("create groups");
         var len = labelKeys.length;
         var anatomicalGroup = new Array(len);
@@ -135,7 +134,7 @@ function Model () {
     };
 
     // return the group affiliation of every node according to activeGroup
-    this.getGroup = function() {
+    this.getGroup = function () {
         var l = groups[activeGroup].length;
         var results = [];
         for (var i = 0; i < l; i++) {
@@ -180,7 +179,7 @@ function Model () {
 
     // store nodes centroids according to topological spaces
     // technique can be: Isomap, MDS, tSNE, anatomy ...
-    this.setCentroids = function(d, topology, offset) {
+    this.setCentroids = function (d, topology, offset) {
         var data = [];
         // data[0] is assumed to contain a string header
         for (var i = 1; i < d.length; i++) {
@@ -192,27 +191,22 @@ function Model () {
     };
 
     // set shortest path distance threshold and update GUI
-    this.setDistanceThreshold = function(dt) {
-        if (document.getElementById("distanceThresholdOutput")) {
-            var percentage = dt / this.getMaximumDistance() * 100;
-            var value = Math.floor(percentage * 100) / 100;
-            document.getElementById("distanceThresholdOutput").value = value + " %";
-        }
+    this.setDistanceThreshold = function (dt) {
         distanceThreshold = dt;
     };
 
     // get shortest path distance threshold
-    this.getDistanceThreshold = function() {
+    this.getDistanceThreshold = function () {
         return distanceThreshold;
     };
 
     // store edge threshold and update GUI
-    this.setThreshold = function(t) {
+    this.setThreshold = function (t) {
         threshold = t;
     };
 
     // get edge threshold
-    this.getThreshold = function() {
+    this.getThreshold = function () {
         return threshold;
     };
 
@@ -290,7 +284,7 @@ function Model () {
                 regionsActivated[regionName] = true;
                 break;
         }
-        updateScenes();
+        updateScenes(); // hide edges of invisible nodes
     };
 
     // get region state using its name
@@ -350,27 +344,12 @@ function Model () {
     };
 
     this.setNumberOfEdges = function(n) {
-        if (document.getElementById("topNThresholdSliderOutput")) {
-            document.getElementById("topNThresholdSliderOutput").value = n;
-        }
         numberOfEdges = n;
     };
 
     // get the region name of a specific node (edge)
     this.getRegionNameByIndex = function (index) {
         return labelsLUT[labelKeys[index]].region_name;
-    };
-
-    this.setNumberOfHops = function(hops) {
-        numberOfHops = hops;
-        if (document.getElementById("numberOfHopsOutput")) {
-            document.getElementById("numberOfHopsOutput").value = hops;
-        }
-    };
-
-
-    this.getNumberOfHops = function () {
-        return numberOfHops;
     };
 
     // get the label visibility
@@ -420,7 +399,7 @@ function Model () {
         var idx = 0;
         // for every node, add the distance to all other nodes
         for(var i = 0; i < nNodes; i++){
-            var vertexes = {};
+            var vertexes = [];
             var row = new Array(nNodes);
             edgeIdx.push(new Array(nNodes));
             edgeIdx[i].fill(-1); // indicates no connection
@@ -448,7 +427,28 @@ function Model () {
     // compute shortest path from a specific node to the rest of the nodes
     this.computeShortestPathDistances = function(rootNode) {
         console.log("computing spt");
-        return graph.shortestPath(String(rootNode));
+        distanceArray = graph.shortestPath(String(rootNode));
+        maxDistance = d3.max(distanceArray);
+    };
+
+    this.getHierarchy = function (rootIndex) {
+        return graph.getHierarchy(rootIndex);
+    };
+
+    this.getPreviousMap = function () {
+        return (graph) ? graph.getPreviousMap() : null;
+    };
+
+    this.getMaxNumberOfHops = function(){
+        return graph.getMaxNumberOfHops();
+    };
+
+    this.setNumberOfHops = function(hops) {
+        numberOfHops = hops;
+    };
+
+    this.getNumberOfHops = function () {
+        return numberOfHops;
     };
 
     this.computeNodesLocationForClusters = function(topology) {

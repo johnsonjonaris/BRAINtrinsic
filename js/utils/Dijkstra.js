@@ -1,9 +1,6 @@
 
 
-var previousMap;
-var hierarchy = [];
-var rootNode;
-var dist;
+
 var updateNeeded = true;
 
 function PriorityQueue () {
@@ -31,21 +28,26 @@ function PriorityQueue () {
  */
 function Graph() {
     var INFINITY = 1/0;
-    this.vertices = {};
+    var vertices = [];
+    var hierarchy = [];                 // the hierarchy map to reach every node from the rootNode, each level of nodes are grouped
+    var previousMap = [];               // the index of the previous node in the shortest path in order to reach the rootNode
+                                        // into an array, the furthest set of nodes are the last array = largest number of hops
+    var rootNode = null;                // selected node
+
 
     // method to add vertices to graph
-    this.addVertex = function(name, edges){
-        this.vertices[name] = edges;
+    this.addVertex = function(index, edges){
+        vertices[index] = edges;
     };
 
     // compute shortest path from a start node to the rest of the nodes
     this.shortestPath = function (start) {
         var nodes = new PriorityQueue(),
-            distances = {},
-            previous = {},
+            distances = [],
+            previous = [],
             smallest, vertex, neighbor, alt;
 
-        for(vertex in this.vertices) {
+        for(vertex in vertices) {
             if(vertex === start) {
                 distances[vertex] = 0;
                 nodes.enqueue(0, vertex);
@@ -61,74 +63,64 @@ function Graph() {
         while(!nodes.isEmpty()) {
             smallest = nodes.dequeue();
 
-            for(neighbor in this.vertices[smallest]) {
-                alt = distances[smallest] + this.vertices[smallest][neighbor];
+            for(neighbor in vertices[smallest]) {
+                alt = distances[smallest] + vertices[smallest][neighbor];
 
                 if(alt < distances[neighbor]) {
                     distances[neighbor] = alt;
-                    previous[neighbor] = smallest;
+                    previous[neighbor] = parseInt(smallest);
                     nodes.enqueue(alt, neighbor);
                 }
             }
         }
         previousMap = previous;
-        dist = distances;
         rootNode = start;
-        setHierarchy(rootNode);
+        this.setHierarchy(rootNode);
         return distances;
     };
-}
 
-setHierarchy = function(root){
-    hierarchy = [];
-    var el = [];
-    hierarchy[0] = [];
-    hierarchy[0].push(parseInt(root));
-    var k;
+    this.getPreviousMap = function () {
+        return previousMap;
+    };
 
-    for(k=0; k < hierarchy.length; k++){
-        el = [];
-        for(var i=0; i < hierarchy[k].length; i++) {
+    this.setHierarchy = function(root){
+        hierarchy = [];
+        var el = [];
+        hierarchy[0] = [];
+        hierarchy[0].push(parseInt(root));
 
-            for (var j in previousMap) {
-                if (previousMap[j] == hierarchy[k][i]) {
-                    el[el.length] = parseInt(j);
+        for(var k=0; k < hierarchy.length; k++){
+            el = [];
+            for(var i=0; i < hierarchy[k].length; i++) {
+
+                for (var j in previousMap) {
+                    if (previousMap[j] == hierarchy[k][i]) {
+                        el[el.length] = parseInt(j);
+                    }
                 }
             }
+            if (el.length > 0) {
+                hierarchy[hierarchy.length] = el;
+            }
         }
-        if (el.length > 0) {
-            hierarchy[hierarchy.length] = el;
+    };
+
+    this.getHierarchy = function(rootIndex){
+        if(rootNode && rootNode == rootIndex){
+            return hierarchy;
         }
-    }
-};
-
-getShortestPathDistances = function(model, nodeIndex){
-
-    if(updateNeeded){
-        model.computeShortestPathDistances(nodeIndex);
-        rootNode = nodeIndex;
-        updateNeeded = false;
-       return dist;
-    } else {
-        return dist;
-    }
-    console.log("dist", dist)
-};
-
-getHierarchy = function(model, nodeIndex){
-    if(rootNode && rootNode == nodeIndex){
+        this.shortestPath(String(rootIndex));
         return hierarchy;
+    };
+
+    this.getMaxNumberOfHops = function () {
+        return (hierarchy) ? hierarchy.length : 0;
     }
+}
 
-    model.computeShortestPathDistances(nodeIndex);
-    rootNode = nodeIndex;
 
-    return hierarchy;
-};
 
-getMaximumNumberOfHops = function(){
-    return (hierarchy) ? hierarchy.length : 0;
-};
+
 
 getShortestPathBetweenNodes = function(model, glyphs, a, b){
     var i = b, j;

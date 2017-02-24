@@ -15,7 +15,10 @@ function PreviewArea(canvas_, model_) {
     // nodes and edges
     var glyphs = [];
     var displayedEdges = [];
+    // shortest path
     var shortestPathEdges = [];
+    var distanceArray;                  // contain the shortest path for current selected node (root)
+
     var edgeOpacity = 1.0;
 
     this.activateVR = function (activate) {
@@ -110,15 +113,10 @@ function PreviewArea(canvas_, model_) {
     };
 
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
-    this.setEventListeners = function (onDblClick, onMouseDown, onMouseUp, onDocumentMouseMove) {
-        canvas.addEventListener('dblclick', onDblClick, true);
-        canvas.addEventListener('mousedown', function (e) {
-            onMouseDown(model, e);
-        }, true);
-        canvas.addEventListener('mouseup', onMouseUp);
-        canvas.addEventListener('mousemove', function (e) {
-            onDocumentMouseMove(model, e);
-        }, true);
+    this.setEventListeners = function (onMouseDown, onMouseUp, onDocumentMouseMove) {
+        canvas.addEventListener('mousedown', onMouseDown, true);
+        canvas.addEventListener('mouseup', function (e) { onMouseUp(model, e);});
+        canvas.addEventListener('mousemove', function (e) { onDocumentMouseMove(model, e); }, true);
     };
 
     // update geometry of node
@@ -144,6 +142,11 @@ function PreviewArea(canvas_, model_) {
             scene.remove(displayedEdges[i]);
         }
         displayedEdges = [];
+
+        for(i=0; i < shortestPathEdges.length; i++){
+            scene.remove(shortestPathEdges[i]);
+        }
+        shortestPathEdges = [];
     };
 
     this.animate = function () {
@@ -171,8 +174,22 @@ function PreviewArea(canvas_, model_) {
         this.removeEdgesFromScene();
     };
 
-    this.redrawScene = function () {
+    this.drawScene = function () {
+        if (spt)
+            this.updateShortestPathEdges();
         this.drawRegions();
+        this.drawConnections();
+    };
+
+    this.redrawNodes = function () {
+        removeNodesFromScene();
+        this.drawRegions();
+    };
+
+    this.redrawEdges = function () {
+        this.removeEdgesFromScene();
+        if (spt)
+            this.updateShortestPathEdges();
         this.drawConnections();
     };
 
@@ -184,7 +201,7 @@ function PreviewArea(canvas_, model_) {
     // updating scenes: redrawing glyphs and displayed edges
     this.updateScene = function (){
         this.clearScene();
-        this.redrawScene();
+        this.drawScene();
     };
 
     // draw the brain regions as glyphs (the edges)
@@ -446,6 +463,75 @@ function PreviewArea(canvas_, model_) {
         camera.aspect = window.innerWidth/2.0 / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth/2.0, window.innerHeight);
-        this.animate();
+    };
+
+    // compute shortest path info for a node
+    this.computeShortestPathForNode = function(nodeIndex) {
+        console.log("Compute Shortest Path for node " + nodeIndex);
+        root = nodeIndex;
+        model.computeShortestPathDistances(nodeIndex);
+    };
+
+    // draw shortest path from root node up to a number of hops
+    this.updateShortestPathBasedOnHops = function () {
+        var hops = model.getNumberOfHops();
+        var hierarchy = model.getHierarchy(root);
+        var edges = model.getActiveEdges();
+        var edgeIdx = model.getEdgesIndeces();
+        var previousMap = model.getPreviousMap();
+
+        shortestPathEdges = [];
+        for(var i = 0; i < hierarchy.length; ++i) {
+            if( i < hops + 1 ) {
+                //Visible node branch
+                for(var j=0; j < hierarchy[i].length; j++){
+                    visibleNodes[hierarchy[i][j]] = true;
+                    var prev = previousMap[hierarchy[i][j]];
+                    if(prev){
+                        shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][hierarchy[i][j]]] , prev);
+                    }
+                }
+            } else {
+                for(var j=0; j < hierarchy[i].length; ++j){
+                    visibleNodes[hierarchy[i][j]] = false;
+                }
+            }
+        }
+    };
+
+    this.updateShortestPathBasedOnDistance = function () {
+        nodesSelected = [];
+        shortestPathEdges = [];
+
+        // show only nodes with shortest paths distance less than a threshold
+        var threshold = model.getDistanceThreshold()/100.*model.getMaximumDistance();
+        var distanceArray = model.getDistanceArray();
+        for(var i=0; i < visibleNodes.length; i++){
+            visibleNodes[i] = (distanceArray[i] <= threshold);
+        }
+
+        var edges = model.getActiveEdges();
+        var edgeIdx = model.getEdgesIndeces();
+        var previousMap = model.getPreviousMap();
+
+        for(i=0; i < visibleNodes.length; ++i) {
+            if(visibleNodes[i]){
+                var prev = previousMap[i];
+                if(prev) {
+                    shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][i]] , prev);
+                }
+            }
+        }
+    };
+
+    this.updateShortestPathEdges = function () {
+        switch (shortestPathVisMethod) {
+            case (SHORTEST_DISTANCE):
+                    this.updateShortestPathBasedOnDistance();
+                break;
+            case (NUMBER_HOPS):
+                    this.updateShortestPathBasedOnHops();
+                break;
+        }
     };
 }
