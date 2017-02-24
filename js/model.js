@@ -39,6 +39,7 @@ function Model () {
     var clusters = [];                  // PLACE clusters, assumed level 4: clusters from 1 to 16
     var clusteringLevel = 4;            // default PLACE/PACE level
     var clusteringGroupLevel = 4;       // clustering group level used for color coding, 1 to 4
+    var maxNumberOfClusters = 16;       // max number of clusters
     var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
 
     var fbundling = d3.GPUForceEdgeBundling().cycles(6).iterations(60).enable_keep_programs(true);
@@ -453,19 +454,34 @@ function Model () {
 
     this.computeNodesLocationForClusters = function(topology) {
         var platonic = new Platonics();
-        switch (clusteringLevel) {
-            case 1:
+        if (maxNumberOfClusters == 16) {
+            switch (clusteringLevel) {
+                case 1:
+                    platonic.createTetrahedron();
+                    break;
+                case 2:
+                    platonic.createCube();
+                    break;
+                case 3:
+                    platonic.createDodecahedron();
+                    break;
+                case 4:
+                    platonic.createIcosahedron();
+                    break;
+            }
+        } else {
+            if (maxNumberOfClusters < 5)
                 platonic.createTetrahedron();
-                break;
-            case 2:
+            else if (maxNumberOfClusters < 7)
                 platonic.createCube();
-                break;
-            case 3:
+            else if (maxNumberOfClusters < 11)
                 platonic.createDodecahedron();
-                break;
-            case 4:
+            else if (maxNumberOfClusters < 21)
                 platonic.createIcosahedron();
-                break;
+            else {
+                console.log("Can not visualize clustering data.");
+                return;
+            }
         }
         // use one of the faces to compute primary variables
         var face = platonic.getFace(0);
@@ -479,7 +495,7 @@ function Model () {
         var totalNNodes = clusters[0].length;
         var centroids = new Array(totalNNodes+1);
         var level = clusteringLevel-1;
-        var nClusters = Math.pow(2, clusteringLevel);
+        var nClusters = ((maxNumberOfClusters == 16)) ? Math.pow(2, clusteringLevel) : maxNumberOfClusters;
 
         for (var i = 0; i < nClusters; i++) {
             var clusterIdx = [];
@@ -505,15 +521,23 @@ function Model () {
 
     // assume last level = 4 => 16 clusters at most
     this.setClusters = function(data, loc) {
+        var clusteringData = [];
         clusters = new Array(4); // 4 levels
-        clusters[3] = [];
         // data[0] is assumed to contain a string header
         for (var j = 1; j < data.length; j++) {
-            clusters[3].push(data[j][loc]);
+            clusteringData.push(data[j][loc]);
         }
+        maxNumberOfClusters = d3.max(clusteringData) - d3.min(clusteringData) + 1;
+        clusters[3] = clusteringData;
 		// placeClusters[3] = math.squeeze(clusters.data);
-        for (var i = 2; i >= 0; i--) {
-            clusters[i] =  math.ceil(math.divide(clusters[i+1],2.0));
+        if (maxNumberOfClusters == 16) { // PLACE
+            for (var i = 2; i >= 0; i--) {
+                clusters[i] = math.ceil(math.divide(clusters[i + 1], 2.0));
+            }
+        } else {
+            clusters[0] = clusteringData.slice(0);
+            clusters[1] = clusteringData.slice(0);
+            clusters[2] = clusteringData.slice(0);
         }
     };
 
@@ -552,6 +576,8 @@ function Model () {
                     break;
                 case ("PLACE"): // structural
                 case ("PACE"): // functional
+                case ("Q-Modularity"):
+                case ("Q"):
                     this.setClusters(data, i);
                     this.computeNodesLocationForClusters(dataType);
                     topologies.push(dataType);
