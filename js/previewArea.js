@@ -143,7 +143,11 @@ function PreviewArea(canvas_, model_) {
         }
         displayedEdges = [];
 
-        for(i=0; i < shortestPathEdges.length; i++){
+        this.removeShortestPathEdgesFromScene();
+    };
+
+    this.removeShortestPathEdgesFromScene = function () {
+        for(var i=0; i < shortestPathEdges.length; i++){
             scene.remove(shortestPathEdges[i]);
         }
         shortestPathEdges = [];
@@ -480,7 +484,8 @@ function PreviewArea(canvas_, model_) {
         var edgeIdx = model.getEdgesIndeces();
         var previousMap = model.getPreviousMap();
 
-        shortestPathEdges = [];
+        this.removeShortestPathEdgesFromScene();
+
         for(var i = 0; i < hierarchy.length; ++i) {
             if( i < hops + 1 ) {
                 //Visible node branch
@@ -501,7 +506,7 @@ function PreviewArea(canvas_, model_) {
 
     this.updateShortestPathBasedOnDistance = function () {
         nodesSelected = [];
-        shortestPathEdges = [];
+        this.removeShortestPathEdgesFromScene();
 
         // show only nodes with shortest paths distance less than a threshold
         var threshold = model.getDistanceThreshold()/100.*model.getMaximumDistance();
@@ -533,5 +538,28 @@ function PreviewArea(canvas_, model_) {
                     this.updateShortestPathBasedOnHops();
                 break;
         }
+    };
+
+    // prepares the shortest path from a = root to node b
+    this.getShortestPathFromRootToNode = function(target) {
+        this.removeShortestPathEdgesFromScene();
+
+        var i = target;
+        var prev;
+        var edges = model.getActiveEdges();
+        var edgeIdx = model.getEdgesIndeces();
+        var previousMap = model.getPreviousMap();
+
+        visibleNodes.fill(true);
+        while(previousMap[i]!= null){
+            prev = previousMap[i];
+            visibleNodes[prev] = true;
+            shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][i]], prev );
+            i = prev;
+        }
+
+        removeNodesFromScene();
+        this.drawRegions();
+        this.drawConnections();
     };
 }

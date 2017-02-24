@@ -106,6 +106,8 @@ function onLeftClick(model, event) {
     if ( objectIntersected ) {
         nodeIndex = glyphNodeDictionary[objectIntersected.object.uuid];
     }
+    if (nodeIndex == undefined)
+        return;
 
     if (objectIntersected && visibleNodes[nodeIndex]) {
         if(!spt) {
@@ -139,8 +141,10 @@ function onLeftClick(model, event) {
                 removeEdgesGivenNodeFromScenes(nodeIndex);
             }
         } else {
-            // var glyphs = isLeft ? glyphsLeft:glyphsRight;
-            // getShortestPathBetweenNodes(model, glyphs, root, nodeIndex);
+            if (isLeft)
+                previewAreaLeft.getShortestPathFromRootToNode(nodeIndex);
+            else
+                previewAreaRight.getShortestPathFromRootToNode(nodeIndex);
         }
     }
     pointedNodeIdx = -1;
@@ -417,4 +421,25 @@ changeSceneToSubject = function (subjectId, model, previewArea, side) {
                 })
             ;
         });
+};
+
+getShortestPathBetweenNodes = function(a, b) {
+    var i = b, j;
+    var prev, line;
+    shortestPathEdges = [];
+
+    for(j = 0; j < visibleNodes.length; j++){
+        visibleNodes[j] = true;
+    }
+    visibleNodes[i] = true;
+    while(previousMap[i]!= null){
+        prev = previousMap[i];
+        visibleNodes[prev] = true;
+        var start = new THREE.Vector3(spheres[i].position.x, spheres[i].position.y, spheres[i].position.z);
+        var end = new THREE.Vector3(spheres[prev].position.x, spheres[prev].position.y, spheres[prev].position.z);
+
+        line = createLine(start,end,getConnectionMatrix()[i][prev] );
+        shortestPathEdges[shortestPathEdges.length] = line;
+        i = parseInt(prev);
+    }
 };
