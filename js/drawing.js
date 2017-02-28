@@ -420,24 +420,3 @@ changeSceneToSubject = function (subjectId, model, previewArea, side) {
             ;
         });
 };
-
-getShortestPathBetweenNodes = function(a, b) {
-    var i = b, j;
-    var prev, line;
-    shortestPathEdges = [];
-
-    for(j = 0; j < visibleNodes.length; j++){
-        visibleNodes[j] = true;
-    }
-    visibleNodes[i] = true;
-    while(previousMap[i]!= null){
-        prev = previousMap[i];
-        visibleNodes[prev] = true;
-        var start = new THREE.Vector3(spheres[i].position.x, spheres[i].position.y, spheres[i].position.z);
-        var end = new THREE.Vector3(spheres[prev].position.x, spheres[prev].position.y, spheres[prev].position.z);
-
-        line = createLine(start,end,getConnectionMatrix()[i][prev] );
-        shortestPathEdges[shortestPathEdges.length] = line;
-        i = parseInt(prev);
-    }
-};

@@ -117,29 +117,3 @@ function Graph() {
         return (hierarchy) ? hierarchy.length : 0;
     }
 }
-
-
-
-
-
-getShortestPathBetweenNodes = function(model, glyphs, a, b){
-    var i = b, j;
-    var prev, line;
-    shortestPathEdges = [];
-
-    for(j = 0; j < visibleNodes.length; j++){
-        visibleNodes[j] = true;
-    }
-    visibleNodes[i] = true;
-    while(previousMap[i]!= null){
-        prev = previousMap[i];
-        visibleNodes[prev] = true;
-        var start = new THREE.Vector3(glyphs[i].position.x, glyphs[i].position.y, glyphs[i].position.z);
-        var end = new THREE.Vector3(glyphs[prev].position.x, glyphs[prev].position.y, glyphs[prev].position.z);
-
-        line = createLine(start, end, model.getConnectionMatrix()[i][prev]);
-        shortestPathEdges[shortestPathEdges.length] = line;
-        i = parseInt(prev);
-    }
-    updateScenes();
-};
