@@ -73,6 +73,7 @@ var parse = function(callback){
     callback(null,null);
 };
 
+var atlas = null;
 var folder = getQueryVariable("dataset");
 var dataFiles = {};
 

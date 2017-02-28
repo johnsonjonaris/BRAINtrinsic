@@ -5,17 +5,18 @@
 private variables
  */
 
-function Model () {
-    var groups = [];                    // contain nodes group affiliation according to Anatomy, place, rich club, id
-    var activeGroup = 0;                // 0 = Anatomy, 1 = embeddness, 2 = rich club, 3 = PLACE, 4 = metric
-    var regionsActivated = [];          // store the group activation boolean according to activeGroup
-    var regionState = {};               // group state: active, transparent or inactive
-    var labelKeys;                      // map between each node and its corresponding FSL label
-    var labelsLUT = {};                 // contains FSL label name, visibility, group name, rich club, name and hemisphere
+function Model() {
+    var groups = {};                    // contain nodes group affiliation according to Anatomy, place, rich club, id
+    var activeGroup;                    // active group name
+    var regions = {};                   // activeGroup activation (T/F) and state: active, transparent or inactive
+    var labelKeys;                      // map between each node and its corresponding Atlas label
     var icColorTable = [];
+    var dataset = [];                   // contains compiled information about the dataset according to the active coloring
+                                        // scheme and topology
 
     var centroids = {};                 // nodes centroids according to topological spaces: centroids[node][technique] = (x,y,z)
     var topologies = [];                // available topologies
+    var clusteringTopologies = [];      // available clustering topologies
     var activeTopology;                 // isomap, MDS, anatomy, tsne, PLACE, selection from centroids
     var nodesDistances = {};            // Euclidean distance between the centroids of all nodes
 
@@ -36,23 +37,22 @@ function Model () {
 
     var metricValues = [];
 
-    var clusters = [];                  // PLACE clusters, assumed level 4: clusters from 1 to 16
+    var clusters = {};                  // PLACE clusters, assumed level 4: clusters from 1 to 16
     var clusteringLevel = 4;            // default PLACE/PACE level
     var clusteringGroupLevel = 4;       // clustering group level used for color coding, 1 to 4
-    var maxNumberOfClusters = 16;       // max number of clusters
     var clusteringRadius = 5;           // sphere radius of PLACE/PACE visualization
 
     var fbundling = d3.GPUForceEdgeBundling().cycles(6).iterations(60).enable_keep_programs(true);
 
     this.clearModel = function () {
         groups = [];
-        activeGroup = 0;
-        regionsActivated = [];
-        regionState = {};
+        regions = {};
         icColorTable = [];
 
         centroids = {};
         topologies = [];
+        clusteringTopologies = [];
+        clusters = {};
         nodesDistances = {};
 
         connectionMatrix = [];
@@ -65,7 +65,7 @@ function Model () {
 
     // data ready in model ready
     this.ready = function() {
-        return (labelsLUT && labelKeys && centroids && connectionMatrix);
+        return (labelKeys && centroids && connectionMatrix);
     };
 
     // set the iso center color table ???
@@ -82,7 +82,7 @@ function Model () {
         return maxDistance;
     };
 
-    // store map between each node and its corresponding FSL label
+    // store map between each node and its corresponding Atlas label#
     this.setLabelKeys = function (data, loc) {
         labelKeys = [];
         // data[0] is assumed to contain a string header
@@ -96,7 +96,7 @@ function Model () {
         activeGroup = group;
     };
 
-    this.getActiveGroup = function () {
+    this.getActiveGroupName = function () {
         return activeGroup;
     };
 
@@ -104,38 +104,38 @@ function Model () {
     this.createGroups = function () {
         console.log("create groups");
         var len = labelKeys.length;
-        var anatomicalGroup = new Array(len);
-        var richClubGroup = new Array(len);
-        var embeddnessGroup = new Array(len);
-        //var icGroup = [];
+        var names = atlas.getGroupsNames();
+        for (var i = 0; i < names.length; ++i)
+            groups[names[i]] = new Array(len);
 
-        for (var i = 0; i < len; i++) {
-            var labelKey = labelKeys[i];
-            anatomicalGroup[i] = labelsLUT[labelKey].group;
-            embeddnessGroup[i] = labelsLUT[labelKey].place;
-            richClubGroup[i] = labelsLUT[labelKey].rich_club;
-            //icGroup[i] = i;
+        for (var i = 0; i < len; ++i) {
+            var label = labelKeys[i];
+            var region = atlas.getRegion(label);
+            for (var j = 0; j < names.length; ++j)
+                groups[names[j]][i] = region[names[j]];
         }
-        groups[0] = anatomicalGroup;
-        groups[1] = embeddnessGroup;
-        groups[2] = richClubGroup;
-        //groups[4] = icGroup;
 
         if (this.hasClusteringData()) {
-            groups[3] = clusters[clusteringGroupLevel-1];
+            for (var i = 0; i < clusteringTopologies.length; ++i) {
+                var topology = clusteringTopologies[i];
+                groups[topology] = clusters[topology][clusters[topology].length - 1];
+            }
         }
+
+        activeGroup = names[0];
+        this.prepareDataset();
     };
 
     // update the clustering group level, level can be 1 to 4
     this.updateClusteringGroupLevel = function (level) {
         if (this.hasClusteringData()) {
-            groups[3] = clusters[level-1];
+            groups[activeGroup] = clusters[activeGroup][level-1];
             clusteringGroupLevel = level;
         }
     };
 
     // return the group affiliation of every node according to activeGroup
-    this.getGroup = function () {
+    this.getActiveGroup = function () {
         var l = groups[activeGroup].length;
         var results = [];
         for (var i = 0; i < l; i++) {
@@ -148,9 +148,9 @@ function Model () {
     };
 
     // add group data
-    this.setGroup = function (d) {
+    /*this.setGroup = function (d) {
         groups[groups.length] = d.data;
-    };
+    };*/
 
     // isomap, MDS, anatomy, tsne, selection from centroids
     this.setActiveTopology = function (topology) {
@@ -211,41 +211,35 @@ function Model () {
         return threshold;
     };
 
-    // set the look up table filling labelsLUT
-    // from loaded data for each FSL node label
-    // for each label, d contains: label#, group, place, rich_club, region_name, hemisphere
-    this.setLookUpTable = function(d) {
-        var el;
-        for (var i = 0; i < d.data.length; i++) {
-            el = d.data[i];
-            el.visibility = true;
-            labelsLUT[d.data[i].label] = el;
-        }
-    };
-
     // set connection matrix
     this.setConnectionMatrix = function(d) {
         connectionMatrix = d.data;
         this.computeDistanceMatrix();
     };
 
-    // get the dataset according to activeCentroids
-    this.getDataset = function() {
-        var nNodes = labelKeys.length;
-        var result = [];
-
-        for (var i = 0; i < nNodes; i++) {
+    // prepare the dataset data
+    this.prepareDataset = function() {
+        dataset = [];
+        for (var i = 0; i < labelKeys.length; i++) {
             var label = labelKeys[i];
-            result[i] = {
-                //getting Centroids
+            var region = atlas.getRegion(label);
+            dataset[i] = {
                 position: centroids[activeTopology][i],
-                name: labelsLUT[label].region_name,
+                name: region.region_name,
                 group: groups[activeGroup][i],
-                hemisphere: labelsLUT[label].hemisphere,
+                hemisphere: region.hemisphere,
                 label: label
             };
         }
-        return result;
+    };
+
+    // get the dataset according to activeTopology
+    this.getDataset = function() {
+        for (var i = 0; i < dataset.length; i++) {
+            dataset[i].position = centroids[activeTopology][i];
+            dataset[i].group = groups[activeGroup][i];
+        }
+        return dataset;
     };
 
     // get connection matrix according to activeMatrix
@@ -265,24 +259,24 @@ function Model () {
 
     // return if a specific region is activated
     this.isRegionActive = function(region) {
-        return regionsActivated[region];
+        return regions[region].active;
     };
 
     // toggle a specific region in order: active, transparent, inactive
     // set activation to false if inactive
     this.toggleRegion = function(regionName) {
-        switch (regionState[regionName]) {
+        switch (regions[regionName].state) {
             case 'active':
-                regionState[regionName] = 'transparent';
-                regionsActivated[regionName] = true;
+                regions[regionName].state = 'transparent';
+                regions[regionName].active = true;
                 break;
             case 'transparent':
-                regionState[regionName] = 'inactive';
-                regionsActivated[regionName] = false;
+                regions[regionName].state = 'inactive';
+                regions[regionName].active = false;
                 break;
             case 'inactive':
-                regionState[regionName] = 'active';
-                regionsActivated[regionName] = true;
+                regions[regionName].state = 'active';
+                regions[regionName].active = true;
                 break;
         }
         updateScenes(); // hide edges of invisible nodes
@@ -290,23 +284,23 @@ function Model () {
 
     // get region state using its name
     this.getRegionState = function(regionName) {
-        return regionState[regionName];
+        return regions[regionName].state;
     };
 
     this.getRegionActivation = function(regionName) {
-        return regionsActivated[regionName];
+        return regions[regionName].active;
     };
 
     // set all regions active
-    this.setRegionsActivated = function() {
-        regionsActivated = {};
-        regionState = {};
-
-        var l = groups[activeGroup].length;
-        for (var i = 0; i < l; i++) {
+    this.setAllRegionsActivated = function() {
+        regions = {};
+        for (var i = 0; i < groups[activeGroup].length; i++) {
             var element = groups[activeGroup][i];
-            regionsActivated[element] = true;
-            regionState[element] = 'active';
+            if (regions[element] === undefined)
+            regions[element] = {
+                active: true,
+                state: 'active'
+            }
         }
     };
 
@@ -350,21 +344,7 @@ function Model () {
 
     // get the region name of a specific node (edge)
     this.getRegionNameByIndex = function (index) {
-        return labelsLUT[labelKeys[index]].region_name;
-    };
-
-    // get the label visibility
-    this.getLabelVisibility = function(label) {
-        return labelsLUT[label]['visibility'];
-    };
-
-    // set the label visibility: label is an index, visibility is boolean
-    this.setLabelVisibility = function(label, visibility) {
-        if (labelsLUT[label] != undefined)
-            labelsLUT[label]['visibility'] = visibility;
-        else {
-            console.log("It isn't possible to set visibility of the label");
-        }
+        return dataset[index].name;
     };
 
     this.setMetricValues = function(data) {
@@ -381,7 +361,6 @@ function Model () {
 // Jet colormap
 //'#000080','#0000c7','#0001ff','#0041ff','#0081ff','#00c1ff','#16ffe1','#49ffad','#7dff7a',
 // '#b1ff46','#e4ff13','#ffd000','#ff9400','#ff5900','#ff1e00','#c40000'
-
 // Mine colormap
 //'#c6dbef', '#9ecae1', '#6baed6', '#3182bd', '#08519c'
 
@@ -454,34 +433,24 @@ function Model () {
 
     this.computeNodesLocationForClusters = function(topology) {
         var platonic = new Platonics();
-        if (maxNumberOfClusters == 16) {
-            switch (clusteringLevel) {
-                case 1:
-                    platonic.createTetrahedron();
-                    break;
-                case 2:
-                    platonic.createCube();
-                    break;
-                case 3:
-                    platonic.createDodecahedron();
-                    break;
-                case 4:
-                    platonic.createIcosahedron();
-                    break;
-            }
-        } else {
-            if (maxNumberOfClusters < 5)
-                platonic.createTetrahedron();
-            else if (maxNumberOfClusters < 7)
-                platonic.createCube();
-            else if (maxNumberOfClusters < 11)
-                platonic.createDodecahedron();
-            else if (maxNumberOfClusters < 21)
-                platonic.createIcosahedron();
-            else {
-                console.log("Can not visualize clustering data.");
-                return;
-            }
+        var isHierarchical = topology == "PLACE" || topology == "PACE";
+        var level = isHierarchical ? clusteringLevel-1 : 0;
+        var cluster = clusters[topology][level];
+        var totalNNodes = cluster.length;
+        var maxNumberOfClusters = d3.max(cluster) - d3.min(cluster) + 1;
+        var nClusters = ((isHierarchical)) ? Math.pow(2, clusteringLevel) : maxNumberOfClusters;
+
+        if (maxNumberOfClusters < 4)
+            platonic.createTetrahedron();
+        else if (maxNumberOfClusters < 7)
+            platonic.createCube();
+        else if (maxNumberOfClusters < 10)
+            platonic.createDodecahedron();
+        else if (maxNumberOfClusters < 20)
+            platonic.createIcosahedron();
+        else {
+            console.log("Can not visualize clustering data.");
+            return;
         }
         // use one of the faces to compute primary variables
         var face = platonic.getFace(0);
@@ -492,15 +461,13 @@ function Model () {
         var coneR = clusteringRadius*Math.sin(coneAngle/2);
         var coneH = clusteringRadius*Math.cos(coneAngle/2);
         var v1 = [], v2 = [], center = [];
-        var totalNNodes = clusters[0].length;
         var centroids = new Array(totalNNodes+1);
-        var level = clusteringLevel-1;
-        var nClusters = ((maxNumberOfClusters == 16)) ? Math.pow(2, clusteringLevel) : maxNumberOfClusters;
 
+        // assume clustering data starts at 1
         for (var i = 0; i < nClusters; i++) {
             var clusterIdx = [];
             for (var s = 0; s < totalNNodes; s++) {
-                if (clusters[level][s] == (i+1)) clusterIdx.push(s);
+                if (cluster[s] == (i+1)) clusterIdx.push(s);
             }
             var nNodes = clusterIdx.length;
             face = platonic.getFace(i);
@@ -519,26 +486,24 @@ function Model () {
         this.setCentroids(centroids, topology, 0);
     };
 
-    // assume last level = 4 => 16 clusters at most
-    this.setClusters = function(data, loc) {
+    // clusters can be hierarchical such as PLACE and PACE or not
+    this.setClusters = function(data, loc, name) {
         var clusteringData = [];
-        clusters = new Array(4); // 4 levels
         // data[0] is assumed to contain a string header
         for (var j = 1; j < data.length; j++) {
             clusteringData.push(data[j][loc]);
         }
-        maxNumberOfClusters = d3.max(clusteringData) - d3.min(clusteringData) + 1;
-        clusters[3] = clusteringData;
-		// placeClusters[3] = math.squeeze(clusters.data);
-        if (maxNumberOfClusters == 16) { // PLACE
+        var temp = [];
+        if (name == "PLACE" || name == "PACE") { // PLACE
+            temp = new Array(4); // 4 levels
+            temp[3] = clusteringData;
             for (var i = 2; i >= 0; i--) {
-                clusters[i] = math.ceil(math.divide(clusters[i + 1], 2.0));
+                temp[i] = math.ceil(math.divide(temp[i + 1], 2.0));
             }
         } else {
-            clusters[0] = clusteringData.slice(0);
-            clusters[1] = clusteringData.slice(0);
-            clusters[2] = clusteringData.slice(0);
+            temp[0] = clusteringData;
         }
+        clusters[name] = temp;
     };
 
     this.setClusteringLevel = function(level) {
@@ -562,7 +527,11 @@ function Model () {
     };
 
     this.hasClusteringData = function () {
-        return (clusters.length > 0);
+        return (clusteringTopologies.length > 0);
+    };
+
+    this.getClusteringTopologiesNames = function () {
+        return clusteringTopologies;
     };
 
     this.setTopology = function (data) {
@@ -578,9 +547,10 @@ function Model () {
                 case ("PACE"): // functional
                 case ("Q-Modularity"):
                 case ("Q"):
-                    this.setClusters(data, i);
+                    this.setClusters(data, i, dataType);
                     this.computeNodesLocationForClusters(dataType);
                     topologies.push(dataType);
+                    clusteringTopologies.push(dataType);
                     break;
                 case (""):
                     break;

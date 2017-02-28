@@ -501,9 +501,9 @@ createLegend = function(model) {
 
     legendMenu = d3.select("#legend");
 
-    if(model.getActiveGroup() != 4) {
-        var activeGroup = model.getGroup();
-        if(typeof(activeGroup[0]) == "number"){ // group is numerical
+    if(model.getActiveGroupName() != 4) {
+        var activeGroup = model.getActiveGroup();
+        if(typeof(activeGroup[0].name) == "number"){ // group is numerical
             activeGroup.sort(function(a, b){return a-b});
         } else { // group is string
             activeGroup.sort();
@@ -630,8 +630,7 @@ createLegend = function(model) {
 
 
 /* Color coding area at upload */
-// add "Color Coding" radio button group containing:
-// Anatomy, Embeddedness and Rich Club groups
+// add "Color Coding" radio button group containing: Anatomy, Embeddedness ...
 addGroupList = function() {
     var menu = d3.select("#upload");
 
@@ -640,97 +639,54 @@ addGroupList = function() {
         .text("Color coding:");
     menu.append("br");
 
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","colorGroup")
-        .attr("id","anatomy")
-        .attr("value","0")
-        .attr("checked","true")
-        .on("change", function () {
-            setColorClusteringSliderVisibility("hidden");
-            changeColorGroup(this.value);
-        });
-    menu.append("label")
-        .attr("for","anatomy")
-        .text("Anatomy");
-    menu.append("br");
-
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","colorGroup")
-        .attr("id","embeddedness")
-        .attr("value","1")
-        .on("change", function () {
-            setColorClusteringSliderVisibility("hidden");
-            changeColorGroup(this.value);
-        });
-    menu.append("label")
-        .attr("for","embeddedness")
-        .text("Embeddedness");
-    menu.append("br");
-
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","colorGroup")
-        .attr("value","2")
-        .attr("id","richClub")
-        .on("change", function () {
-            setColorClusteringSliderVisibility("hidden");
-            changeColorGroup(this.value);
-        });
-    menu.append("label")
-        .attr("for","richClub")
-        .text("Rich Club");
-    menu.append("br");
-
-    if (modelLeft.hasClusteringData() && modelRight.hasClusteringData()) {
+    var names = atlas.getGroupsNames();
+    for (var i = 0; i < names.length; ++i) {
         menu.append("input")
             .attr("type", "radio")
             .attr("name","colorGroup")
-            .attr("value","3")
-            .attr("id","PLACE")
+            .attr("id",names[i]+"_ColorGroup")
+            .attr("value",names[i])
+            .attr("checked","false")
             .on("change", function () {
-                setColorClusteringSliderVisibility("visible");
+                setColorClusteringSliderVisibility("hidden");
                 changeColorGroup(this.value);
             });
         menu.append("label")
-            .attr("for","PLACE")
-            .text("PLACE");
+            .attr("for",names[i])
+            .text(names[i]);
         menu.append("br");
-        addColorClusteringSlider();
     }
 
-    /*
-    menu.append("input")
-        .attr("type", "radio")
-        .attr("name","colorGroup")
-        .attr("value","3")
-        .attr("id","ic")
-        .on("change", function () {
-            changeColorGroup(this.value);
-        });
+    if (modelLeft.hasClusteringData() && modelRight.hasClusteringData()) {
+        var clusterNames = modelLeft.getClusteringTopologiesNames();
+        var hierarchicalClusteringExist = false;
+        for (var i = 0; i < clusterNames.length; ++i) {
+            var name = clusterNames[i];
+            var isHierarchical = name == "PLACE" || name == "PACE";
+            hierarchicalClusteringExist |= isHierarchical;
+            menu.append("input")
+                .attr("type", "radio")
+                .attr("name", "colorGroup")
+                .attr("value", name)
+                .attr("id", name+"_ColorGroup")
+                .attr("checked", "false")
+                .on("change", function () {
+                    setColorClusteringSliderVisibility(this.getAttribute("hierarchical") == 'true' ? "visible" : "hidden");
+                    changeColorGroup(this.value);
+                });
+            menu.append("label")
+                .attr("for", name)
+                .text(name);
+            menu.append("br");
+            document.getElementById(name+"_ColorGroup").setAttribute("hierarchical", isHierarchical);
+        }
 
-
-   menu.append("label")
-        .attr("for","ic")
-        .text("IC");*/
-
-    if(metric == true){
-        menu.append("input")
-            .attr("type", "radio")
-            .attr("name","colorGroup")
-            .attr("value","4")
-            .attr("id","metric")
-            .on("change", function () {
-                changeColorGroup(this.value);
-            });
-        menu.append("label")
-            .attr("for","metric")
-            .text("Custom Group");
-        menu.append("br");
+        if (hierarchicalClusteringExist)
+            addColorClusteringSlider();
     }
 
     setColorClusteringSliderVisibility("hidden");
+    document.getElementById(names[0]+"_ColorGroup").checked = "true";
 };
 
 addColorClusteringSlider = function () {
@@ -751,7 +707,7 @@ addColorClusteringSlider = function () {
             document.getElementById("colorClusteringSliderLabel").innerHTML = "Level " + this.value;
             modelLeft.updateClusteringGroupLevel(this.value);
             modelRight.updateClusteringGroupLevel(this.value);
-            changeColorGroup(3);
+            changeColorGroup(modelLeft.getActiveGroupName());
         });
 };
 
@@ -767,9 +723,11 @@ setColorClusteringSliderVisibility = function (value) {
 /* Topology options at topologyLeft and topologyRight */
 // add "Topological Spaces" radio button group for scene containing:
 // Isomap, MDS, tSNE and anatomy spaces
-addGeometryRadioButtons = function (model, side) {
+addTopologyRadioButtons = function (model, side) {
 
     var topologies = model.getTopologies();
+    var hierarchicalClusteringExist = false;
+
     var menu = d3.select("#topology" + side);
 
     menu.append("br");
@@ -794,6 +752,7 @@ addGeometryRadioButtons = function (model, side) {
                     setClusteringSliderVisibility(side, "visible");
                     changeActiveGeometry(model, side, this.value);
                 });
+                hierarchicalClusteringExist = true;
                 break;
             default:
                 ip.on("change", function () {
@@ -806,14 +765,10 @@ addGeometryRadioButtons = function (model, side) {
             .attr("for",topology)
             .text(topology);
         menu.append("br");
-
-        switch (topology) {
-            case ("PLACE"):
-            case ("PACE"):
-                addClusteringSlider(model, side);
-                break;
-        }
     }
+
+    if (hierarchicalClusteringExist)
+        addClusteringSlider(model, side);
 
     setClusteringSliderVisibility(side, "hidden");
     document.getElementById(topologies[0] + side).checked = "true";
@@ -993,8 +948,9 @@ addFslRadioButton = function() {
             .attr("value", index)
             .attr("checked", "true")
             .on("change", function () {
-                modelLeft.setLabelVisibility(index, this.checked);
-                modelRight.setLabelVisibility(index, this.checked);
+                lut.setLabelVisibility(index, this.checked);
+                //modelLeft.setLabelVisibility(index, this.checked);
+                //modelRight.setLabelVisibility(index, this.checked);
                 updateScenes();
             });
 

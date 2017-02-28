@@ -72,3 +72,19 @@ Float32Array.prototype.get = function(r,c,k) {
 Float32Array.prototype.setTo = function(r,c,k, val) {
     this[(r*this.width)*this.comp + c*this.comp + k] = val;
 };
+
+/**
+ * removes a set of elements from an array - By John Resig (MIT Licensed)
+ * Remove the second item from the array: array.remove(1);
+ * Remove the second-to-last item from the array: array.remove(-2);
+ * Remove the second and third items from the array: array.remove(1,2);
+ * Remove the last and second-to-last items from the array: array.remove(-2,-1);
+ * @param from from index
+ * @param to to index
+ * @returns {*}
+ */
+Array.prototype.remove = function(from, to) {
+    var rest = this.slice((to || from) + 1 || this.length);
+    this.length = from < 0 ? this.length + from : from;
+    return this.push.apply(this, rest);
+};

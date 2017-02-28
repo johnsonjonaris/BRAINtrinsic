@@ -1,4 +1,4 @@
-label;group;region_name;hemisphere
+label;Anatomy;region_name;hemisphere
 1;leftOccipital;Left Lateral Occipital Cortex inferior division;left
 2;leftOccipital;Left Lateral Occipital Cortex superior division;left
 3;rightParietal;Right Precuneous Cortex;right

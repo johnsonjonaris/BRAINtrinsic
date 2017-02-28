@@ -52,7 +52,14 @@ var loadIcColors = function (callback) {
     });
 };
 
-// the look up table is common for all datasets
+// the look up table is common for all subjects of a dataset, provides information about a specific Atlas
+// for each label we have:
+// label#: label number in the Atlas (mandatory)
+// group: anatomical grouping : lobe name (mandatory)
+// region_name: region name (mandatory)
+// hemisphere: left or right (mandatory)
+// place: embeddness (optional)
+// rich_club: rich club affiliation: region name vs non-RichClub (optional)
 var loadLookUpTable = function (callback) {
     var labelsLUTFilename = "LookupTable_" + labelLUT + ".csv";
     Papa.parse("data/"+labelsLUTFilename, {
@@ -62,8 +69,7 @@ var loadLookUpTable = function (callback) {
         header: true,
         complete: function (results) {
             console.log("Setting up Look-up Table");
-            modelLeft.setLookUpTable(results);
-            modelRight.setLookUpTable(results);
+            atlas = new Atlas(results);
             console.log("Look up table loaded ... ");
             callback(null, null);
         }
@@ -98,6 +104,7 @@ var loadSubjectTopology = function (fileNames, model, callback) {
     });
 };
 
+/*
 var loadColorMap = function (callback) {
     Papa.parse("data/colorMap.csv", {
         download: true,
@@ -110,7 +117,7 @@ var loadColorMap = function (callback) {
             callback(null,null);
         }
     });
-};
+};*/
 
 
 var loadMetricValues = function(callback){

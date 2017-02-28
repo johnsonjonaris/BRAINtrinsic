@@ -49,7 +49,7 @@ scaleColorGroup = function(model, group, nodeIndex) {
     }
 
     // metric based
-    if(model.getActiveGroup() == 4){
+    if(model.getActiveGroupName() == 4){
         if(nodeIndex == -1){
             console.log("ERROR!!!!");
             return metricQuantileScale(0);
@@ -61,7 +61,7 @@ scaleColorGroup = function(model, group, nodeIndex) {
 
 // set group color according to the activeGroup number of elements
 setColorGroupScale = function() {
-    groupColor = (modelLeft.getGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20();
+    groupColor = (modelLeft.getActiveGroup().length <= 10) ? d3.scale.category10() : d3.scale.category20();
 };
 
 // return a power scale function for the adjacency matrix

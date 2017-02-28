@@ -205,8 +205,8 @@ initCanvas = function () {
     addModalityButton();
     addThresholdSlider();
     addGroupList();
-    addGeometryRadioButtons(modelLeft, 'Left');
-    addGeometryRadioButtons(modelRight, 'Right');
+    addTopologyRadioButtons(modelLeft, 'Left');
+    addTopologyRadioButtons(modelRight, 'Right');
 
     addShortestPathFilterButton();
     addDistanceSlider();
@@ -218,8 +218,8 @@ initCanvas = function () {
     // addFslRadioButton();
     // addSearchPanel();
 
-    modelLeft.setRegionsActivated();
-    modelRight.setRegionsActivated();
+    modelLeft.setAllRegionsActivated();
+    modelRight.setAllRegionsActivated();
 
     createLegend(modelLeft);
     // create visualization
@@ -346,12 +346,12 @@ getIntersectedObject = function(event) {
     return isLeft ? previewAreaLeft.getIntersectedObject(vector) : previewAreaRight.getIntersectedObject(vector);
 };
 
-changeColorGroup = function (n) {
-    modelLeft.setActiveGroup(parseInt(n));
-    modelRight.setActiveGroup(parseInt(n));
+changeColorGroup = function (name) {
+    modelLeft.setActiveGroup(name);
+    modelRight.setActiveGroup(name);
 
-    modelLeft.setRegionsActivated();
-    modelRight.setRegionsActivated();
+    modelLeft.setAllRegionsActivated();
+    modelRight.setAllRegionsActivated();
     setColorGroupScale();
 
     updateScenes();
@@ -413,8 +413,8 @@ changeSceneToSubject = function (subjectId, model, previewArea, side) {
                 .awaitAll( function () {
                     console.log("Loading data done.");
                     model.createGroups();
-                    addGeometryRadioButtons(model, side);
-                    model.setRegionsActivated();
+                    addTopologyRadioButtons(model, side);
+                    model.setAllRegionsActivated();
                     redrawScene(side);
                 })
             ;

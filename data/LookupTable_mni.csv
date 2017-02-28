@@ -1,4 +1,4 @@
-label;group;region_name;hemisphere
+label;Anatomy;region_name;hemisphere
 1;Right;MNI(51:-10:5);right
 2;Right;MNI(23:-5:-23);right
 3;Left;MNI(-27:-22:61);left

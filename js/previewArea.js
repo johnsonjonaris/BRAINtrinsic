@@ -2,6 +2,14 @@
  * Created by Johnson on 2/15/2017.
  */
 
+/**
+ * This class controls the preview 3D area. It controls the creation of glyphs (nodes), edges, shortest path edges. It
+ * also executes the update requests to those objects. It init the VR environment when requested.
+ * @param canvas_ a WebGl canvas
+ * @param model_ a Model object
+ * @constructor
+ */
+
 function PreviewArea(canvas_, model_) {
     var model = model_;
     var canvas = canvas_;
@@ -198,7 +206,7 @@ function PreviewArea(canvas_, model_) {
 
     // determine if a region should be drawn
     var shouldDrawRegion = function (region) {
-        return (model.isRegionActive(region.group) && model.getLabelVisibility(region.label));
+        return (model.isRegionActive(region.group) && atlas.getLabelVisibility(region.label));
     };
 
     // updating scenes: redrawing glyphs and displayed edges
@@ -210,12 +218,10 @@ function PreviewArea(canvas_, model_) {
     // draw the brain regions as glyphs (the edges)
     this.drawRegions = function () {
         var dataset = model.getDataset();
-        var l = dataset.length;
-
         var material;
         var geometry = new THREE.CircleGeometry( 1.0, 10);
 
-        for(var i=0; i < l; i++){
+        for(var i=0; i < dataset.length; i++){
             glyphs[i] = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
             if(shouldDrawRegion(dataset[i])) {
                 material = getNormalMaterial(model, dataset[i].group,i);
