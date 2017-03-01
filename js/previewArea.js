@@ -62,7 +62,7 @@ function PreviewArea(canvas_, model_) {
         }
         enableVR = true;
 
-        // initOculusTouch();
+        initOculusTouch();
     };
 
     // init Oculus Touch controllers
@@ -180,8 +180,8 @@ function PreviewArea(canvas_, model_) {
             oculusControl.update();
             effect.render(scene, camera);
 
-            // controllerLeft.update();
-            // controllerRight.update();
+            controllerLeft.update();
+            controllerRight.update();
         }
     };
 

@@ -2,7 +2,7 @@
 clc;
 clear all;
 
-nNodes = 82;
+nNodes = 200;
 nodes = cell(4,1);
 for i = 1:4
     nodes{i} = randi(2^i,[nNodes,1]);
@@ -19,7 +19,7 @@ zUp = 0:h:5;
 zDown = -5:h:0;
 
 
-nSplits = 4;
+nSplits = 8;
 coneH = radius+1;
 coneAngle = 360/nSplits/2/2;
 coneR = coneH * tand(coneAngle);
@@ -48,10 +48,10 @@ figure;
 hold on
 
 [v, f] = createTetrahedron;
-[v, f] = createCube;
-[v, f] = createOctahedron;
+% [v, f] = createCube;
+% [v, f] = createOctahedron;
 [v, f] = createDodecahedron;
-[v, f] = createIcosahedron;
+% [v, f] = createIcosahedron;
 
 v = (v - repmat(mean(v),[size(v,1) 1]));
 v = v./repmat(sqrt(sum(v.^2,2)),[1,3]);
@@ -72,7 +72,7 @@ coneAngle = theta*0.6;
 coneH = radius*cosd(coneAngle/2);
 coneR = radius*sind(coneAngle/2);    
 % drawMesh(v, f, 'FaceAlpha',0.3);
-% drawMesh(v*largestPolydron, f, 'FaceAlpha',0.1);
+drawMesh(v*largestPolydron, f, 'FaceAlpha',0.1);
 
 % prepare sphere coordinates
 [X,Y,Z] = sphere(ng);
@@ -80,7 +80,7 @@ X = X*radius;
 Y = Y*radius;
 Z = Z*radius;
 
-for i = 1:16
+for i = 1:8
     face = v(f(i,:),:);
     coneAxis = mean(face);
     coneAxis = coneAxis./norm(coneAxis);
@@ -96,7 +96,7 @@ for i = 1:16
     
     % get the nodes
     if (i < 17)
-        nNodes = sum(nodes{4} == i);
+        nNodes = sum(nodes{3} == i);
         points = sunflower(nNodes,2,coneR,center,v1,v2);
         % put the points on the sphere's surface
         points = points./repmat(sqrt(sum(points.^2,2)), [1,3]);
@@ -127,5 +127,6 @@ for i = 1:16
     surface(XX,YY,ZZ,'Facecolor',colors(i),'EdgeColor','none','FaceAlpha',0.4);
 end
 
-axis image equal; grid on;
+axis image equal; grid off;
+set(findobj(gcf, 'type','axes'), 'Visible','off')
 
