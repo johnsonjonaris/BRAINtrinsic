@@ -631,7 +631,7 @@ createLegend = function(model) {
 
 /* Color coding area at upload */
 // add "Color Coding" radio button group containing: Anatomy, Embeddedness ...
-addGroupList = function() {
+addColorGroupList = function() {
     var menu = d3.select("#upload");
 
     menu.append("label")

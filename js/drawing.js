@@ -204,7 +204,7 @@ initCanvas = function () {
     addEdgeBundlingCheck();
     addModalityButton();
     addThresholdSlider();
-    addGroupList();
+    addColorGroupList();
     addTopologyRadioButtons(modelLeft, 'Left');
     addTopologyRadioButtons(modelRight, 'Right');
 
@@ -354,7 +354,8 @@ changeColorGroup = function (name) {
     modelRight.setAllRegionsActivated();
     setColorGroupScale();
 
-    updateScenes();
+    redrawNodes();
+    createLegend(modelLeft);
 };
 
 redrawScene = function (side) {
