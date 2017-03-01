@@ -10,7 +10,6 @@ var activeVR = 'left';
 
 var nodesSelected = [];
 var visibleNodes =[];               // boolean array storing nodes visibility
-var shortestPathEdges = [];
 
 var pointedNodeIdx = -1;            // index of node under the mouse
 var pointedObject;                  // node object under mouse
@@ -19,6 +18,7 @@ var root;                           // the index of the root node = start point 
 var thresholdModality = true;
 var enableEB = true;
 
+var vr = false;                     // enable VR
 var spt = false;                    // enabling shortest path
 var click = true;
 
@@ -175,13 +175,17 @@ function onMouseUp(model, event) {
 }
 
 function onKeyPress(event) {
-    if (event.key === 's' || event.keyCode === 115) {
+    if (event.key === 'v' || event.keyCode === 118) {
+        activeVR = 'none';
+        vr = true;
+    }
+    if (vr && (event.key === 's' || event.keyCode === 115)) {
         activeVR = 'left';
         previewAreaLeft.activateVR(false);
         previewAreaRight.activateVR(false);
         setTimeout(function() { previewAreaLeft.activateVR(true); }, 500);
     }
-    if (event.key === 'd' || event.keyCode === 100) {
+    if (vr && (event.key === 'd' || event.keyCode === 100)) {
         activeVR = 'right';
         previewAreaLeft.activateVR(false);
         previewAreaRight.activateVR(false);
@@ -191,6 +195,9 @@ function onKeyPress(event) {
         activeVR = 'none';
         previewAreaLeft.activateVR(false);
         previewAreaRight.activateVR(false);
+        vr = false;
+        previewAreaLeft.resetCamera();
+        previewAreaRight.resetCamera();
     }
 }
 
@@ -232,11 +239,11 @@ initCanvas = function () {
     previewAreaRight.createCanvas();
     previewAreaRight.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
     // prepare Occulus rift
-    if (vr > 0) {
+    //if (vr > 0) {
         previewAreaLeft.initOculusRift();
         previewAreaRight.initOculusRift();
         window.addEventListener("keypress", onKeyPress, true);
-    }
+    //}
     visibleNodes = Array(modelLeft.getConnectionMatrixDimension()).fill(true);
     // draw connectomes and start animation
     drawAllRegions();
@@ -292,7 +299,7 @@ redrawEdges = function () {
 
 // animate scenes and capture control inputs
 animate = function () {
-    if (vr == 0) {
+    if (!vr) {
         requestAnimationFrame(animate);
         previewAreaLeft.animate();
         previewAreaRight.animate();

@@ -78,7 +78,6 @@ var folder = getQueryVariable("dataset");
 var dataFiles = {};
 
 var labelLUT = getQueryVariable("lut");
-var vr = getQueryVariable("vr");
 var isLoaded = parseInt(getQueryVariable("load"));
 metric = stringToBoolean(getQueryVariable("metric"));
 if( metric == undefined){

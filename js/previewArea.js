@@ -108,6 +108,12 @@ function PreviewArea(canvas_, model_) {
         scene.add( axisHelper );
     };
 
+    this.resetCamera = function () {
+        camera.position.x = 50;
+        camera.position.y = 50;
+        camera.position.z = 50;
+    };
+
     // create 3js elements: scene, canvas, camera and controls; and init them and add skybox to the scene
     this.createCanvas = function() {
         scene = new THREE.Scene();
