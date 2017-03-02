@@ -66,6 +66,8 @@ function PreviewArea(canvas_, model_) {
     };
 
     // init Oculus Touch controllers
+    // not supported in Firefox, only Google chromium
+    // check https://webvr.info/get-chrome/
     var initOculusTouch = function () {
         controllerLeft = new THREE.ViveController( 0 );
         controllerRight = new THREE.ViveController( 1 );
@@ -87,8 +89,27 @@ function PreviewArea(canvas_, model_) {
             scene.add(controllerLeft);
             scene.add(controllerRight);
         } );
+
+        controllerLeft.addEventListener('axischanged', function(e) { zoomCamera(e.axes[1]); }, true);
+        // controllerLeft.addEventListener('gripsup', function(e) { updateVRStatus('left'); }, true);
+        // controllerRight.addEventListener('gripsup', function(e) { updateVRStatus('right'); }, true);
+
+
         console.log("Init Oculus Touch done")
     };
+
+    var scanTouch = function () {
+
+    };
+
+    function zoomCamera(dir) {
+        var fovMAX = 160;
+        var fovMIN = 1;
+        var zoomFactor = (dir > 0) ? 0.2 : -0.2;
+        camera.fov += zoomFactor;
+        camera.fov = Math.max( Math.min( camera.fov, fovMAX ), fovMIN );
+        camera.updateProjectionMatrix();
+    }
 
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
     var initScene = function () {
@@ -177,11 +198,13 @@ function PreviewArea(canvas_, model_) {
 
     this.animateVR = function () {
         if (enableVR && activeVR) {
-            oculusControl.update();
-            effect.render(scene, camera);
-
             controllerLeft.update();
             controllerRight.update();
+
+            scanTouch();
+
+            oculusControl.update();
+            effect.render(scene, camera);
         }
     };
 
