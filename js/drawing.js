@@ -176,30 +176,48 @@ function onMouseUp(model, event) {
 
 function onKeyPress(event) {
     if (event.key === 'v' || event.keyCode === 118) {
-        activeVR = 'none';
-        vr = true;
+        updateVRStatus('enable');
     }
     if (vr && (event.key === 's' || event.keyCode === 115)) {
-        activeVR = 'left';
-        previewAreaLeft.activateVR(false);
-        previewAreaRight.activateVR(false);
-        setTimeout(function() { previewAreaLeft.activateVR(true); }, 500);
+        updateVRStatus('left');
     }
     if (vr && (event.key === 'd' || event.keyCode === 100)) {
-        activeVR = 'right';
-        previewAreaLeft.activateVR(false);
-        previewAreaRight.activateVR(false);
-        setTimeout(function() { previewAreaRight.activateVR(true); }, 500);
+        updateVRStatus('right')
     }
     if (event.key === 'e' || event.keyCode === 101) {
-        activeVR = 'none';
-        previewAreaLeft.activateVR(false);
-        previewAreaRight.activateVR(false);
-        vr = false;
-        previewAreaLeft.resetCamera();
-        previewAreaRight.resetCamera();
+        updateVRStatus('disable');
     }
 }
+
+updateVRStatus = function (status) {
+    switch (status)
+    {
+        case 'enable':
+            activeVR = 'none';
+            vr = true;
+            break;
+        case 'left':
+            activeVR = 'left';
+            previewAreaLeft.activateVR(false);
+            previewAreaRight.activateVR(false);
+            setTimeout(function () { previewAreaLeft.activateVR(true); }, 500);
+            break;
+        case 'right':
+            activeVR = 'right';
+            previewAreaLeft.activateVR(false);
+            previewAreaRight.activateVR(false);
+            setTimeout(function () { previewAreaRight.activateVR(true); }, 500);
+            break;
+        case 'disable':
+            activeVR = 'none';
+            previewAreaLeft.activateVR(false);
+            previewAreaRight.activateVR(false);
+            vr = false;
+            previewAreaLeft.resetCamera();
+            previewAreaRight.resetCamera();
+            break;
+    }
+};
 
 // init the canvas where we render the brain
 initCanvas = function () {
@@ -239,11 +257,10 @@ initCanvas = function () {
     previewAreaRight.createCanvas();
     previewAreaRight.setEventListeners(onMouseDown, onMouseUp, onDocumentMouseMove);
     // prepare Occulus rift
-    //if (vr > 0) {
-        previewAreaLeft.initOculusRift();
-        previewAreaRight.initOculusRift();
-        window.addEventListener("keypress", onKeyPress, true);
-    //}
+    previewAreaLeft.initOculusRift();
+    previewAreaRight.initOculusRift();
+    window.addEventListener("keypress", onKeyPress, true);
+
     visibleNodes = Array(modelLeft.getConnectionMatrixDimension()).fill(true);
     // draw connectomes and start animation
     drawAllRegions();
