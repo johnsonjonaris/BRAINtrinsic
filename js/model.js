@@ -22,6 +22,7 @@ function Model() {
 
     var connectionMatrix = [];          // adjacency matrix
     var distanceMatrix = [];            // contains the distance matrix of the model: 1/(adjacency matrix)
+    var nodesStrength = [];
 
     var threshold;                      // threshold for the edge value
     var numberOfEdges = 5;              // threshold the number of edges for shortest paths
@@ -215,6 +216,7 @@ function Model() {
     this.setConnectionMatrix = function(d) {
         connectionMatrix = d.data;
         this.computeDistanceMatrix();
+        this.computeNodalStrength();
     };
 
     // prepare the dataset data
@@ -366,14 +368,20 @@ function Model() {
 
     /* BCT Stuff*/
     // compute nodal strength of a specific node given its row
-    this.computeNodalStrength = function(connectionRow) {
-        return d3.sum(connectionRow);
+    this.getNodalStrength = function(idx) {
+        return nodesStrength[idx];
+    };
+
+    this.computeNodalStrength = function () {
+        var nNodes = connectionMatrix.length;
+        nodesStrength = new Array(nNodes);
+        for (var i = 0; i < nNodes; ++i)
+            nodesStrength[i] = d3.sum(connectionMatrix[i].slice(0));
     };
 
     // compute distance matrix = 1/(adjacency matrix)
     this.computeDistanceMatrix = function() {
-        var adjacencyMatrix = this.getConnectionMatrix();
-        var nNodes = adjacencyMatrix.length;
+        var nNodes = connectionMatrix.length;
         distanceMatrix = new Array(nNodes);
         graph = new Graph();
         var idx = 0;
@@ -384,9 +392,9 @@ function Model() {
             edgeIdx.push(new Array(nNodes));
             edgeIdx[i].fill(-1); // indicates no connection
             for(var j = 0; j < nNodes; j++){
-                vertexes[j] = 1/adjacencyMatrix[i][j];
-                row[j] = 1/adjacencyMatrix[i][j];
-                if (j > i && Math.abs(adjacencyMatrix[i][j]) > 0) {
+                vertexes[j] = 1/connectionMatrix[i][j];
+                row[j] = 1/connectionMatrix[i][j];
+                if (j > i && Math.abs(connectionMatrix[i][j]) > 0) {
                     edgeIdx[i][j] = idx;
                     idx++;
                 }
@@ -612,10 +620,9 @@ function Model() {
         fbundling.edges(edges_);
         var results = fbundling();
 
-        for (var i = 0; i <edges_.length; i++) {
+        for (i = 0; i <edges_.length; i++) {
             edges[activeTopology][edgeIndices[i]] = results[i];
         }
-        // console.log(results)
     };
 
     this.getActiveEdges = function() {

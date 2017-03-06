@@ -300,8 +300,8 @@ setNodeInfoPanel = function (regionName, index) {
 
     panel.selectAll("p").remove();
 
-    var nodalStrengthLeft = Math.floor(d3.sum(modelLeft.getConnectionMatrixRow(index))*100)/100;
-    var nodalStrengthRight = Math.floor(d3.sum(modelRight.getConnectionMatrixRow(index))*100)/100;
+    var nodalStrengthLeft = Math.floor(modelLeft.getNodalStrength(index)*100)/100;
+    var nodalStrengthRight = Math.floor(modelRight.getNodalStrength(index)*100)/100;
 
     var para = document.createElement("p");
     var node = document.createTextNode(index + " " + regionName + " " + nodalStrengthLeft + " / " + nodalStrengthRight);
