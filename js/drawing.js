@@ -379,6 +379,8 @@ changeColorGroup = function (name) {
     setColorGroupScale();
 
     redrawNodes();
+    previewAreaLeft.updateEdgeColors();
+    previewAreaRight.updateEdgeColors();
     createLegend(modelLeft);
 };
 

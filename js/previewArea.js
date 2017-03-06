@@ -311,14 +311,37 @@ function PreviewArea(canvas_, model_) {
         // setEdgesColor();
     };
 
-    // set the color and thickness of displayed edges
-    this.setEdgesColor = function () {
+    // skew the color distribution according to the nodes strength
+    var computeColorGradient = function (c1, c2, n, p) {
+        var gradient = new Float32Array( n * 3 );
+        var p1 = p; var p2 = 1-p1;
+        for (var i = 0; i < n; ++i) {
+            // skew the color distribution according to the nodes strength
+            var r = i/(n-1);
+            var rr = (r*r*(p2-0.5) + r*(0.5-p2*p2))/(p1*p2);
+            gradient[ i * 3 ] = c2.r + (c1.r - c2.r)*rr;
+            gradient[ i * 3 + 1 ] = c2.g + (c1.g - c2.g)*rr;
+            gradient[ i * 3 + 2 ] = c2.b + (c1.b - c2.b)*rr
+        }
+        return gradient;
+    };
 
+    // set the color of displayed edges
+    this.updateEdgeColors = function () {
+        var edge, c1, c2;
         for(var i = 0; i < displayedEdges.length; i++){
-            // displayedEdges[i].material.color = 0xff0000;
+            edge = displayedEdges[i];
+            c1 = glyphs[edge.nodes[0]].material.color;
+            c2 = glyphs[edge.nodes[1]].material.color;
+            edge.geometry.addAttribute( 'color', new THREE.BufferAttribute( computeColorGradient(c1,c2,edge.nPoints, edge.p1), 3 ) );
         }
 
-        // updateEdgeLegend();
+        for(i = 0; i < shortestPathEdges.length; i++){
+            edge = displayedEdges[i];
+            c1 = glyphs[edge.nodes[0]].material.color;
+            c2 = glyphs[edge.nodes[1]].material.color;
+            edge.geometry.addAttribute( 'color', new THREE.BufferAttribute( computeColorGradient(c1,c2,edge.nPoints, edge.p1), 3 ) );
+        }
     };
 
     this.updateEdgeOpacity = function (opacity) {
@@ -336,24 +359,42 @@ function PreviewArea(canvas_, model_) {
     // line.setGeometry( geometry );
     // material = new THREE.MeshLineMaterial();
     // var mesh  = new THREE.Mesh(line.geometry, material);
-    var createLine = function(edge, ownerNode){
+    var createLine = function(edge, ownerNode, nodes){
         var material = new THREE.LineBasicMaterial({
             transparent: true,
             opacity: edgeOpacity,
-            color: 0xff0000
-            // lights: true
-            // Due to limitations in the ANGLE layer, with the WebGL renderer on Windows platforms linewidth
-            // will always be 1 regardless of the set value.!!!
+            vertexColors: THREE.VertexColors
+            // Due to limitations in the ANGLE layer on Windows platforms linewidth will always be 1.
         });
-        var geometry = new THREE.Geometry();
-        geometry.vertices = edge;
+
+        var geometry = new THREE.BufferGeometry();
+        var n = edge.length;
+
+        var positions = new Float32Array( n * 3 );
+        for (var i = 0; i < n; i++) {
+            positions[ i * 3 ] = edge[i].x;
+            positions[ i * 3 + 1 ] = edge[i].y;
+            positions[ i * 3 + 2 ] = edge[i].z;
+        }
+        geometry.addAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+
+        var s1 = model.getNodalStrength(nodes[0]), s2 = model.getNodalStrength(nodes[1]);
+        var p1 = s1/(s1+s2);
+        var c1 = new THREE.Color(scaleColorGroup(model, model.getRegionByNode(nodes[0]), nodes[0])),// glyphs[nodes[0]].material.color,
+            c2 = new THREE.Color(scaleColorGroup(model, model.getRegionByNode(nodes[1]), nodes[1]));// glyphs[nodes[1]].material.color;
+        geometry.addAttribute( 'color', new THREE.BufferAttribute( computeColorGradient(c1,c2,n,p1), 3 ) );
+
+        // geometry.colors = colorGradient;
         var line  = new THREE.Line(geometry, material);
         line.name = ownerNode;
+        line.nPoints = n;
+        line.nodes = nodes;
+        line.p1 = p1;
         return line;
     };
 
-    var drawEdgeWithName = function (edge, ownerNode) {
-        var line = createLine(edge, ownerNode);
+    var drawEdgeWithName = function (edge, ownerNode, nodes) {
+        var line = createLine(edge, ownerNode, nodes);
         scene.add(line);
         return line;
     };
@@ -369,7 +410,7 @@ function PreviewArea(canvas_, model_) {
         }
         for (var i in row) {
             if ((nodeIndex != row[i]) && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
-                displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[nodeIndex][row[i]]], nodeIndex);
+                displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[nodeIndex][row[i]]], nodeIndex, [nodeIndex, row[i]]);
             }
         }
 
@@ -388,7 +429,7 @@ function PreviewArea(canvas_, model_) {
 
         for(var i=0; i < row.length ; i++){
             if((i != indexNode) && row[i] > model.getThreshold()  && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
-                displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode);
+                displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
             }
         }
         // setEdgesColor();
@@ -527,7 +568,7 @@ function PreviewArea(canvas_, model_) {
                     visibleNodes[hierarchy[i][j]] = true;
                     var prev = previousMap[hierarchy[i][j]];
                     if(prev){
-                        shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][hierarchy[i][j]]] , prev);
+                        shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][hierarchy[i][j]]] , prev, [prev, i]);
                     }
                 }
             } else {
@@ -557,7 +598,7 @@ function PreviewArea(canvas_, model_) {
             if(visibleNodes[i]){
                 var prev = previousMap[i];
                 if(prev) {
-                    shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][i]] , prev);
+                    shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][i]], prev, [prev, i]);
                 }
             }
         }
@@ -588,7 +629,7 @@ function PreviewArea(canvas_, model_) {
         while(previousMap[i]!= null){
             prev = previousMap[i];
             visibleNodes[prev] = true;
-            shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][i]], prev );
+            shortestPathEdges[shortestPathEdges.length] = createLine(edges[edgeIdx[prev][i]], prev, [prev, i] );
             i = prev;
         }
 
