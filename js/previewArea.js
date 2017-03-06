@@ -13,7 +13,7 @@
 function PreviewArea(canvas_, model_) {
     var model = model_;
     var canvas = canvas_;
-    var camera = null, renderer = null, controls = null, scene = null;
+    var camera = null, renderer = null, controls = null, scene = null, raycaster = null;
 
     // VR stuff
     var oculusControl = null, effect = null;
@@ -115,7 +115,7 @@ function PreviewArea(canvas_, model_) {
     var initScene = function () {
         renderer.setSize(canvas.clientWidth, window.innerHeight);
         canvas.appendChild(renderer.domElement);
-
+        raycaster = new THREE.Raycaster();
         camera.position.z = 50;
 
         //Adding light
@@ -522,19 +522,9 @@ function PreviewArea(canvas_, model_) {
     // detects which scene: left or right
     // return undefined if no object was found
     this.getIntersectedObject = function(vector) {
-
-        vector = vector.unproject( camera );
-
-        var ray = new THREE.Raycaster( camera.position,
-            vector.sub( camera.position ).normalize() );
-
-        var objectsIntersected = ray.intersectObjects( glyphs );
-
-        if(objectsIntersected[0]){
-            return objectsIntersected[0];
-        }
-
-        return undefined;
+        raycaster.setFromCamera(vector, camera);
+        var objectsIntersected = raycaster.intersectObjects( glyphs );
+        return (objectsIntersected[0])?  objectsIntersected[0] : undefined;
     };
 
     // callback when window is resized

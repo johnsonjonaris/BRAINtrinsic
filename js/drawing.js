@@ -261,7 +261,7 @@ initCanvas = function () {
     previewAreaRight.initOculusRift();
     window.addEventListener("keypress", onKeyPress, true);
 
-    visibleNodes = Array(modelLeft.getConnectionMatrixDimension()).fill(true);
+    visibleNodes = new Array(modelLeft.getConnectionMatrixDimension()).fill(true);
     // draw connectomes and start animation
     drawAllRegions();
     $(window).resize(function(e){
@@ -361,12 +361,10 @@ getIntersectedObject = function(event) {
 
     // mapping coordinates of the viewport to (-1,1), (1,1), (-1,-1), (1,-1)
     // TODO: there is a glitch for the right side
-    var vector = new THREE.Vector3(
+    var vector = new THREE.Vector2(
         ( event.clientX / window.innerWidth ) * 4 - (isLeft?1:3),
-        - ( event.clientY / window.innerHeight ) * 2 + 1,
-        0.5
+        - ( event.clientY / window.innerHeight ) * 2 + 1
     );
-
     return isLeft ? previewAreaLeft.getIntersectedObject(vector) : previewAreaRight.getIntersectedObject(vector);
 };
 

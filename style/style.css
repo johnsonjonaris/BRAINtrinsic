@@ -86,7 +86,7 @@ button > input[type="checkbox"] {
 }
 
 #canvasLeft {
-    width: 50%;
+    width: 49.5%;
     height: 100%;
     float: left;
     z-index: 1;
