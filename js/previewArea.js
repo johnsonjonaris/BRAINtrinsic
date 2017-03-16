@@ -222,7 +222,6 @@ function PreviewArea(canvas_, model_) {
         brain = new THREE.Group();
         // brain.position.z = -50.0;
         scene.add(brain);
-        console.log(brain)
 
         //Adding light
         scene.add( new THREE.HemisphereLight(0x606060, 0x080820, 1.5));
