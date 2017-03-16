@@ -29,6 +29,12 @@ function onDocumentMouseMove(model, event) {
     event.preventDefault();
     var intersectedObject = getIntersectedObject(event);
     // var isLeft = event.clientX < window.innerWidth/2;
+    updateNodeSelection(model, intersectedObject);
+
+}
+
+updateNodeSelection = function (model, intersectedObject)
+{
     var nodeIdx, regionName, nodeRegion;
     if ( intersectedObject ) {
         nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
@@ -67,7 +73,7 @@ function onDocumentMouseMove(model, event) {
             pointedObject = null;
         }
     }
-}
+};
 
 // callback to interact with objects in scene with double click
 // selected nodes are drawn bigger

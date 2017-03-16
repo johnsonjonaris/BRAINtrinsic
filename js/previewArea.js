@@ -31,47 +31,11 @@ function PreviewArea(canvas_, model_) {
 
     var edgeOpacity = 1.0;
 
-    function onControllerMove(controller) {
-
+    // on pointing controller move
+    var onControllerMove = function (controller) {
         var intersectedObject = getPointedObject(controller);
-
-        var nodeIdx, regionName, nodeRegion;
-        if ( intersectedObject ) {
-            nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
-            regionName = model.getRegionNameByIndex(nodeIdx);
-            nodeRegion = model.getRegionByNode(nodeIdx);
-        }
-
-        var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
-        // update node information label
-        if ( nodeExistAndVisible ) {
-            setNodeInfoPanel(model, regionName, nodeIdx);
-        }
-
-        if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
-            // create a selected node (bigger) from the pointed node
-            pointedObject = intersectedObject.object;
-            glyphs[nodeIdx].geometry = createSelectedGeometryByObject(pointedObject);
-            glyphs[nodeIdx].geometry = createSelectedGeometryByObject(pointedObject);
-            // console.log("Drawing edges from node ", nodeIdx);
-            pointedNodeIdx = nodeIdx;
-        } else {
-            if(pointedObject){
-                nodeIdx = glyphNodeDictionary[pointedObject.uuid];
-                pointedNodeIdx = -1;
-                if(nodeIdx == root) {
-                    console.log("Root creation");
-                    glyphs[nodeIdx].geometry = createRootGeometryByObject(pointedObject);
-                    glyphs[nodeIdx].geometry = createRootGeometryByObject(pointedObject);
-                }
-                else {
-                    glyphs[nodeIdx].geometry = createNormalGeometryByObject(pointedObject);
-                    glyphs[nodeIdx].geometry = createNormalGeometryByObject(pointedObject);
-                }
-                pointedObject = null;
-            }
-        }
-    }
+        updateNodeSelection(model, intersectedObject);
+    };
 
     this.activateVR = function (activate) {
         if (activate == activeVR)
@@ -140,8 +104,6 @@ function PreviewArea(canvas_, model_) {
 
         // controllerLeft.addEventListener('gripsup', function(e) { updateVRStatus('left'); }, true);
         // controllerRight.addEventListener('gripsup', function(e) { updateVRStatus('right'); }, true);
-
-        scanOculusTouch();
 
         console.log("Init Oculus Touch done")
     };
@@ -237,8 +199,6 @@ function PreviewArea(canvas_, model_) {
         onControllerMove(controllerLeft);
         if (!pointedObject)
             onControllerMove(controllerRight);
-
-        setTimeout(function() { scanOculusTouch(); }, 100);
     };
 
     // draw a pointing line
@@ -352,6 +312,8 @@ function PreviewArea(canvas_, model_) {
         if (enableVR && activeVR) {
             controllerLeft.update();
             controllerRight.update();
+
+            scanOculusTouch();
 
             oculusControl.update();
             effect.render(scene, camera);
