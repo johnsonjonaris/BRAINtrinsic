@@ -148,10 +148,6 @@ function Model() {
         return results;
     };
 
-    // add group data
-    /*this.setGroup = function (d) {
-        groups[groups.length] = d.data;
-    };*/
 
     // isomap, MDS, anatomy, tsne, selection from centroids
     this.setActiveTopology = function (topology) {
