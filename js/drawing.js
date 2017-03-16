@@ -217,6 +217,8 @@ updateVRStatus = function (status) {
             vr = false;
             previewAreaLeft.resetCamera();
             previewAreaRight.resetCamera();
+            previewAreaLeft.resetBrainPosition();
+            previewAreaRight.resetBrainPosition();
             break;
     }
 };

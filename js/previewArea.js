@@ -18,15 +18,60 @@ function PreviewArea(canvas_, model_) {
     // VR stuff
     var oculusControl = null, effect = null;
     var controllerLeft = null, controllerRight = null;
+    var pointerLeft = null, pointerRight = null;      // left and right controller pointers for pointing at things
+
     var enableVR = false;
     var activeVR = false;
     // nodes and edges
+    var brain = null; // three js group housing all glyphs and edges
     var glyphs = [];
     var displayedEdges = [];
     // shortest path
     var shortestPathEdges = [];
 
     var edgeOpacity = 1.0;
+
+    function onControllerMove(controller) {
+
+        var intersectedObject = getPointedObject(controller);
+
+        var nodeIdx, regionName, nodeRegion;
+        if ( intersectedObject ) {
+            nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
+            regionName = model.getRegionNameByIndex(nodeIdx);
+            nodeRegion = model.getRegionByNode(nodeIdx);
+        }
+
+        var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
+        // update node information label
+        if ( nodeExistAndVisible ) {
+            setNodeInfoPanel(model, regionName, nodeIdx);
+        }
+
+        if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
+            // create a selected node (bigger) from the pointed node
+            pointedObject = intersectedObject.object;
+            glyphs[nodeIdx].geometry = createSelectedGeometryByObject(pointedObject);
+            glyphs[nodeIdx].geometry = createSelectedGeometryByObject(pointedObject);
+            // console.log("Drawing edges from node ", nodeIdx);
+            pointedNodeIdx = nodeIdx;
+        } else {
+            if(pointedObject){
+                nodeIdx = glyphNodeDictionary[pointedObject.uuid];
+                pointedNodeIdx = -1;
+                if(nodeIdx == root) {
+                    console.log("Root creation");
+                    glyphs[nodeIdx].geometry = createRootGeometryByObject(pointedObject);
+                    glyphs[nodeIdx].geometry = createRootGeometryByObject(pointedObject);
+                }
+                else {
+                    glyphs[nodeIdx].geometry = createNormalGeometryByObject(pointedObject);
+                    glyphs[nodeIdx].geometry = createNormalGeometryByObject(pointedObject);
+                }
+                pointedObject = null;
+            }
+        }
+    }
 
     this.activateVR = function (activate) {
         if (activate == activeVR)
@@ -86,30 +131,126 @@ function PreviewArea(canvas_, model_) {
             controllerLeft.add( object.clone() );
             controllerRight.add( object.clone() );
 
+            controllerLeft.standingMatrix = oculusControl.getStandingMatrix();
+            controllerRight.standingMatrix = oculusControl.getStandingMatrix();
+
             scene.add(controllerLeft);
             scene.add(controllerRight);
         } );
 
-        controllerLeft.addEventListener('axischanged', function(e) { zoomCamera(e.axes[1]); }, true);
         // controllerLeft.addEventListener('gripsup', function(e) { updateVRStatus('left'); }, true);
         // controllerRight.addEventListener('gripsup', function(e) { updateVRStatus('right'); }, true);
 
+        scanOculusTouch();
 
         console.log("Init Oculus Touch done")
     };
 
-    var scanTouch = function () {
+    // scan the Oculus Touch for controls
+    var scanOculusTouch = function () {
+        var boostRotationSpeed = controllerLeft.getButtonState('trigger') ? 0.1 : 0.02;
+        var boostMoveSpeed = controllerRight.getButtonState('trigger') ? 5.0 : 1.0;
+        var angleX = null, angleY = null;
+        var gamePadLeft = controllerLeft.getGamepad();
+        var gamePadRight = controllerRight.getGamepad();
+        if(gamePadLeft) {
+            angleX = gamePadLeft.axes[0];
+            angleY = gamePadLeft.axes[1];
+            if(controllerLeft.getButtonState('thumbpad')) {
+                brain.scale.multiplyScalar(1.0 + boostRotationSpeed * angleY);
+            } else {
+                brain.rotateX(boostRotationSpeed * angleX);
+                brain.rotateZ(boostRotationSpeed * angleY);
+            }
+            brain.matrixWorldNeedsUpdate = true;
+        }
 
+        if(gamePadRight) {
+            angleX = gamePadRight.axes[0];
+            angleY = gamePadRight.axes[1];
+            if(controllerRight.getButtonState('thumbpad')) {
+                brain.position.y += boostMoveSpeed * angleY;
+            } else {
+                brain.position.z += boostMoveSpeed * angleX;
+                brain.position.x += boostMoveSpeed * angleY;
+            }
+            brain.matrixWorldNeedsUpdate = true;
+        }
+
+        var v3Origin = new THREE.Vector3(0,0,0);
+        var v3UnitUp;
+        // var v3UnitFwd = new THREE.Vector3(0,0,1);
+
+        // Find all nodes within 0.1 distance from left Touch Controller
+        var closestNodeIndexLeft = 0, closestNodeDistanceLeft = 99999.9;
+        var closestNodeIndexRight = 0, closestNodeDistanceRight = 99999.9;
+        for (var i = 0; i < brain.children.length; i++) {
+            var distToNodeILeft = controllerLeft.position.distanceTo(brain.children[i].getWorldPosition());
+            if ( (distToNodeILeft < closestNodeDistanceLeft ) ) {
+                closestNodeDistanceLeft = distToNodeILeft;
+                closestNodeIndexLeft = i;
+            }
+
+            var distToNodeIRight = controllerRight.position.distanceTo(brain.children[i].getWorldPosition());
+            if ( (distToNodeIRight < closestNodeDistanceRight ) ) {
+                closestNodeDistanceRight = distToNodeIRight;
+                closestNodeIndexRight = i;
+            }
+        }
+
+        if(controllerLeft.getButtonState('grips')) {
+            pointedNodeIdx = (closestNodeDistanceLeft < 2.0) ? closestNodeIndexLeft : -1;
+
+            v3UnitUp = new THREE.Vector3(0,0,-100.0);
+
+            if (pointerLeft) {
+                // Touch Controller pointer already on!
+            } else {
+                pointerLeft = drawPointer(v3Origin, v3UnitUp);
+                controllerLeft.add(pointerLeft);
+            }
+        } else {
+            if (pointerLeft) {
+                controllerLeft.remove(pointerLeft);
+            }
+            pointerLeft = null;
+        }
+
+        if(controllerRight.getButtonState('grips')) {
+            pointedNodeIdx = (closestNodeDistanceRight < 2.0) ? closestNodeIndexRight : -1;
+
+            v3UnitUp = new THREE.Vector3(0,0,-100.0);
+
+            if (pointerRight) {
+                // Touch Controller pointer already on!
+            } else {
+                pointerRight = drawPointer(v3Origin, v3UnitUp);
+                controllerRight.add(pointerRight);
+            }
+        } else {
+            if (pointerRight) {
+                controllerRight.remove(pointerRight);
+            }
+            pointerRight = null;
+        }
+
+        onControllerMove(controllerLeft);
+        if (!pointedObject)
+            onControllerMove(controllerRight);
+
+        setTimeout(function() { scanOculusTouch(); }, 100);
     };
 
-    function zoomCamera(dir) {
-        var fovMAX = 160;
-        var fovMIN = 1;
-        var zoomFactor = (dir > 0) ? 0.2 : -0.2;
-        camera.fov += zoomFactor;
-        camera.fov = Math.max( Math.min( camera.fov, fovMAX ), fovMIN );
-        camera.updateProjectionMatrix();
-    }
+    // draw a pointing line
+    var drawPointer = function (start, end) {
+        var material = new THREE.LineBasicMaterial();
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(
+            start,
+            end
+        );
+        return new THREE.Line(geometry, material);
+    };
 
     // initialize scene: init 3js scene, canvas, renderer and camera; add axis and light to the scene
     var initScene = function () {
@@ -117,6 +258,11 @@ function PreviewArea(canvas_, model_) {
         canvas.appendChild(renderer.domElement);
         raycaster = new THREE.Raycaster();
         camera.position.z = 50;
+
+        brain = new THREE.Group();
+        // brain.position.z = -50.0;
+        scene.add(brain);
+        console.log(brain)
 
         //Adding light
         scene.add( new THREE.HemisphereLight(0x606060, 0x080820, 1.5));
@@ -133,6 +279,12 @@ function PreviewArea(canvas_, model_) {
         camera.position.x = 50;
         camera.position.y = 50;
         camera.position.z = 50;
+    };
+
+    this.resetBrainPosition = function () {
+        brain.scale = new THREE.Vector3(1,1,1);
+        brain.position = new THREE.Vector3(0,0,0);
+        brain.matrixWorldNeedsUpdate = true;
     };
 
     // create 3js elements: scene, canvas, camera and controls; and init them and add skybox to the scene
@@ -165,7 +317,7 @@ function PreviewArea(canvas_, model_) {
 
     var removeNodesFromScene = function () {
         for (var i=0; i < glyphs.length; ++i){
-            scene.remove(glyphs[i]);
+            brain.remove(glyphs[i]);
             delete glyphNodeDictionary[glyphs[i].uuid];
         }
         glyphs = [];
@@ -173,7 +325,7 @@ function PreviewArea(canvas_, model_) {
 
     this.removeEdgesFromScene = function () {
         for(var i=0; i < displayedEdges.length; ++i){
-            scene.remove(displayedEdges[i]);
+            brain.remove(displayedEdges[i]);
         }
         displayedEdges = [];
 
@@ -182,7 +334,7 @@ function PreviewArea(canvas_, model_) {
 
     this.removeShortestPathEdgesFromScene = function () {
         for(var i=0; i < shortestPathEdges.length; i++){
-            scene.remove(shortestPathEdges[i]);
+            brain.remove(shortestPathEdges[i]);
         }
         shortestPathEdges = [];
     };
@@ -200,8 +352,6 @@ function PreviewArea(canvas_, model_) {
         if (enableVR && activeVR) {
             controllerLeft.update();
             controllerRight.update();
-
-            scanTouch();
 
             oculusControl.update();
             effect.render(scene, camera);
@@ -276,7 +426,7 @@ function PreviewArea(canvas_, model_) {
                 glyphNodeDictionary[glyphs[i].uuid] = i;
 
                 if(visibleNodes[i]){
-                    scene.add(glyphs[i]);
+                    brain.add(glyphs[i]);
                 }
             }
             glyphs[i].userData.hemisphere = dataset[i].hemisphere;
@@ -305,7 +455,7 @@ function PreviewArea(canvas_, model_) {
         // draw all edges belonging to the shortest path array
         for(i=0; i < shortestPathEdges.length; i++){
             displayedEdges[displayedEdges.length] = shortestPathEdges[i];
-            scene.add(shortestPathEdges[i]);
+            brain.add(shortestPathEdges[i]);
         }
 
         // setEdgesColor();
@@ -395,7 +545,7 @@ function PreviewArea(canvas_, model_) {
 
     var drawEdgeWithName = function (edge, ownerNode, nodes) {
         var line = createLine(edge, ownerNode, nodes);
-        scene.add(line);
+        brain.add(line);
         return line;
     };
 
@@ -446,7 +596,7 @@ function PreviewArea(canvas_, model_) {
             //removing only the edges that starts from that node
             if(edge.name == indexNode && shortestPathEdges.indexOf(edge) == -1){
                 removedEdges[removedEdges.length] = i;
-                scene.remove(edge);
+                brain.remove(edge);
             }
         }
 
@@ -626,5 +776,23 @@ function PreviewArea(canvas_, model_) {
         removeNodesFromScene();
         this.drawRegions();
         this.drawConnections();
+    };
+
+    // get intersected object pointed to by Vive/Touch Controller pointer
+    // return undefined if no object was found
+    var getPointedObject = function(controller) {
+
+        var gamePad = controller.getGamepad();
+        if (gamePad) {
+            var orientation = new THREE.Quaternion().fromArray(gamePad.pose.orientation);
+            var v3orientation = new THREE.Vector3(0,0,-1.0);
+            v3orientation.applyQuaternion(orientation);
+            var ray = new THREE.Raycaster(controller.position, v3orientation);
+            var objectsIntersected = ray.intersectObjects(glyphs);
+            if (objectsIntersected[0]) {
+                return objectsIntersected[0];
+            }
+        }
+        return undefined;
     };
 }
