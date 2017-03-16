@@ -169,9 +169,11 @@ function onMouseUp(model, event) {
             onMiddleClick(event);
             break;
         case 2:
-            toggleFslMenu();
+            if (click)
+                toggleFslMenu();
             break;
     }
+    click = false;
 }
 
 function onKeyPress(event) {
