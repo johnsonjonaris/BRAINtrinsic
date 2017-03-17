@@ -35,17 +35,17 @@ function onDocumentMouseMove(model, event) {
 
 updateNodeSelection = function (model, intersectedObject)
 {
-    var nodeIdx, regionName, nodeRegion;
+    var nodeIdx, region, nodeRegion, label;
     if ( intersectedObject ) {
         nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
-        regionName = model.getRegionNameByIndex(nodeIdx);
+        region = model.getRegionByIndex(nodeIdx);
         nodeRegion = model.getRegionByNode(nodeIdx);
     }
 
     var nodeExistAndVisible = (intersectedObject && visibleNodes[nodeIdx] && model.isRegionActive(nodeRegion));
     // update node information label
     if ( nodeExistAndVisible ) {
-        setNodeInfoPanel(regionName, nodeIdx);
+        setNodeInfoPanel(region, nodeIdx);
     }
 
     if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected

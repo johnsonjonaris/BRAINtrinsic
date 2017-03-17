@@ -340,9 +340,9 @@ function Model() {
         numberOfEdges = n;
     };
 
-    // get the region name of a specific node (edge)
-    this.getRegionNameByIndex = function (index) {
-        return dataset[index].name;
+    // get the region data of a specific node
+    this.getRegionByIndex = function (index) {
+        return dataset[index];
     };
 
     this.setMetricValues = function(data) {

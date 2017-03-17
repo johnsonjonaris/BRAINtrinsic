@@ -293,8 +293,8 @@ addSkyboxButton = function () {
     menu.append("br");
 };
 
-// adds a text label showing: node index - region name - nodal strength
-setNodeInfoPanel = function (regionName, index) {
+// adds a text label showing: label - region name - nodal strength
+setNodeInfoPanel = function (region, index) {
 
     var panel = d3.select('#nodeInfoPanel');
 
@@ -304,7 +304,7 @@ setNodeInfoPanel = function (regionName, index) {
     var nodalStrengthRight = Math.floor(modelRight.getNodalStrength(index)*100)/100;
 
     var para = document.createElement("p");
-    var node = document.createTextNode(index + " " + regionName + " " + nodalStrengthLeft + " / " + nodalStrengthRight);
+    var node = document.createTextNode(region.label + " " + region.name + " " + nodalStrengthLeft + " / " + nodalStrengthRight);
 
     panel.node().appendChild(para).appendChild(node);
 };
