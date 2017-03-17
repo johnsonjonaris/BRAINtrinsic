@@ -401,7 +401,7 @@ function PreviewArea(canvas_, model_) {
         for(var i= 0; i < nodesSelected.length; i++){
             nodeIdx = nodesSelected[i];
             // draw only edges belonging to active nodes
-            if(model.isRegionActive(model.getRegionByNode(nodeIdx))) {
+            if(model.isRegionActive(model.getGroupNameByNodeIndex(nodeIdx))) {
                 // two ways to draw edges
                 if(thresholdModality) {
                     // 1) filter edges according to threshold
@@ -491,8 +491,8 @@ function PreviewArea(canvas_, model_) {
 
         var s1 = model.getNodalStrength(nodes[0]), s2 = model.getNodalStrength(nodes[1]);
         var p1 = s1/(s1+s2);
-        var c1 = new THREE.Color(scaleColorGroup(model, model.getRegionByNode(nodes[0]), nodes[0])),// glyphs[nodes[0]].material.color,
-            c2 = new THREE.Color(scaleColorGroup(model, model.getRegionByNode(nodes[1]), nodes[1]));// glyphs[nodes[1]].material.color;
+        var c1 = new THREE.Color(scaleColorGroup(model, model.getGroupNameByNodeIndex(nodes[0]), nodes[0])),// glyphs[nodes[0]].material.color,
+            c2 = new THREE.Color(scaleColorGroup(model, model.getGroupNameByNodeIndex(nodes[1]), nodes[1]));// glyphs[nodes[1]].material.color;
         geometry.addAttribute( 'color', new THREE.BufferAttribute( computeColorGradient(c1,c2,n,p1), 3 ) );
 
         // geometry.colors = colorGradient;
@@ -520,7 +520,7 @@ function PreviewArea(canvas_, model_) {
             model.performEBOnNode(nodeIndex);
         }
         for (var i in row) {
-            if ((nodeIndex != row[i]) && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
+            if ((nodeIndex != row[i]) && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && visibleNodes[i]) {
                 displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[nodeIndex][row[i]]], nodeIndex, [nodeIndex, row[i]]);
             }
         }
@@ -539,7 +539,7 @@ function PreviewArea(canvas_, model_) {
         }
 
         for(var i=0; i < row.length ; i++){
-            if((i != indexNode) && row[i] > model.getThreshold()  && model.isRegionActive(model.getRegionByNode(i)) && visibleNodes[i]) {
+            if((i != indexNode) && row[i] > model.getThreshold()  && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && visibleNodes[i]) {
                 displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
             }
         }
