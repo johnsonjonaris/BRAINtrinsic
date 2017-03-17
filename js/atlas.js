@@ -42,6 +42,8 @@ function Atlas(data) {
             el.visibility = true;
             lut[d.data[i].label] = el;
         }
+        sphereResolution = (d.data.length < 1000) ? 12 : (d.data.length < 2000) ? 8 : 4;
+        console.log(sphereResolution)
     };
 
 
