@@ -251,13 +251,13 @@ function Model() {
     };
 
     // get the group of a specific node according to activeGroup
-    this.getRegionByNode = function (nodeIndex) {
-        return groups[activeGroup][nodeIndex];
+    this.getGroupNameByNodeIndex = function (index) {
+        return groups[activeGroup][index];
     };
 
     // return if a specific region is activated
-    this.isRegionActive = function(region) {
-        return regions[region].active;
+    this.isRegionActive = function(regionName) {
+        return regions[regionName].active;
     };
 
     // toggle a specific region in order: active, transparent, inactive
