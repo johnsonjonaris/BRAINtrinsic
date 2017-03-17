@@ -110,20 +110,16 @@ function PreviewArea(canvas_, model_) {
 
     // scan the Oculus Touch for controls
     var scanOculusTouch = function () {
-        var boostRotationSpeed = controllerLeft.getButtonState('trigger') ? 0.1 : 0.02;
-        var boostMoveSpeed = controllerRight.getButtonState('trigger') ? 5.0 : 1.0;
+        var boostRotationSpeed = controllerLeft.getButtonState('grips') ? 0.1 : 0.02;
+        var boostMoveSpeed = controllerRight.getButtonState('grips') ? 5.0 : 1.0;
         var angleX = null, angleY = null;
         var gamePadLeft = controllerLeft.getGamepad();
         var gamePadRight = controllerRight.getGamepad();
         if(gamePadLeft) {
             angleX = gamePadLeft.axes[0];
             angleY = gamePadLeft.axes[1];
-            if(controllerLeft.getButtonState('thumbpad')) {
-                brain.scale.multiplyScalar(1.0 + boostRotationSpeed * angleY);
-            } else {
-                brain.rotateX(boostRotationSpeed * angleX);
-                brain.rotateZ(boostRotationSpeed * angleY);
-            }
+            brain.rotateX(boostRotationSpeed * angleX);
+            brain.rotateZ(boostRotationSpeed * angleY);
             brain.matrixWorldNeedsUpdate = true;
         }
 
@@ -140,7 +136,7 @@ function PreviewArea(canvas_, model_) {
         }
 
         var v3Origin = new THREE.Vector3(0,0,0);
-        var v3UnitUp;
+        var v3UnitUp = new THREE.Vector3(0,0,-100.0);
         // var v3UnitFwd = new THREE.Vector3(0,0,1);
 
         // Find all nodes within 0.1 distance from left Touch Controller
@@ -160,10 +156,8 @@ function PreviewArea(canvas_, model_) {
             }
         }
 
-        if(controllerLeft.getButtonState('grips')) {
+        if(controllerLeft.getButtonState('trigger')) {
             pointedNodeIdx = (closestNodeDistanceLeft < 2.0) ? closestNodeIndexLeft : -1;
-
-            v3UnitUp = new THREE.Vector3(0,0,-100.0);
 
             if (pointerLeft) {
                 // Touch Controller pointer already on!
@@ -171,6 +165,7 @@ function PreviewArea(canvas_, model_) {
                 pointerLeft = drawPointer(v3Origin, v3UnitUp);
                 controllerLeft.add(pointerLeft);
             }
+            onControllerMove(controllerLeft);
         } else {
             if (pointerLeft) {
                 controllerLeft.remove(pointerLeft);
@@ -178,10 +173,8 @@ function PreviewArea(canvas_, model_) {
             pointerLeft = null;
         }
 
-        if(controllerRight.getButtonState('grips')) {
+        if(controllerRight.getButtonState('trigger')) {
             pointedNodeIdx = (closestNodeDistanceRight < 2.0) ? closestNodeIndexRight : -1;
-
-            v3UnitUp = new THREE.Vector3(0,0,-100.0);
 
             if (pointerRight) {
                 // Touch Controller pointer already on!
@@ -189,16 +182,13 @@ function PreviewArea(canvas_, model_) {
                 pointerRight = drawPointer(v3Origin, v3UnitUp);
                 controllerRight.add(pointerRight);
             }
+            onControllerMove(controllerRight);
         } else {
             if (pointerRight) {
                 controllerRight.remove(pointerRight);
             }
             pointerRight = null;
         }
-
-        onControllerMove(controllerLeft);
-        if (!pointedObject)
-            onControllerMove(controllerRight);
     };
 
     // draw a pointing line
@@ -220,7 +210,6 @@ function PreviewArea(canvas_, model_) {
         camera.position.z = 50;
 
         brain = new THREE.Group();
-        // brain.position.z = -50.0;
         scene.add(brain);
 
         //Adding light
@@ -241,8 +230,11 @@ function PreviewArea(canvas_, model_) {
     };
 
     this.resetBrainPosition = function () {
-        brain.scale = new THREE.Vector3(1,1,1);
-        brain.position = new THREE.Vector3(0,0,0);
+        brain.updateMatrix();
+        brain.position.set(0,0,0);
+        brain.rotation.set(0,0,0);
+        brain.scale.set(1,1,1);
+        brain.updateMatrix();
         brain.matrixWorldNeedsUpdate = true;
     };
 
