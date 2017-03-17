@@ -447,8 +447,10 @@ changeSceneToSubject = function (subjectId, model, previewArea, side) {
                 .defer(loadSubjectTopology, fileNames, model)
                 .awaitAll( function () {
                     console.log("Loading data done.");
+                    var activeGroup = model.getActiveGroupName();
                     model.createGroups();
                     addTopologyRadioButtons(model, side);
+                    model.setActiveGroup(activeGroup);
                     model.setAllRegionsActivated();
                     redrawScene(side);
                 })
