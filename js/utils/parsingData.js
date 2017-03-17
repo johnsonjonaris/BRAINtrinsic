@@ -26,6 +26,7 @@ var scanFolder = function (callback) {
                 delimiter: ",",
                 dynamicTyping: true,
                 header: true,
+                skipEmptyLines: true,
                 error: "continue",
                 complete: function (results) {
                     dataFiles = results.data;
@@ -44,6 +45,7 @@ var loadIcColors = function (callback) {
         delimiter: ",",
         dynamicTyping: true,
         error:"continue",
+        skipEmptyLines: true,
         complete: function (results) {
             modelLeft.setICColor(results);
             modelRight.setICColor(results);
@@ -67,6 +69,7 @@ var loadLookUpTable = function (callback) {
         delimiter: ";",
         dynamicTyping: true,
         header: true,
+        skipEmptyLines: true,
         complete: function (results) {
             console.log("Setting up Look-up Table");
             atlas = new Atlas(results);
@@ -82,6 +85,7 @@ var loadSubjectNetwork = function (fileNames, model, callback) {
         dynamicTyping: true,
         delimiter: ',',
         header: false,
+        skipEmptyLines: true,
         complete: function(results){
             model.setConnectionMatrix(results);
             console.log("NW loaded ... ");
@@ -96,6 +100,7 @@ var loadSubjectTopology = function (fileNames, model, callback) {
         dynamicTyping: true,
         delimiter: ',',
         header: false,
+        skipEmptyLines: true,
         complete: function(results){
             model.setTopology(results.data);
             console.log("Topology loaded ... ");
@@ -127,6 +132,7 @@ var loadMetricValues = function(callback){
         delimiter: ',',
         dynamicTyping: true,
         header: false,
+        skipEmptyLines: true,
         complete: function(results){
             modelLeft.setMetricValues(results);
             modelRight.setMetricValues(results);
