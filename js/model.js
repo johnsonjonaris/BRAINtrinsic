@@ -129,10 +129,14 @@ function Model() {
 
     // update the clustering group level, level can be 1 to 4
     this.updateClusteringGroupLevel = function (level) {
-        if (this.hasClusteringData()) {
+        if (this.hasClusteringData() && clusteringTopologies.indexOf(activeGroup) > -1 && clusters[activeGroup].length > 1) {
             groups[activeGroup] = clusters[activeGroup][level-1];
             clusteringGroupLevel = level;
         }
+    };
+
+    this.getClusteringGroupLevel = function () {
+        return clusteringGroupLevel;
     };
 
     // return the group affiliation of every node according to activeGroup
@@ -435,6 +439,11 @@ function Model() {
         return numberOfHops;
     };
 
+    // compute the position of each node for a clustering topology according to clustering data
+    // in case of PLACE or PACE, clustering level can be 1 to 4, clusters[topology][level]
+    // in case of other clustering techniques: Q-modularity, no hierarchy information is applied
+    // clusters[topology][0] contains the clustering information.
+    // clusters starts by 1 not 0.
     this.computeNodesLocationForClusters = function(topology) {
         var platonic = new Platonics();
         var isHierarchical = topology == "PLACE" || topology == "PACE";

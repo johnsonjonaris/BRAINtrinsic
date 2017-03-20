@@ -448,9 +448,13 @@ changeSceneToSubject = function (subjectId, model, previewArea, side) {
                 .awaitAll( function () {
                     console.log("Loading data done.");
                     var activeGroup = model.getActiveGroupName();
+                    var level1 = model.getClusteringLevel();
+                    var level2 = model.getClusteringGroupLevel();
                     model.createGroups();
                     addTopologyRadioButtons(model, side);
                     model.setActiveGroup(activeGroup);
+                    model.setClusteringLevel(level1);
+                    model.updateClusteringGroupLevel(level2);
                     model.setAllRegionsActivated();
                     redrawScene(side);
                 })
