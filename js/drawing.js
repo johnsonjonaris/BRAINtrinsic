@@ -35,7 +35,7 @@ function onDocumentMouseMove(model, event) {
 
 updateNodeSelection = function (model, intersectedObject)
 {
-    var nodeIdx, region, nodeRegion, label;
+    var nodeIdx, region, nodeRegion;
     if ( intersectedObject ) {
         nodeIdx = glyphNodeDictionary[intersectedObject.object.uuid];
         region = model.getRegionByIndex(nodeIdx);
@@ -137,8 +137,6 @@ function onLeftClick(model, event) {
                 pointedObject = null;
             } else {
                 //if the node is already selected, remove edges and remove from the nodeSelected Array
-                previewAreaLeft.updateNodeColor(nodeIndex, new THREE.Color(scaleColorGroup(model, model.getGroupNameByNodeIndex(nodeIndex), nodeIndex)));
-                previewAreaRight.updateNodeColor(nodeIndex, new THREE.Color(scaleColorGroup(model, model.getGroupNameByNodeIndex(nodeIndex), nodeIndex)));
                 previewAreaLeft.updateNodeGeometry(nodeIndex, createNormalGeometryByObject(objectIntersected.object));
                 previewAreaRight.updateNodeGeometry(nodeIndex, createNormalGeometryByObject(objectIntersected.object));
                 nodesSelected.splice(el, 1);
