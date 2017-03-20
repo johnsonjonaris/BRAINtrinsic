@@ -29,11 +29,11 @@ function onDocumentMouseMove(model, event) {
     event.preventDefault();
     var intersectedObject = getIntersectedObject(event);
     // var isLeft = event.clientX < window.innerWidth/2;
-    updateNodeSelection(model, intersectedObject);
+    updateNodeMoveOver(model, intersectedObject);
 
 }
 
-updateNodeSelection = function (model, intersectedObject)
+updateNodeMoveOver = function (model, intersectedObject)
 {
     var nodeIdx, region, nodeRegion;
     if ( intersectedObject ) {
@@ -46,6 +46,10 @@ updateNodeSelection = function (model, intersectedObject)
     // update node information label
     if ( nodeExistAndVisible ) {
         setNodeInfoPanel(region, nodeIdx);
+        if (vr) {
+            previewAreaLeft.updateNodeLabel(region.name, nodeIdx);
+            previewAreaRight.updateNodeLabel(region.name, nodeIdx);
+        }
     }
 
     if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
@@ -106,6 +110,10 @@ function onLeftClick(model, event) {
     event.preventDefault();
     var objectIntersected = getIntersectedObject(event);
     var isLeft = event.clientX < window.innerWidth/2;
+    updateNodeSelection(model, objectIntersected, isLeft);
+}
+
+updateNodeSelection = function (model, objectIntersected, isLeft) {
     var nodeIndex;
     if ( objectIntersected ) {
         nodeIndex = glyphNodeDictionary[objectIntersected.object.uuid];
@@ -150,7 +158,7 @@ function onLeftClick(model, event) {
         }
     }
     pointedNodeIdx = -1;
-}
+};
 
 // callback on mouse press
 function onMouseDown(event) {

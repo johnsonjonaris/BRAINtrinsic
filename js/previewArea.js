@@ -14,6 +14,7 @@ function PreviewArea(canvas_, model_) {
     var model = model_;
     var canvas = canvas_;
     var camera = null, renderer = null, controls = null, scene = null, raycaster = null;
+    var nodeLabelSprite = null, nodeNameMap = null, nspCanvas = null;
 
     // VR stuff
     var oculusControl = null, effect = null;
@@ -30,12 +31,6 @@ function PreviewArea(canvas_, model_) {
     var shortestPathEdges = [];
 
     var edgeOpacity = 1.0;
-
-    // on pointing controller move
-    var onControllerMove = function (controller) {
-        var intersectedObject = getPointedObject(controller);
-        updateNodeSelection(model, intersectedObject);
-    };
 
     this.activateVR = function (activate) {
         if (activate == activeVR)
@@ -156,16 +151,20 @@ function PreviewArea(canvas_, model_) {
             }
         }
 
+        var isLeft = (activeVR == 'left');
         if(controllerLeft.getButtonState('trigger')) {
             pointedNodeIdx = (closestNodeDistanceLeft < 2.0) ? closestNodeIndexLeft : -1;
 
             if (pointerLeft) {
-                // Touch Controller pointer already on!
+                // Touch Controller pointer already on! scan for selection
+                if (controllerLeft.getButtonState('grips')) {
+                    updateNodeSelection(model, getPointedObject(controllerLeft), isLeft);
+                }
             } else {
                 pointerLeft = drawPointer(v3Origin, v3UnitUp);
                 controllerLeft.add(pointerLeft);
             }
-            onControllerMove(controllerLeft);
+            updateNodeMoveOver(model, getPointedObject(controllerLeft));
         } else {
             if (pointerLeft) {
                 controllerLeft.remove(pointerLeft);
@@ -177,12 +176,15 @@ function PreviewArea(canvas_, model_) {
             pointedNodeIdx = (closestNodeDistanceRight < 2.0) ? closestNodeIndexRight : -1;
 
             if (pointerRight) {
-                // Touch Controller pointer already on!
+                // Touch Controller pointer already on! scan for selection
+                if (controllerRight.getButtonState('grips')) {
+                    updateNodeSelection(model, getPointedObject(controllerRight), isLeft);
+                }
             } else {
                 pointerRight = drawPointer(v3Origin, v3UnitUp);
                 controllerRight.add(pointerRight);
             }
-            onControllerMove(controllerRight);
+            updateNodeMoveOver(model, getPointedObject(controllerRight));
         } else {
             if (pointerRight) {
                 controllerRight.remove(pointerRight);
@@ -221,6 +223,7 @@ function PreviewArea(canvas_, model_) {
 
         var axisHelper = new THREE.AxisHelper( 5 );
         scene.add( axisHelper );
+        addNodeLabel();
     };
 
     this.resetCamera = function () {
@@ -747,5 +750,49 @@ function PreviewArea(canvas_, model_) {
             }
         }
         return undefined;
+    };
+
+    // Update the text and position according to selected node
+    // The alignment, size and offset parameters are set by experimentation
+    // TODO needs more experimentation
+    this.updateNodeLabel = function(text, nodeIndex) {
+        var context = nspCanvas.getContext('2d');
+        context.textAlign = 'left';
+        context.clearRect(0, 0, 256*4, 256);
+        context.fillText(text, 5, 120);
+
+        nodeNameMap.needsUpdate = true;
+        var pos = glyphs[nodeIndex].position;
+        nodeLabelSprite.position.set(pos.x, pos.y, pos.z);
+        nodeLabelSprite.needsUpdate = true;
+    };
+
+    // Adding Node label Sprite
+    var addNodeLabel = function() {
+
+        nspCanvas = document.createElement('canvas');
+        var size = 256;
+        nspCanvas.width = size*4;
+        nspCanvas.height = size;
+        var context = nspCanvas.getContext('2d');
+        context.fillStyle = '#ffffff';
+        context.textAlign = 'left';
+        context.font = '24px Arial';
+        context.fillText("", 0, 0);
+
+        nodeNameMap = new THREE.Texture(nspCanvas);
+        nodeNameMap.needsUpdate = true;
+
+        var mat = new THREE.SpriteMaterial({
+            map: nodeNameMap,
+            transparent: false,
+            useScreenCoordinates: false,
+            color: 0xffffff
+        });
+
+        nodeLabelSprite = new THREE.Sprite(mat);
+        nodeLabelSprite.scale.set( 100, 50, 1 );
+        nodeLabelSprite.position.set( 0, 0, 0 );
+        brain.add(nodeLabelSprite);
     };
 }
