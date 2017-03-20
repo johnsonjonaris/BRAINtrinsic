@@ -531,7 +531,7 @@ function PreviewArea(canvas_, model_) {
         }
 
         for(var i=0; i < row.length ; i++){
-            if((i != indexNode) && row[i] > model.getThreshold()  && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && visibleNodes[i]) {
+            if((i != indexNode) && Math.abs(row[i]) > model.getThreshold()  && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && visibleNodes[i]) {
                 displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
             }
         }

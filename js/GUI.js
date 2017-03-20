@@ -315,27 +315,28 @@ addThresholdSlider = function () {
 
     var max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
     var min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
+    max = Math.max(Math.abs(max), Math.abs(min))*100;
     var menu = d3.select("#edgeInfoPanel");
     menu.append("label")
         .attr("for", "thresholdSlider")
         .attr("id", "thresholdSliderLabel")
-        .text("Threshold @ " + max/2);
+        .text("Threshold @ " + max/2/100);
     menu.append("input")
         .attr("type", "range")
         .attr("value", max/2)
         .attr("id", "thresholdSlider")
-        .attr("min", min)
+        .attr("min", 0.)
         .attr("max", max)
-        .attr("step",max/1000)
+        .attr("step",max/100)
         .on("change", function () {
-            modelLeft.setThreshold(Math.floor(this.value*100)/100);
-            modelRight.setThreshold(Math.floor(this.value*100)/100);
+            modelLeft.setThreshold(Math.floor(this.value)/100);
+            modelRight.setThreshold(Math.floor(this.value)/100);
             redrawEdges();
-            document.getElementById("thresholdSliderLabel").innerHTML = "Threshold @ " + this.value;
+            document.getElementById("thresholdSliderLabel").innerHTML = "Threshold @ " + this.value/100;
         });
 
-    modelLeft.setThreshold(Math.floor(max*100/2)/100);
-    modelRight.setThreshold(Math.floor(max*100/2)/100);
+    modelLeft.setThreshold(max/2/100);
+    modelRight.setThreshold(max/2/100);
 };
 
 // add opacity slider 0 to 1
