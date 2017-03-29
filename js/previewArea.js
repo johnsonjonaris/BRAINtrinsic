@@ -514,7 +514,7 @@ function PreviewArea(canvas_, model_) {
         if (enableEB) {
             model.performEBOnNode(nodeIndex);
         }
-        for (var i in row) {
+        for (var i =0; i < row.length; ++i) {
             if ((nodeIndex != row[i]) && model.isRegionActive(model.getGroupNameByNodeIndex(i)) && visibleNodes[i]) {
                 displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[nodeIndex][row[i]]], nodeIndex, [nodeIndex, row[i]]);
             }
