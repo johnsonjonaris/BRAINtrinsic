@@ -5,6 +5,7 @@
 
 var SHORTEST_DISTANCE = 0, NUMBER_HOPS = 1; //enums
 var shortestPathVisMethod = SHORTEST_DISTANCE;
+var thresholdMultiplier = 1.0; // 100.0 for fMRI data of values (-1.0->1.0) and 1.0 if values > 1.0
 
 // TODO create uploadData function and prevent code repetition
 // init the GUI by creating all the data upload buttons
@@ -315,28 +316,30 @@ addThresholdSlider = function () {
 
     var max = Math.max(modelLeft.getMaximumWeight(), modelRight.getMaximumWeight());
     var min = Math.min(modelLeft.getMinimumWeight(), modelRight.getMinimumWeight());
-    max = Math.max(Math.abs(max), Math.abs(min))*100;
+    max = Math.max(Math.abs(max), Math.abs(min));
+    thresholdMultiplier = (max < 1.0) ? 100.0 : 1.0;
+    max *= thresholdMultiplier;
     var menu = d3.select("#edgeInfoPanel");
     menu.append("label")
         .attr("for", "thresholdSlider")
         .attr("id", "thresholdSliderLabel")
-        .text("Threshold @ " + max/2/100);
+        .text("Threshold @ " + max/2/thresholdMultiplier);
     menu.append("input")
         .attr("type", "range")
         .attr("value", max/2)
         .attr("id", "thresholdSlider")
         .attr("min", 0.)
         .attr("max", max)
-        .attr("step",max/100)
+        .attr("step", max/20)
         .on("change", function () {
-            modelLeft.setThreshold(Math.floor(this.value)/100);
-            modelRight.setThreshold(Math.floor(this.value)/100);
+            modelLeft.setThreshold(Math.floor(this.value)/thresholdMultiplier);
+            modelRight.setThreshold(Math.floor(this.value)/thresholdMultiplier);
             redrawEdges();
-            document.getElementById("thresholdSliderLabel").innerHTML = "Threshold @ " + this.value/100;
+            document.getElementById("thresholdSliderLabel").innerHTML = "Threshold @ " + this.value/thresholdMultiplier;
         });
 
-    modelLeft.setThreshold(max/2/100);
-    modelRight.setThreshold(max/2/100);
+    modelLeft.setThreshold(max/2/thresholdMultiplier);
+    modelRight.setThreshold(max/2/thresholdMultiplier);
 };
 
 // add opacity slider 0 to 1
