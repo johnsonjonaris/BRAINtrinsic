@@ -331,8 +331,8 @@ addThresholdSlider = function () {
         .attr("max", max)
         .attr("step", max/20)
         .on("change", function () {
-            modelLeft.setThreshold(Math.floor(this.value)/thresholdMultiplier);
-            modelRight.setThreshold(Math.floor(this.value)/thresholdMultiplier);
+            modelLeft.setThreshold(this.value/thresholdMultiplier);
+            modelRight.setThreshold(this.value/thresholdMultiplier);
             redrawEdges();
             document.getElementById("thresholdSliderLabel").innerHTML = "Threshold @ " + this.value/thresholdMultiplier;
         });
