@@ -25,8 +25,7 @@ var colorMap = {
     'Caudate':'#ad494a'
 };
 
-scaleColorGroup = function(model, group, nodeIndex) {
-    nodeIndex = (typeof nodeIndex === 'undefined') ? -1 : nodeIndex;
+scaleColorGroup = function(model, group) {
 
     var color;
     var filteredGroup;
@@ -49,13 +48,13 @@ scaleColorGroup = function(model, group, nodeIndex) {
     }
 
     // metric based
-    if(model.getActiveGroupName() == 4){
+    /*if(model.getActiveGroupName() == 4){
         if(nodeIndex == -1){
             console.log("ERROR!!!!");
             return metricQuantileScale(0);
         }
         color = metricQuantileScale(metricValues[nodeIndex][0]);
-    }
+    }*/
     return color;
 };
 

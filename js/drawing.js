@@ -55,8 +55,8 @@ updateNodeMoveOver = function (model, intersectedObject)
     if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
         // create a selected node (bigger) from the pointed node
         pointedObject = intersectedObject.object;
-        previewAreaLeft.updateNodeGeometry(nodeIdx, createSelectedGeometryByObject(pointedObject));
-        previewAreaRight.updateNodeGeometry(nodeIdx, createSelectedGeometryByObject(pointedObject));
+        previewAreaLeft.updateNodeGeometry(nodeIdx, 'selected');
+        previewAreaRight.updateNodeGeometry(nodeIdx, 'selected');
         // console.log("Drawing edges from node ", nodeIdx);
         pointedNodeIdx = nodeIdx;
     } else {
@@ -67,12 +67,12 @@ updateNodeMoveOver = function (model, intersectedObject)
             pointedNodeIdx = -1;
             if(nodeIdx == root) {
                 console.log("Root creation");
-                previewAreaLeft.updateNodeGeometry(nodeIdx, createRootGeometryByObject(pointedObject));
-                previewAreaRight.updateNodeGeometry(nodeIdx, createRootGeometryByObject(pointedObject));
+                previewAreaLeft.updateNodeGeometry(nodeIdx, 'root');
+                previewAreaRight.updateNodeGeometry(nodeIdx, 'root');
             }
             else {
-                previewAreaLeft.updateNodeGeometry(nodeIdx, createNormalGeometryByObject(pointedObject));
-                previewAreaRight.updateNodeGeometry(nodeIdx, createNormalGeometryByObject(pointedObject));
+                previewAreaLeft.updateNodeGeometry(nodeIdx, 'normal');
+                previewAreaRight.updateNodeGeometry(nodeIdx, 'normal');
             }
             pointedObject = null;
         }
@@ -126,9 +126,8 @@ updateNodeSelection = function (model, objectIntersected, isLeft) {
             var el = nodesSelected.indexOf(nodeIndex);
             if (el == -1) {
                 //if the node is not already selected -> draw edges and add in the nodesSelected Array
-                var hemisphere = objectIntersected.object.userData['hemisphere'];
-                previewAreaLeft.drawSelectedNode(nodeIndex, hemisphere);
-                previewAreaRight.drawSelectedNode(nodeIndex, hemisphere);
+                previewAreaLeft.drawSelectedNode(nodeIndex);
+                previewAreaRight.drawSelectedNode(nodeIndex);
 
                 // draw edges in one two ways:
                 if (thresholdModality) {
@@ -145,8 +144,10 @@ updateNodeSelection = function (model, objectIntersected, isLeft) {
                 pointedObject = null;
             } else {
                 //if the node is already selected, remove edges and remove from the nodeSelected Array
-                previewAreaLeft.updateNodeGeometry(nodeIndex, createNormalGeometryByObject(objectIntersected.object));
-                previewAreaRight.updateNodeGeometry(nodeIndex, createNormalGeometryByObject(objectIntersected.object));
+                if (pointedObject) {
+                    previewAreaLeft.updateNodeGeometry(nodeIndex, 'normal');
+                    previewAreaRight.updateNodeGeometry(nodeIndex, 'normal');
+                }
                 nodesSelected.splice(el, 1);
                 removeEdgesGivenNodeFromScenes(nodeIndex);
             }
@@ -279,7 +280,8 @@ initCanvas = function () {
 
     visibleNodes = new Array(modelLeft.getConnectionMatrixDimension()).fill(true);
     // draw connectomes and start animation
-    drawAllRegions();
+    previewAreaLeft.drawRegions();
+    previewAreaRight.drawRegions();
     $(window).resize(function(e){
         e.preventDefault();
         console.log("on resize event");
@@ -320,11 +322,6 @@ updateScenes = function () {
     createLegend(modelLeft);
 };
 
-redrawNodes = function () {
-    previewAreaLeft.redrawNodes();
-    previewAreaRight.redrawNodes();
-};
-
 redrawEdges = function () {
     previewAreaLeft.redrawEdges();
     previewAreaRight.redrawEdges();
@@ -347,12 +344,6 @@ animate = function () {
             requestAnimationFrame(animate);
         }
     }
-};
-
-// draw the brain regions as glyphs (the edges)
-drawAllRegions = function() {
-    previewAreaLeft.drawRegions();
-    previewAreaRight.drawRegions();
 };
 
 updateOpacity = function (opacity) {
@@ -392,7 +383,8 @@ changeColorGroup = function (name) {
     modelRight.setAllRegionsActivated();
     setColorGroupScale();
 
-    redrawNodes();
+    previewAreaLeft.updateNodesColor();
+    previewAreaRight.updateNodesColor();
     previewAreaLeft.updateEdgeColors();
     previewAreaRight.updateEdgeColors();
     createLegend(modelLeft);

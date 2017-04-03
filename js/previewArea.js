@@ -227,9 +227,7 @@ function PreviewArea(canvas_, model_) {
     };
 
     this.resetCamera = function () {
-        camera.position.x = 50;
-        camera.position.y = 50;
-        camera.position.z = 50;
+        camera.position.set(50,50,50);
     };
 
     this.resetBrainPosition = function () {
@@ -259,14 +257,28 @@ function PreviewArea(canvas_, model_) {
         canvas.addEventListener('mousemove', function (e) { onDocumentMouseMove(model, e); }, true);
     };
 
-    // update geometry of node
-    this.updateNodeGeometry = function (nodeIndex, geometry) {
-        glyphs[nodeIndex].geometry = geometry;
+    // update node scale according to selection status
+    this.updateNodeGeometry = function (nodeIndex, status) {
+        var scale = 1.0;
+        switch (status){
+            case 'normal':
+                scale = 1.0;
+                break;
+            case 'selected':
+                scale = (8/3);
+                break;
+            case 'root':
+                scale = (10/3);
+                break;
+        }
+        glyphs[nodeIndex].scale.set(scale, scale, scale);
     };
 
-    // update node color
-    this.updateNodeColor = function (nodeIndex, color) {
-        glyphs[nodeIndex].material.color = color;
+    this.updateNodesColor = function () {
+        var dataset = model.getDataset();
+        for (var i=0; i < glyphs.length; ++i){
+            glyphs[i].material.color = new THREE.Color(scaleColorGroup(model, dataset[i].group));
+        }
     };
 
     var removeNodesFromScene = function () {
@@ -327,11 +339,6 @@ function PreviewArea(canvas_, model_) {
         this.drawConnections();
     };
 
-    this.redrawNodes = function () {
-        removeNodesFromScene();
-        this.drawRegions();
-    };
-
     this.redrawEdges = function () {
         this.removeEdgesFromScene();
         if (spt)
@@ -358,21 +365,20 @@ function PreviewArea(canvas_, model_) {
 
         for(var i=0; i < dataset.length; i++){
             glyphs[i] = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+            var scale = 1.0;
             if(shouldDrawRegion(dataset[i])) {
-                material = getNormalMaterial(model, dataset[i].group,i);
+                material = getNormalMaterial(model, dataset[i].group);
+                geometry = getNormalGeometry(dataset[i].hemisphere);
 
-                if(nodesSelected.indexOf(i) == -1) {
-                    //if the node is not selected
-                    geometry = createNormalGeometry(dataset[i].hemisphere);
-                } else {
-                    // selected node
-                    geometry = createSelectedGeometry(dataset[i].hemisphere);
+                if(nodesSelected.indexOf(i) == -1) { //node is not selected
+                    scale = 1.0;
+                } else { // selected node
+                    scale = 8/3;
                 }
 
-                if(root && root == i){
-                    // root node
-                    geometry = createRootGeometry(dataset[i].hemisphere);
+                if(root && root == i){ // root node
                     material.transparent = false;
+                    scale = 10/3;
                 }
 
                 glyphs[i] = new THREE.Mesh(geometry, material);
@@ -386,6 +392,7 @@ function PreviewArea(canvas_, model_) {
                 }
             }
             glyphs[i].userData.hemisphere = dataset[i].hemisphere;
+            glyphs[i].scale.set(scale, scale, scale);
         }
     };
 
@@ -486,8 +493,8 @@ function PreviewArea(canvas_, model_) {
 
         var s1 = model.getNodalStrength(nodes[0]), s2 = model.getNodalStrength(nodes[1]);
         var p1 = s1/(s1+s2);
-        var c1 = new THREE.Color(scaleColorGroup(model, model.getGroupNameByNodeIndex(nodes[0]), nodes[0])),// glyphs[nodes[0]].material.color,
-            c2 = new THREE.Color(scaleColorGroup(model, model.getGroupNameByNodeIndex(nodes[1]), nodes[1]));// glyphs[nodes[1]].material.color;
+        var c1 = new THREE.Color(scaleColorGroup(model, model.getGroupNameByNodeIndex(nodes[0]))),// glyphs[nodes[0]].material.color,
+            c2 = new THREE.Color(scaleColorGroup(model, model.getGroupNameByNodeIndex(nodes[1])));// glyphs[nodes[1]].material.color;
         geometry.addAttribute( 'color', new THREE.BufferAttribute( computeColorGradient(c1,c2,n,p1), 3 ) );
 
         // geometry.colors = colorGradient;
@@ -615,13 +622,12 @@ function PreviewArea(canvas_, model_) {
         skybox.visible = visible;
     };
 
-    // draw a selected node in both scenes
-    this.drawSelectedNode = function (nodeIndex, hemisphere) {
-        // if node not selected, draw the edges connected to it and add it to selected nodes
+    // draw a selected node: increase it's size
+    this.drawSelectedNode = function (nodeIndex) {
         if(nodesSelected.indexOf(nodeIndex) == -1) {
             nodesSelected[nodesSelected.length] = nodeIndex;
         }
-        glyphs[nodeIndex].geometry = createSelectedGeometry(hemisphere);
+        this.updateNodeGeometry(nodeIndex, 'selected');
     };
 
     // get intersected object beneath the mouse pointer

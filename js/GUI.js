@@ -258,12 +258,11 @@ addDimensionFactorSlider = function () {
         .attr("type", "range")
         .attr("value", "1")
         .attr("id", "dimensionSlider")
-        .attr("min","0")
-        .attr("max", "3")
-        .attr("step","0.01")
+        .attr("min","0.2")
+        .attr("max", "4")
+        .attr("step","0.1")
         .on("change", function () {
             setDimensionFactor(this.value);
-            redrawNodes();
         });
 
     panel.append("label")
