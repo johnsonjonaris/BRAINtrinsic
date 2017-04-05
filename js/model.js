@@ -281,7 +281,10 @@ function Model() {
                 regions[regionName].active = true;
                 break;
         }
-        updateScenes(); // hide edges of invisible nodes
+    };
+
+    this.getCurrentRegionsInformation = function () {
+        return regions;
     };
 
     // get region state using its name
@@ -291,6 +294,14 @@ function Model() {
 
     this.getRegionActivation = function(regionName) {
         return regions[regionName].active;
+    };
+
+    this.setCurrentRegionsInformation = function (info) {
+        for (var element in regions) {
+            if (info[element]) {
+                regions[element] = info[element];
+            }
+        }
     };
 
     // set all regions active

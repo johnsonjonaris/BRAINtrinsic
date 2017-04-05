@@ -383,10 +383,11 @@ changeColorGroup = function (name) {
     modelRight.setAllRegionsActivated();
     setColorGroupScale();
 
+    previewAreaLeft.updateNodesVisibility();
+    previewAreaRight.updateNodesVisibility();
     previewAreaLeft.updateNodesColor();
     previewAreaRight.updateNodesColor();
-    previewAreaLeft.updateEdgeColors();
-    previewAreaRight.updateEdgeColors();
+    redrawEdges();
     createLegend(modelLeft);
 };
 
@@ -433,9 +434,8 @@ updateShortestPathEdges = function (side) {
 changeSceneToSubject = function (subjectId, model, previewArea, side) {
     var fileNames = dataFiles[subjectId];
     removeGeometryButtons(side);
+    var info = model.getCurrentRegionsInformation();
     model.clearModel();
-
-    previewArea.clearScene();
 
     queue()
         .defer(loadSubjectNetwork, fileNames, model)
@@ -454,6 +454,7 @@ changeSceneToSubject = function (subjectId, model, previewArea, side) {
                     model.setClusteringLevel(level1);
                     model.updateClusteringGroupLevel(level2);
                     model.setAllRegionsActivated();
+                    model.setCurrentRegionsInformation(info);
                     redrawScene(side);
                 })
             ;

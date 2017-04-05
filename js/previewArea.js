@@ -326,19 +326,6 @@ function PreviewArea(canvas_, model_) {
         }
     };
 
-    // clear scene
-    this.clearScene = function () {
-        removeNodesFromScene();
-        this.removeEdgesFromScene();
-    };
-
-    this.drawScene = function () {
-        if (spt)
-            this.updateShortestPathEdges();
-        this.drawRegions();
-        this.drawConnections();
-    };
-
     this.redrawEdges = function () {
         this.removeEdgesFromScene();
         if (spt)
@@ -353,48 +340,63 @@ function PreviewArea(canvas_, model_) {
 
     // updating scenes: redrawing glyphs and displayed edges
     this.updateScene = function (){
-        this.clearScene();
-        this.drawScene();
+        updateNodesPositions();
+        this.updateNodesVisibility();
+        this.redrawEdges();
     };
 
-    // draw the brain regions as glyphs (the edges)
+    // draw the brain regions as glyphs (the nodes)
+    // assumes all nodes are visible, nothing is selected
     this.drawRegions = function () {
         var dataset = model.getDataset();
-        var material;
-        var geometry = new THREE.CircleGeometry( 1.0, 10);
+        var material, geometry;
 
         for(var i=0; i < dataset.length; i++){
-            glyphs[i] = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
-            var scale = 1.0;
-            if(shouldDrawRegion(dataset[i])) {
-                material = getNormalMaterial(model, dataset[i].group);
-                geometry = getNormalGeometry(dataset[i].hemisphere);
-
-                if(nodesSelected.indexOf(i) == -1) { //node is not selected
-                    scale = 1.0;
-                } else { // selected node
-                    scale = 8/3;
-                }
-
-                if(root && root == i){ // root node
-                    material.transparent = false;
-                    scale = 10/3;
-                }
-
-                glyphs[i] = new THREE.Mesh(geometry, material);
-                glyphs[i].userData.hemisphere = dataset[i].hemisphere;
-                glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
-
-                glyphNodeDictionary[glyphs[i].uuid] = i;
-
-                if(visibleNodes[i]){
-                    brain.add(glyphs[i]);
-                }
-            }
+            geometry = getNormalGeometry(dataset[i].hemisphere);
+            material = getNormalMaterial(model, dataset[i].group);
+            glyphs[i] = new THREE.Mesh(geometry, material);
+            brain.add(glyphs[i]);
+            glyphNodeDictionary[glyphs[i].uuid] = i;
+            glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
             glyphs[i].userData.hemisphere = dataset[i].hemisphere;
-            glyphs[i].scale.set(scale, scale, scale);
         }
     };
+
+    // update the nodes positions according to the latest in the model
+    var updateNodesPositions = function () {
+        var dataset = model.getDataset();
+        for(var i=0; i < dataset.length; i++){
+            glyphs[i].position.set(dataset[i].position.x, dataset[i].position.y, dataset[i].position.z);
+        }
+    };
+
+    this.updateNodesVisibility = function () {
+        var dataset = model.getDataset();
+        for(var i=0; i < dataset.length; i++){
+            var opacity = 1.0;
+            if(root && root == i){ // root node
+                opacity = 1.0;
+            }
+
+            if (shouldDrawRegion(dataset[i])) {
+                switch (model.getRegionState(dataset[i].group)){
+                    case 'active':
+                        opacity = 1.0;
+                        break;
+                    case 'transparent':
+                        opacity = 0.3;
+                        break;
+                    case 'inactive':
+                        opacity = 0.0;
+                        break;
+                }
+            } else {
+                opacity = 0.0;
+            }
+            glyphs[i].material.opacity = opacity;
+        }
+    };
+
 
     // draw all connections between the selected nodes, needs the connection matrix.
     // don't draw edges belonging to inactive nodes
@@ -545,7 +547,6 @@ function PreviewArea(canvas_, model_) {
                 displayedEdges[displayedEdges.length] = drawEdgeWithName(edges[edgeIdx[indexNode][i]], indexNode, [indexNode, i]);
             }
         }
-        // setEdgesColor();
     };
 
     // give a specific node index, remove all edges from a specific node in a specific scene
@@ -735,8 +736,6 @@ function PreviewArea(canvas_, model_) {
             i = prev;
         }
 
-        removeNodesFromScene();
-        this.drawRegions();
         this.drawConnections();
     };
 

@@ -537,6 +537,7 @@ createLegend = function(model) {
                 .on("click", function(){
                     modelLeft.toggleRegion(this.id);
                     modelRight.toggleRegion(this.id);
+                    updateScenes();
                 });
 
             if(typeof(activeGroup[i]) != 'number' && activeGroup[i].indexOf("right") > -1){
@@ -803,7 +804,6 @@ addClusteringSlider = function (model, side) {
         .attr("step", 1)
         .on("change", function () {
             model.setClusteringLevel(parseInt(this.value));
-            // drawScene(model, side);
             redrawScene(side);
             document.getElementById("clusteringSliderLabel" + side).innerHTML = "Level " + this.value;
         });

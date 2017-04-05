@@ -30,27 +30,27 @@ setDimensionFactor = function(value){
 
 // return the material for a node (vertex) according to its state: active or transparent
 getNormalMaterial = function(model, group) {
-    var material;
+    var material, opacity = 1.0;
     switch (model.getRegionState(group)){
         case 'active':
-            material = new THREE.MeshPhongMaterial({
-                color: scaleColorGroup(model, group),
-                shininess: 15,
-                transparent: false,
-                specular: 0x222222,
-                reflectivity:1.3,
-                opacity: 1.0
-            });
+            opacity = 1.0;
             break;
         case 'transparent':
-            material = new THREE.MeshPhongMaterial({
-                color: scaleColorGroup(model, group),
-                shininess: 50,
-                transparent: true,
-                opacity: 0.3
-            });
+            opacity = 0.3;
+            break;
+
+        case 'inactive':
+            opacity = 0.0;
             break;
     }
+    material = new THREE.MeshPhongMaterial({
+        color: scaleColorGroup(model, group),
+        shininess: 50,
+        transparent: true,
+        specular: 0x222222,
+        reflectivity:1.3,
+        opacity: opacity
+    });
     return material;
 };
 
