@@ -322,6 +322,12 @@ updateScenes = function () {
     createLegend(modelLeft);
 };
 
+updateNodesVisiblity = function () {
+    previewAreaLeft.updateNodesVisibility();
+    previewAreaRight.updateNodesVisibility();
+    createLegend(modelLeft);
+};
+
 redrawEdges = function () {
     previewAreaLeft.redrawEdges();
     previewAreaRight.redrawEdges();

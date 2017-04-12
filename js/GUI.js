@@ -537,7 +537,10 @@ createLegend = function(model) {
                 .on("click", function(){
                     modelLeft.toggleRegion(this.id);
                     modelRight.toggleRegion(this.id);
-                    updateScenes();
+                    if (modelLeft.getRegionState(this.id) == 'transparent')
+                        updateNodesVisiblity();
+                    else
+                        updateScenes();
                 });
 
             if(typeof(activeGroup[i]) != 'number' && activeGroup[i].indexOf("right") > -1){
