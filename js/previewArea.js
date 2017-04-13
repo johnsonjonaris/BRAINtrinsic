@@ -264,6 +264,9 @@ function PreviewArea(canvas_, model_) {
             case 'normal':
                 scale = 1.0;
                 break;
+            case 'mouseover':
+                scale = 1.2;
+                break;
             case 'selected':
                 scale = (8/3);
                 break;

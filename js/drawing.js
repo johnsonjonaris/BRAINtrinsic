@@ -20,7 +20,9 @@ var enableEB = true;
 
 var vr = false;                     // enable VR
 var spt = false;                    // enabling shortest path
-var click = true;
+var click = false;
+var hoverTimeout = false;
+var oldNodeIndex = -1;
 
 // callback on mouse moving, expected action: node beneath pointer are drawn bigger
 function onDocumentMouseMove(model, event) {
@@ -53,12 +55,19 @@ updateNodeMoveOver = function (model, intersectedObject)
     }
 
     if ( nodeExistAndVisible && (nodesSelected.indexOf(nodeIdx) == -1)) { // not selected
-        // create a selected node (bigger) from the pointed node
-        pointedObject = intersectedObject.object;
-        previewAreaLeft.updateNodeGeometry(nodeIdx, 'selected');
-        previewAreaRight.updateNodeGeometry(nodeIdx, 'selected');
-        // console.log("Drawing edges from node ", nodeIdx);
-        pointedNodeIdx = nodeIdx;
+        if (hoverTimeout && oldNodeIndex == nodeIdx) {
+            // create a selected node (bigger) from the pointed node
+            pointedObject = intersectedObject.object;
+            previewAreaLeft.updateNodeGeometry(nodeIdx, 'mouseover');
+            previewAreaRight.updateNodeGeometry(nodeIdx, 'mouseover');
+            // console.log("Drawing edges from node ", nodeIdx);
+            pointedNodeIdx = nodeIdx;
+            hoverTimeout = false;
+        } else {
+            setTimeout(function () {hoverTimeout = true;}, 500);
+            oldNodeIndex = nodeIdx;
+
+        }
     } else {
         if(pointedObject){
             nodeIdx = glyphNodeDictionary[pointedObject.uuid];
@@ -164,7 +173,7 @@ updateNodeSelection = function (model, objectIntersected, isLeft) {
 // callback on mouse press
 function onMouseDown(event) {
     click = true;
-    switch (event.button) {
+    switch (event.button) { // middle button
         case 2: // right click -> should be < 200 msec
             setTimeout(function () {click = false;}, 200);
             break;
