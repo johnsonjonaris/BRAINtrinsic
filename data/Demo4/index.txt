@@ -1,2 +1,3 @@
 subjectID,network,topology
-healthy,nwHealthy.csv,healthy.csv
+structural,nwStruct.csv,struct.csv
+functional,nwFunc.csv,func.csv
